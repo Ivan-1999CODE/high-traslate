@@ -1,1692 +1,1658 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI English Tutor - Unit 34</title>
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  BookOpen, 
+  Gamepad2, 
+  LayoutList, 
+  Layers, 
+  Volume2, 
+  ChevronLeft, 
+  ChevronRight, 
+  CheckCircle, 
+  XCircle,
+  Trophy,
+  Star,
+  Sparkles,
+  HelpCircle,
+  RefreshCw,
+  Library,
+  Puzzle,
+  Lightbulb,
+  Music,
+  Map,
+  Wand2, // 魔杖
+  Flag,  // 投降
+  AlertCircle, // 警告
+  ArrowDownLeft, // 指向箭頭
+  Signal, // 難度圖示
+  Unlock,
+  Lock,
+  MessageCircle, // 問答圖示
+  X, // 關閉圖示
+  Send, // 發送圖示
+  Bot // 機器人圖示
+} from 'lucide-react';
+
+// --- 資料庫 (完整句子 + 重點單字) ---
+const EXAM_DATA = {
+  group1: {
+    title: "93-103年 (句子學習 & 單字測驗)",
+    range: "93-103",
+    vocab: [
+      // 93年
+      { 
+        id: "93-1", 
+        sentence: "Although Lily was born blind and deaf, she never gave up.", 
+        sentence_ch: "雖然 Lily 生來又瞎又聾，但她從不氣餒。", 
+        word: "deaf", part: "adj.", chinese: "聾的"
+      },
+      { 
+        id: "93-2", 
+        sentence: "Her story proves that as long as we work hard, we will succeed.", 
+        sentence_ch: "她的故事證明了，我們只要努力必能成功。", 
+        word: "succeed", part: "v.", chinese: "成功"
+      },
+      { 
+        id: "93-3", 
+        sentence: "Technology makes our lives more comfortable; however, it is also used to commit crimes.", 
+        sentence_ch: "科技讓我們的生活更舒適，然而它也被利用來犯罪。", 
+        word: "commit", part: "v.", chinese: "犯罪；承諾"
+      },
+      { 
+        id: "93-4", 
+        sentence: "According to the latest news report, the most common example is Internet fraud.", 
+        sentence_ch: "根據最新的新聞報導，最常見的例子是網際網路詐財。", 
+        word: "fraud", part: "n.", chinese: "詐騙；騙局"
+      },
+      // 94年
+      { 
+        id: "94-1", 
+        sentence: "Human knowledge about outer space is very limited, but we have been interested in it for a long time.", 
+        sentence_ch: "人類對外太空所知非常有限，但長久以來我們對它卻很感興趣。", 
+        word: "limited", part: "adj.", chinese: "有限的"
+      },
+      { 
+        id: "94-2", 
+        sentence: "The rapid development of space technology enables us to explore its mysteries.", 
+        sentence_ch: "太空科技的快速發展，使我們得以探索它的奧秘。", 
+        word: "explore", part: "v.", chinese: "探索"
+      },
+      { 
+        id: "94-3", 
+        sentence: "As members of the global village, we should not limit ourselves to this small island.", 
+        sentence_ch: "身為地球村的成員，我們不應該把自己侷限在這個小島上。", 
+        word: "limit", part: "v.", chinese: "限制"
+      },
+      { 
+        id: "94-4", 
+        sentence: "We should not only participate in international activities but also show our own cultural characteristics.", 
+        sentence_ch: "我們不但應該參與國際性的活動，並且應該展現我們自己的文化特色。", 
+        word: "characteristic", part: "n.", chinese: "特色；特徵"
+      },
+      // 95年
+      { 
+        id: "95-1", 
+        sentence: "Generally speaking, reading is good for children.", 
+        sentence_ch: "一般人都知道閱讀對孩子有益。", 
+        word: "generally", part: "adv.", chinese: "一般地"
+      },
+      { 
+        id: "95-2", 
+        sentence: "Teachers should encourage students to borrow books from the library.", 
+        sentence_ch: "老師應該多鼓勵學生到圖書館借書。", 
+        word: "encourage", part: "v.", chinese: "鼓勵"
+      },
+      { 
+        id: "95-3", 
+        sentence: "To provide a smoke-free dining environment, many restaurants do not allow smoking indoors.", 
+        sentence_ch: "為提供一個無煙的用餐環境，許多餐廳不允許室內抽煙。", 
+        word: "environment", part: "n.", chinese: "環境"
+      },
+      { 
+        id: "95-4", 
+        sentence: "Although opposed by many heavy smokers, this is indeed good news for non-smokers.", 
+        sentence_ch: "雖然遭到許多癮君子的反對，這對不抽煙的人的確是一大福音。", 
+        word: "oppose", part: "v.", chinese: "反對"
+      },
+      // 96年
+      { 
+        id: "96-1", 
+        sentence: "If we live only for ourselves, we will not feel truly happy.", 
+        sentence_ch: "如果我們只為自己而活，就不會真正地感到快樂。", 
+        word: "truly", part: "adv.", chinese: "真正地"
+      },
+      { 
+        id: "96-2", 
+        sentence: "When we start caring about others, the door to happiness will naturally open.", 
+        sentence_ch: "當我們開始為他人著想，快樂之門自然會開啟。", 
+        word: "naturally", part: "adv.", chinese: "自然地"
+      },
+      { 
+        id: "96-3", 
+        sentence: "The rapid development of public transportation has gradually shortened the distance between cities and the countryside.", 
+        sentence_ch: "大眾運輸的快速發展已逐漸縮短了都市與鄉村的距離。", 
+        word: "transportation", part: "n.", chinese: "運輸"
+      },
+      { 
+        id: "96-4", 
+        sentence: "With the high-speed rail, we can travel between the north and south of Taiwan within half a day.", 
+        sentence_ch: "有了高速鐵路，我們可以在半天內往返台灣南北兩地。", 
+        word: "travel", part: "v.", chinese: "旅行"
+      },
+      // 97年
+      { 
+        id: "97-1", 
+        sentence: "Listening to music is a hobby you can enjoy for a lifetime.", 
+        sentence_ch: "聽音樂是一個你可以終生享受的嗜好。", 
+        word: "lifetime", part: "n.", chinese: "終生"
+      },
+      { 
+        id: "97-2", 
+        sentence: "But being able to play musical instruments can bring you more joy.", 
+        sentence_ch: "但能彈奏樂器可以為你帶來更多喜悅。", 
+        word: "instrument", part: "n.", chinese: "樂器"
+      },
+      { 
+        id: "97-3", 
+        sentence: "The global food crisis has caused serious social problems in many areas of the world.", 
+        sentence_ch: "全球糧食危機已經在世界許多地區造成嚴重的社會問題。", 
+        word: "crisis", part: "n.", chinese: "危機"
+      },
+      { 
+        id: "97-4", 
+        sentence: "Experts warn us that we should no longer take cheap food prices for granted.", 
+        sentence_ch: "專家警告我們不應再將食物價格低廉視為理所當然。", 
+        word: "expert", part: "n.", chinese: "專家"
+      },
+      // 98年
+      { 
+        id: "98-1", 
+        sentence: "Most students are not used to solving problems by themselves; they always expect teachers to provide standard answers.", 
+        sentence_ch: "大部分學生不習慣自己解決問題，他們總是期待老師提供標準答案。", 
+        word: "expect", part: "v.", chinese: "期待"
+      },
+      { 
+        id: "98-2", 
+        sentence: "Besides studying hard to acquire knowledge, students should also cultivate the ability of independent thinking.", 
+        sentence_ch: "除了用功讀書獲取知識外，學生也應培養獨立思考的能力。", 
+        word: "cultivate", part: "v.", chinese: "培養"
+      },
+      { 
+        id: "98-3", 
+        sentence: "Jade Mountain is the highest peak in East Asia, famous for its biodiversity.", 
+        sentence_ch: "玉山是東亞第一高峰，以生態多樣聞名。", 
+        word: "biodiversity", part: "n.", chinese: "生物多樣性"
+      },
+      { 
+        id: "98-4", 
+        sentence: "People voted for it on the Internet to make it one of the New 7 Wonders of Nature.", 
+        sentence_ch: "大家在網路上投票給它，要讓它成為世界 7 大奇觀之一。", 
+        word: "vote", part: "v.", chinese: "投票"
+      },
+      // 99年
+      { 
+        id: "99-1", 
+        sentence: "In the past, bicycles were mainly used as a means of transportation.", 
+        sentence_ch: "在過去，腳踏車主要是作為一種交通工具。", 
+        word: "means", part: "n.", chinese: "手段；方法"
+      },
+      { 
+        id: "99-2", 
+        sentence: "However, riding bicycles has now become a popular leisure activity.", 
+        sentence_ch: "然而，騎腳踏車現在已成為一種熱門的休閒活動。", 
+        word: "leisure", part: "n.", chinese: "休閒"
+      },
+      { 
+        id: "99-3", 
+        sentence: "The birth rate in our country has decreased rapidly in the last twenty years.", 
+        sentence_ch: "近 20 年來我國的出生率快速下滑。", 
+        word: "decrease", part: "v.", chinese: "減少"
+      },
+      { 
+        id: "99-4", 
+        sentence: "This may lead to a serious shortage of human resources in the future.", 
+        sentence_ch: "這可能導致我們未來人力資源的嚴重不足。", 
+        word: "shortage", part: "n.", chinese: "短缺"
+      },
+      // 100年
+      { 
+        id: "100-1", 
+        sentence: "Night markets in Taiwan have long been considered representative of our local culture.", 
+        sentence_ch: "台灣的夜市早已被認為足以代表我們的在地文化。", 
+        word: "representative", part: "adj.", chinese: "具代表性的"
+      },
+      { 
+        id: "100-2", 
+        sentence: "Every year they attract thousands of tourists from different countries.", 
+        sentence_ch: "每年它們都吸引了成千上萬來自不同國家的觀光客。", 
+        word: "attract", part: "v.", chinese: "吸引"
+      },
+      { 
+        id: "100-3", 
+        sentence: "The explosion at the nuclear power plant in Japan has raised global concerns about nuclear energy safety.", 
+        sentence_ch: "日本的核電廠爆炸已經引起全球對核子能源安全的疑慮。", 
+        word: "concern", part: "n.", chinese: "疑慮；關切"
+      },
+      { 
+        id: "100-4", 
+        sentence: "Scientists are looking for safe, clean, and inexpensive green energy to meet our demand for electricity.", 
+        sentence_ch: "科學家正在尋求安全、乾淨又不昂貴的綠色能源，以滿足我們對電的需求。", 
+        word: "demand", part: "n.", chinese: "需求"
+      },
+      // 101年
+      { 
+        id: "101-1", 
+        sentence: "In recent years, many films made in Taiwan have received international attention.", 
+        sentence_ch: "近年來，許多台灣製作的影片已經受到國際的重視。", 
+        word: "attention", part: "n.", chinese: "注意；重視"
+      },
+      { 
+        id: "101-2", 
+        sentence: "The locations where these movies were filmed have also become popular tourist attractions.", 
+        sentence_ch: "拍攝這些電影的地點也成為熱門的觀光景點。", 
+        word: "attraction", part: "n.", chinese: "景點；吸引力"
+      },
+      { 
+        id: "101-3", 
+        sentence: "Some packaged foods we consider safe may contain ingredients harmful to the human body.", 
+        sentence_ch: "有些我們認為安全的包裝食品可能含有對人體有害的成分。", 
+        word: "ingredient", part: "n.", chinese: "成分"
+      },
+      { 
+        id: "101-4", 
+        sentence: "For the sake of our own health, we should read the instructions on the packages carefully before buying food.", 
+        sentence_ch: "為了我們自身的健康，在購買食物前我們應仔細閱讀包裝上的說明。", 
+        word: "instruction", part: "n.", chinese: "說明；指示"
+      },
+      // 102年
+      { 
+        id: "102-1", 
+        sentence: "High housing prices in urban areas have had a serious impact on society.", 
+        sentence_ch: "都會地區的高房價對社會產生了嚴重的影響。", 
+        word: "impact", part: "n.", chinese: "衝擊；影響"
+      },
+      { 
+        id: "102-2", 
+        sentence: "The government is launching new policies to meet people's housing demands.", 
+        sentence_ch: "政府正推出新的政策，以滿足人們的住房需求。", 
+        word: "policy", part: "n.", chinese: "政策"
+      },
+      { 
+        id: "102-3", 
+        sentence: "For many students nowadays, striking a balance between schoolwork and extracurricular activities is a big challenge.", 
+        sentence_ch: "對現今的許多學生而言，在課業或課外活動間取得平衡是一大挑戰。", 
+        word: "challenge", part: "n.", chinese: "挑戰"
+      },
+      { 
+        id: "102-4", 
+        sentence: "Effective time management is the most important lesson every responsible student must learn.", 
+        sentence_ch: "有效的時間管理是每位有責任感的學生必須學習的首要課題。", 
+        word: "management", part: "n.", chinese: "管理"
+      },
+      // 103年
+      { 
+        id: "103-1", 
+        sentence: "Some young people quit their high-paying jobs in the city and return to their hometowns to grow organic vegetables.", 
+        sentence_ch: "有些年輕人辭掉都市裡的高薪工作，返回家鄉種植有機蔬菜。", 
+        word: "organic", part: "adj.", chinese: "有機的"
+      },
+      { 
+        id: "103-2", 
+        sentence: "Through determination and effort, many of them have succeeded, not only making more profits but also living healthier lives.", 
+        sentence_ch: "藉由決心和努力，很多人成功了，不但獲利更多，還過著更健康的生活。", 
+        word: "profit", part: "n.", chinese: "利潤"
+      },
+      { 
+        id: "103-3", 
+        sentence: "Eating too much fried food may lead to overweight problems among schoolchildren, or even more serious health issues.", 
+        sentence_ch: "食用過多油炸食物可能會導致學童體重過重，甚至更嚴重的健康問題。", 
+        word: "issue", part: "n.", chinese: "議題；問題"
+      },
+      { 
+        id: "103-4", 
+        sentence: "Therefore, parents and teachers should work together to find effective measures to deal with this thorny issue.", 
+        sentence_ch: "因此，家長和老師應共同合作，找出處理這個棘手議題的有效措施。", 
+        word: "measure", part: "n.", chinese: "措施"
+      },
+    ]
+  },
+  group2: {
+    title: "104-114年 (句子學習 & 單字測驗)",
+    range: "104-114",
+    vocab: [
+      // 104年
+      { 
+        id: "104-1", 
+        sentence: "A successful business should not take making profits as its main goal.", 
+        sentence_ch: "成功的企業不應把獲利當作最主要的目標。", 
+        word: "goal", part: "n.", chinese: "目標"
+      },
+      { 
+        id: "104-2", 
+        sentence: "It should shoulder social responsibilities to improve the public welfare.", 
+        sentence_ch: "它應該負起社會責任，以增進大眾的福祉。", 
+        word: "welfare", part: "n.", chinese: "福祉；福利"
+      },
+      { 
+        id: "104-3", 
+        sentence: "The density of convenience stores in Taiwan is the highest in the world, with one store for every two thousand people on average.", 
+        sentence_ch: "台灣便利商店的密集度是全世界最高的，平均每兩千人就有一家。", 
+        word: "density", part: "n.", chinese: "密度"
+      },
+      { 
+        id: "104-4", 
+        sentence: "In addition to buying daily necessities, customers can also pay bills and even pick up items ordered online at these stores.", 
+        sentence_ch: "除了購買生活必需品，顧客也可以在這些店家繳費，甚至領取網路訂購之物品。", 
+        word: "necessity", part: "n.", chinese: "必需品"
+      },
+      // 105年
+      { 
+        id: "105-1", 
+        sentence: "Compared with their parents' generation, young people nowadays enjoy more freedom and prosperity.", 
+        sentence_ch: "相較於他們父母的世代，現今年輕人享受較多的自由和繁榮。", 
+        word: "prosperity", part: "n.", chinese: "繁榮"
+      },
+      { 
+        id: "105-2", 
+        sentence: "But in this rapidly changing world, they must learn how to deal with new challenges effectively.", 
+        sentence_ch: "但是在這個快速改變的世界中，他們必須學會如何有效地因應新的挑戰。", 
+        word: "effectively", part: "adv.", chinese: "有效地"
+      },
+      { 
+        id: "105-3", 
+        sentence: "Once mosquitoes bite patients with certain infectious diseases, they may spread the virus to other people.", 
+        sentence_ch: "蚊子一旦叮咬過某些傳染病的患者，就可能將病毒傳染給其他人。", 
+        word: "infectious", part: "adj.", chinese: "傳染性的"
+      },
+      { 
+        id: "105-4", 
+        sentence: "They spread diseases rapidly among humans, causing deaths far beyond what we can imagine.", 
+        sentence_ch: "它們在人類中快速傳播疾病，造成的死亡遠超乎我們所能想像。", 
+        word: "imagine", part: "v.", chinese: "想像"
+      },
+      // 106年
+      { 
+        id: "106-1", 
+        sentence: "Jade Mountain is often covered with thick snow in winter, making the entire peak shine like jade.", 
+        sentence_ch: "玉山在冬天常常覆蓋著厚厚的積雪，使整個山頂閃耀如玉。", 
+        word: "peak", part: "n.", chinese: "山頂"
+      },
+      { 
+        id: "106-2", 
+        sentence: "Conquering Jade Mountain has always been one of the most difficult challenges for domestic and foreign mountain climbers.", 
+        sentence_ch: "征服玉山一直是國內外登山者最困難的挑戰之一。", 
+        word: "conquer", part: "v.", chinese: "征服"
+      },
+      { 
+        id: "106-3", 
+        sentence: "The World Universiade is an international sports and cultural event hosted by different cities every two years.", 
+        sentence_ch: "世界大學運動會是一項國際體育及文化盛事，每兩年一次由不同城市舉辦。", 
+        word: "host", part: "v.", chinese: "主辦"
+      },
+      { 
+        id: "106-4", 
+        sentence: "In the competitions, student athletes from universities around the world build friendships and learn the true meaning of sportsmanship.", 
+        sentence_ch: "在比賽中，來自全球大學的學生運動員建立友誼，並學習運動家精神的真諦。", 
+        word: "sportsmanship", part: "n.", chinese: "運動家精神"
+      },
+      // 107年
+      { 
+        id: "107-1", 
+        sentence: "In recent years, there have been more and more super typhoons, usually causing serious disasters.", 
+        sentence_ch: "近年來，有越來越多超級颱風，通常造成嚴重災害。", 
+        word: "disaster", part: "n.", chinese: "災難"
+      },
+      { 
+        id: "107-2", 
+        sentence: "When a typhoon strikes, we should prepare enough food and stay indoors, and move to a safe place quickly if necessary.", 
+        sentence_ch: "颱風來襲時，我們應該準備足夠的食物，並待在室內，若有必要應迅速移動至安全的地方。", 
+        word: "necessary", part: "adj.", chinese: "必要的"
+      },
+      { 
+        id: "107-3", 
+        sentence: "Fast fashion features speed and low prices, allowing people to buy trendy clothes at affordable prices.", 
+        sentence_ch: "快速時尚以速度與低價為特色，讓人們可以用負擔得起的價格買到流行的服飾。", 
+        word: "affordable", part: "adj.", chinese: "負擔得起的"
+      },
+      { 
+        id: "107-4", 
+        sentence: "However, the 'fast consumption' it encourages has created a large amount of waste, causing huge pollution problems.", 
+        sentence_ch: "然而，它所鼓勵的「快速消費」卻製造了大量的廢棄物，造成巨大的污染問題。", 
+        word: "consumption", part: "n.", chinese: "消費"
+      },
+      // 108年
+      { 
+        id: "108-1", 
+        sentence: "Since it started operating in 2007, the High Speed Rail has become one of the most convenient and fastest means of transportation in Taiwan.", 
+        sentence_ch: "自 2007 年營運以來，高鐵已成為台灣最便利、最快速的交通工具之一。", 
+        word: "operate", part: "v.", chinese: "營運；操作"
+      },
+      { 
+        id: "108-2", 
+        sentence: "For those who emphasize efficiency in the workplace, the High Speed Rail is certainly the first choice for business travel.", 
+        sentence_ch: "對於強調職場效率的人而言，高鐵當然是商務旅遊的首選。", 
+        word: "efficiency", part: "n.", chinese: "效率"
+      },
+      { 
+        id: "108-3", 
+        sentence: "Creative banners have recently become effective advertising tools in night markets and also stimulated the growth of buying spirit.", 
+        sentence_ch: "創意布條最近在夜市成了有效的廣告工具，也刺激了買氣的成長。", 
+        word: "stimulate", part: "v.", chinese: "刺激"
+      },
+      { 
+        id: "108-4", 
+        sentence: "Some of them seem meaningless, but they are quite eye-catching and often bring a knowing smile to people.", 
+        sentence_ch: "其中有些看似無意義，但卻相當引人注目，且常能帶給人們會心的一笑。", 
+        word: "eye-catching", part: "adj.", chinese: "引人注目的"
+      },
+      // 109年
+      { 
+        id: "109-1", 
+        sentence: "We sometimes go against our own will to do certain things just to please friends.", 
+        sentence_ch: "我們有時會違背自己的意願去做某些事情，就只為了要取悅朋友。", 
+        word: "will", part: "n.", chinese: "意願；意志"
+      },
+      { 
+        id: "109-2", 
+        sentence: "In fact, when facing peer pressure, we should learn to stick to our own principles.", 
+        sentence_ch: "其實，在面對同儕壓力的時候，我們應該學習堅持自己的原則。", 
+        word: "principle", part: "n.", chinese: "原則"
+      },
+      { 
+        id: "109-3", 
+        sentence: "Early museums were open only to the upper and middle classes, and visitors had to apply for entry permits in advance.", 
+        sentence_ch: "早期的博物館只開放給中上階層，而且參觀者必須事先申請進入許可。", 
+        word: "permit", part: "n.", chinese: "許可"
+      },
+      { 
+        id: "109-4", 
+        sentence: "Nowadays, most people can enjoy the fun of exploring cultural treasures in person or through online tours.", 
+        sentence_ch: "現今多數人可以親自或透過線上導覽，享受探索文化珍寶的樂趣。", 
+        word: "treasure", part: "n.", chinese: "珍寶"
+      },
+      // 110年
+      { 
+        id: "110-1", 
+        sentence: "According to news reports, more than one million people lose their lives in road accidents worldwide every year.", 
+        sentence_ch: "根據新聞報導，每年全球有超過百萬人在道路事故中喪失性命。", 
+        word: "worldwide", part: "adv.", chinese: "全球地"
+      },
+      { 
+        id: "110-2", 
+        sentence: "Therefore, traffic regulations must be strictly enforced to ensure the safety of all road users.", 
+        sentence_ch: "因此，交通法規必須嚴格執行，以確保所有用路人的安全。", 
+        word: "regulation", part: "n.", chinese: "法規"
+      },
+      { 
+        id: "110-3", 
+        sentence: "Many people are curious about whether the record-breaking low temperatures in the US early this year were related to global warming.", 
+        sentence_ch: "很多人好奇今年年初在美國破紀錄的低溫是否與全球暖化有關。", 
+        word: "related", part: "adj.", chinese: "有關的"
+      },
+      { 
+        id: "110-4", 
+        sentence: "No matter what the answer is, climate experts predict that this kind of abnormal weather will become the new normal.", 
+        sentence_ch: "不論答案為何，氣候專家預告這種不正常的天氣將會變成新的常態。", 
+        word: "abnormal", part: "adj.", chinese: "不正常的"
+      },
+      // 111年
+      { 
+        id: "111-1", 
+        sentence: "Keeping pets is not a temporary life experience but a lifelong commitment to animals.", 
+        sentence_ch: "飼養寵物並非一項短暫的人生體驗，而是一個對動物的終生承諾。", 
+        word: "commitment", part: "n.", chinese: "承諾"
+      },
+      { 
+        id: "111-2", 
+        sentence: "While enjoying the joy pets bring, we should not neglect the responsibility of taking good care of them.", 
+        sentence_ch: "在享受寵物所帶來的歡樂時，我們不該忽略要善盡照顧他們的責任。", 
+        word: "neglect", part: "v.", chinese: "忽略"
+      },
+      // 112年
+      { 
+        id: "112-1", 
+        sentence: "History has proved time and again that war causes terrible disasters.", 
+        sentence_ch: "歷史一再證明，戰爭會造成極為可怕的災難。", 
+        word: "prove", part: "v.", chinese: "證明"
+      },
+      { 
+        id: "112-2", 
+        sentence: "Avoiding conflict and ensuring world peace should be the goal that all mankind pursues.", 
+        sentence_ch: "避免衝突、確保世界和平應該是所有人類追求的目標。", 
+        word: "conflict", part: "n.", chinese: "衝突"
+      },
+      // 113年
+      { 
+        id: "113-1", 
+        sentence: "During every election season, politicians are always seen visiting famous temples everywhere.", 
+        sentence_ch: "每逢選舉季節，總會看到政治人物造訪各地著名廟宇。", 
+        word: "politician", part: "n.", chinese: "政治人物"
+      },
+      { 
+        id: "113-2", 
+        sentence: "Besides praying for good election results, they also hope to show respect for local culture and customs.", 
+        sentence_ch: "除了祈求好的選舉結果，他們也希望展現對在地文化與習俗的尊重。", 
+        word: "custom", part: "n.", chinese: "習俗"
+      },
+      // 114年
+      { 
+        id: "114-1", 
+        sentence: "Human imagination and creativity are the biggest driving forces for technological progress.", 
+        sentence_ch: "人類的想像和創意是科技進步最大的驅動力。", 
+        word: "creativity", part: "n.", chinese: "創意"
+      },
+      { 
+        id: "114-2", 
+        sentence: "Magic objects that appeared in sci-fi movies in the past are now coming true one by one.", 
+        sentence_ch: "過去在科幻電影中出現的神奇物件，現在正逐一成真。", 
+        word: "progress", part: "n.", chinese: "進步"
+      } 
+    ]
+  }
+};
+
+// --- 常見連接詞/轉折詞/介系詞列表 (簡易模式用) ---
+const COMMON_CONNECTORS = new Set([
+  "although", "however", "but", "and", "so", "because", "therefore", "if", "when", "while", "since", "after", "before", 
+  "in", "on", "at", "to", "for", "with", "by", "of", "about", "as", "from", 
+  "besides", "also", "generally", "speaking", "according", "during", "once", "no", "matter", "what", "compared"
+]);
+
+// --- 工具函式 ---
+const shuffleArray = (array) => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
+const speakText = (text) => {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  utterance.rate = 0.9;
+  window.speechSynthesis.speak(utterance);
+};
+
+// --- AI API 呼叫函式 ---
+const callGeminiChat = async (userQuestion, contextItem) => {
+  const apiKey = "AIzaSyBwORAUO3cNO-yzy9JSI7Lk2yqSULgRckM"; // 執行環境會自動填入 API Key
+  
+  // 建構 Prompt，包含當前題目的完整資訊
+  const contextPrompt = `
+    你是一位親切、專業的英文老師，正在教導一位台灣學生。
     
-    <!-- 1. 引入 Tailwind CSS 用於樣式 -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    目前正在討論的題目如下：
+    - 英文句子: "${contextItem.sentence}"
+    - 中文翻譯: "${contextItem.sentence_ch}"
+    - 重點單字: "${contextItem.word}" (${contextItem.part}, ${contextItem.chinese})
+
+    學生的問題是： "${userQuestion}"
+
+    請根據上述「當前句子」的情境來回答學生的問題。
+    如果是問同義詞，請給出適合這句語境的同義詞。
+    如果是問改寫，請示範如何改寫這句話。
+    如果是問文法，請解釋這句話的文法結構。
     
-    <!-- 2. 設定 Import Map，讓瀏覽器知道要去哪裡抓 React 和 Lucide -->
-    <script type="importmap">
-    {
-        "imports": {
-            "react": "https://esm.sh/react@18.2.0",
-            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
-            "lucide-react": "https://esm.sh/lucide-react@0.263.1"
-        }
+    回答請用繁體中文，語氣鼓勵且簡潔，長度不要太長。
+    
+    **重要規則：請給出「純文字」的回答，絕對不要使用任何 Markdown 格式（例如：不要用 **粗體**，不要用 # 標題，不要用 * 列表），因為這些符號會讓學生閱讀困難。請直接分段或用空格排版即可。**
+  `;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: contextPrompt }] }]
+        })
+      }
+    );
+
+    const data = await response.json();
+    if (data.error) {
+      console.error("Gemini API Error:", data.error);
+      return "抱歉，AI 老師現在有點忙碌，請稍後再試。";
     }
-    </script>
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "抱歉，我沒有聽清楚。";
+  } catch (error) {
+    console.error("Fetch Error:", error);
+    return "連線發生錯誤，請檢查網路。";
+  }
+};
 
-    <!-- 3. 引入 Babel 來編譯 JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+// --- 共用樣式：遊戲風格按鈕 ---
+const GameButton = ({ children, onClick, color = "blue", className = "", disabled = false, active = false, title = "" }) => {
+  const colorStyles = {
+    blue: "bg-sky-400 border-sky-600 text-white hover:bg-sky-300",
+    green: "bg-emerald-400 border-emerald-600 text-white hover:bg-emerald-300",
+    yellow: "bg-yellow-400 border-yellow-600 text-yellow-900 hover:bg-yellow-300",
+    red: "bg-rose-400 border-rose-600 text-white hover:bg-rose-300",
+    purple: "bg-violet-400 border-violet-600 text-white hover:bg-violet-300",
+    white: "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
+    gray: "bg-slate-200 border-slate-400 text-slate-600 hover:bg-slate-300",
+    active: "bg-yellow-400 border-yellow-600 text-yellow-900 ring-2 ring-yellow-200 ring-offset-2",
+  };
 
-    <style>
-        /* 隱藏捲軸但保持功能 */
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        /* 文字描邊效果 */
-        .text-stroke-white {
-            -webkit-text-stroke: 1px white;
-        }
-    </style>
-</head>
-<body class="bg-sky-50">
-    <div id="root"></div>
+  const finalColor = active ? colorStyles.active : (colorStyles[color] || colorStyles.blue);
 
-    <!-- 4. 主要程式碼邏輯 -->
-    <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useRef } from 'react';
-        import { createRoot } from 'react-dom/client';
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={`
+        ${finalColor} 
+        border-b-4 active:border-b-0 active:translate-y-1 
+        rounded-2xl px-4 py-2 font-black tracking-wide 
+        transition-all duration-100 shadow-md 
+        flex items-center justify-center gap-2
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:active:border-b-4 disabled:active:translate-y-0
+        ${className}
+      `}
+    >
+      {children}
+    </button>
+  );
+};
+
+// --- AI 老師動態聊天室窗元件 ---
+const TeacherChatModal = ({ isOpen, onClose, currentItem }) => {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const chatEndRef = useRef(null);
+
+  // 初始化或切換題目時重置聊天
+  useEffect(() => {
+    if (isOpen && currentItem) {
+      setMessages([
+        {
+          role: 'ai',
+          text: `Hi! 我是你的 AI 英文老師。我們現在正在討論這句話：\n\n"${currentItem.sentence}"\n(${currentItem.sentence_ch})\n\n關於這句話或單字 "${currentItem.word}"，你有什麼想問的嗎？`
+        }
+      ]);
+    }
+  }, [isOpen, currentItem]);
+
+  // 自動捲動到底部
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = async (textToSend = input) => {
+    if (!textToSend.trim()) return;
+    
+    // 1. 顯示使用者訊息
+    const userMsg = textToSend;
+    setInput("");
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setIsLoading(true);
+
+    // 2. 呼叫 Gemini API
+    const aiResponseText = await callGeminiChat(userMsg, currentItem);
+
+    // 3. 顯示 AI 回覆
+    setMessages(prev => [...prev, { role: 'ai', text: aiResponseText }]);
+    setIsLoading(false);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="bg-white w-full max-w-sm h-[500px] rounded-3xl border-4 border-indigo-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in">
+        {/* Header */}
+        <div className="bg-indigo-100 p-3 border-b-2 border-indigo-200 flex justify-between items-center shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="bg-indigo-500 p-2 rounded-full text-white">
+              <Bot size={20} />
+            </div>
+            <div>
+               <div className="font-black text-indigo-700 leading-tight">AI Teacher</div>
+               <div className="text-xs text-indigo-400 font-bold">Always Online</div>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
+            <X size={24} />
+          </button>
+        </div>
         
-        // 引入所有需要的圖標
-        import { 
-            BookOpen, Gamepad2, LayoutList, Layers, Volume2, ChevronLeft, ChevronRight, 
-            CheckCircle, XCircle, Trophy, Star, Sparkles, HelpCircle, RefreshCw, 
-            Library, Puzzle, Lightbulb, Music, Map, Wand2, Flag, AlertCircle, 
-            ArrowDownLeft, Signal, Unlock, Lock, MessageCircle, X, Send, Bot, Key
-        } from 'lucide-react';
+        {/* Chat Area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+               <div 
+                 className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed whitespace-pre-wrap shadow-sm
+                   ${msg.role === 'user' 
+                     ? 'bg-indigo-500 text-white rounded-br-none' 
+                     : 'bg-white border-2 border-slate-100 text-slate-700 rounded-bl-none'}
+                 `}
+               >
+                 {msg.text}
+               </div>
+            </div>
+          ))}
+          {isLoading && (
+             <div className="flex justify-start">
+               <div className="bg-slate-200 px-4 py-3 rounded-2xl rounded-bl-none animate-pulse text-slate-500 text-xs font-bold">
+                 AI 老師正在思考...
+               </div>
+             </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
 
-        // ==========================================
-        // ▼▼▼▼▼▼▼▼ 請在此處貼上您的 API KEY ▼▼▼▼▼▼▼▼
-        // ==========================================
-        
-        const USER_API_KEY = "AIzaSyBwORAUO3cNO-yzy9JSI7Lk2yqSULgRckM"; 
+        {/* Suggestion Chips */}
+        {!isLoading && messages.length < 3 && (
+           <div className="px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-hide">
+              <button onClick={() => handleSend("這句話可以怎麼改寫？")} className="whitespace-nowrap px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 hover:bg-indigo-100">
+                 🔄 怎麼改寫？
+              </button>
+              <button onClick={() => handleSend(`"${currentItem.word}" 有同義詞嗎？`)} className="whitespace-nowrap px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 hover:bg-indigo-100">
+                 📚 同義詞？
+              </button>
+              <button onClick={() => handleSend("這句話的文法結構是什麼？")} className="whitespace-nowrap px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 hover:bg-indigo-100">
+                 🔍 文法分析
+              </button>
+           </div>
+        )}
 
-        // ==========================================
-        // ▲▲▲▲▲▲▲▲ 設定結束 ▲▲▲▲▲▲▲▲
-        // ==========================================
+        {/* Input Area */}
+        <div className="p-3 bg-white border-t border-slate-100 flex gap-2 shrink-0">
+           <input 
+             type="text" 
+             value={input}
+             onChange={(e) => setInput(e.target.value)}
+             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+             placeholder="輸入你的問題..."
+             disabled={isLoading}
+             className="flex-1 bg-slate-100 border-transparent focus:border-indigo-300 focus:bg-white focus:ring-0 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 transition-all outline-none"
+           />
+           <button 
+             onClick={() => handleSend()}
+             disabled={isLoading || !input.trim()}
+             className="bg-indigo-500 text-white p-2 rounded-xl hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+           >
+             <Send size={20} />
+           </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
-        // --- 資料庫 (完整句子 + 重點單字) ---
-        const EXAM_DATA = {
-        group1: {
-            title: "93-103年 (句子學習 & 單字測驗)",
-            range: "93-103",
-            vocab: [
-            // 93年
-            { 
-                id: "93-1", 
-                sentence: "Although Lily was born blind and deaf, she never gave up.", 
-                sentence_ch: "雖然 Lily 生來又瞎又聾，但她從不氣餒。", 
-                word: "deaf", part: "adj.", chinese: "聾的"
-            },
-            { 
-                id: "93-2", 
-                sentence: "Her story proves that as long as we work hard, we will succeed.", 
-                sentence_ch: "她的故事證明了，我們只要努力必能成功。", 
-                word: "succeed", part: "v.", chinese: "成功"
-            },
-            { 
-                id: "93-3", 
-                sentence: "Technology makes our lives more comfortable; however, it is also used to commit crimes.", 
-                sentence_ch: "科技讓我們的生活更舒適，然而它也被利用來犯罪。", 
-                word: "commit", part: "v.", chinese: "犯罪；承諾"
-            },
-            { 
-                id: "93-4", 
-                sentence: "According to the latest news report, the most common example is Internet fraud.", 
-                sentence_ch: "根據最新的新聞報導，最常見的例子是網際網路詐財。", 
-                word: "fraud", part: "n.", chinese: "詐騙；騙局"
-            },
-            // 94年
-            { 
-                id: "94-1", 
-                sentence: "Human knowledge about outer space is very limited, but we have been interested in it for a long time.", 
-                sentence_ch: "人類對外太空所知非常有限，但長久以來我們對它卻很感興趣。", 
-                word: "limited", part: "adj.", chinese: "有限的"
-            },
-            { 
-                id: "94-2", 
-                sentence: "The rapid development of space technology enables us to explore its mysteries.", 
-                sentence_ch: "太空科技的快速發展，使我們得以探索它的奧秘。", 
-                word: "explore", part: "v.", chinese: "探索"
-            },
-            { 
-                id: "94-3", 
-                sentence: "As members of the global village, we should not limit ourselves to this small island.", 
-                sentence_ch: "身為地球村的成員，我們不應該把自己侷限在這個小島上。", 
-                word: "limit", part: "v.", chinese: "限制"
-            },
-            { 
-                id: "94-4", 
-                sentence: "We should not only participate in international activities but also show our own cultural characteristics.", 
-                sentence_ch: "我們不但應該參與國際性的活動，並且應該展現我們自己的文化特色。", 
-                word: "characteristic", part: "n.", chinese: "特色；特徵"
-            },
-            // 95年
-            { 
-                id: "95-1", 
-                sentence: "Generally speaking, reading is good for children.", 
-                sentence_ch: "一般人都知道閱讀對孩子有益。", 
-                word: "generally", part: "adv.", chinese: "一般地"
-            },
-            { 
-                id: "95-2", 
-                sentence: "Teachers should encourage students to borrow books from the library.", 
-                sentence_ch: "老師應該多鼓勵學生到圖書館借書。", 
-                word: "encourage", part: "v.", chinese: "鼓勵"
-            },
-            { 
-                id: "95-3", 
-                sentence: "To provide a smoke-free dining environment, many restaurants do not allow smoking indoors.", 
-                sentence_ch: "為提供一個無煙的用餐環境，許多餐廳不允許室內抽煙。", 
-                word: "environment", part: "n.", chinese: "環境"
-            },
-            { 
-                id: "95-4", 
-                sentence: "Although opposed by many heavy smokers, this is indeed good news for non-smokers.", 
-                sentence_ch: "雖然遭到許多癮君子的反對，這對不抽煙的人的確是一大福音。", 
-                word: "oppose", part: "v.", chinese: "反對"
-            },
-            // 96年
-            { 
-                id: "96-1", 
-                sentence: "If we live only for ourselves, we will not feel truly happy.", 
-                sentence_ch: "如果我們只為自己而活，就不會真正地感到快樂。", 
-                word: "truly", part: "adv.", chinese: "真正地"
-            },
-            { 
-                id: "96-2", 
-                sentence: "When we start caring about others, the door to happiness will naturally open.", 
-                sentence_ch: "當我們開始為他人著想，快樂之門自然會開啟。", 
-                word: "naturally", part: "adv.", chinese: "自然地"
-            },
-            { 
-                id: "96-3", 
-                sentence: "The rapid development of public transportation has gradually shortened the distance between cities and the countryside.", 
-                sentence_ch: "大眾運輸的快速發展已逐漸縮短了都市與鄉村的距離。", 
-                word: "transportation", part: "n.", chinese: "運輸"
-            },
-            { 
-                id: "96-4", 
-                sentence: "With the high-speed rail, we can travel between the north and south of Taiwan within half a day.", 
-                sentence_ch: "有了高速鐵路，我們可以在半天內往返台灣南北兩地。", 
-                word: "travel", part: "v.", chinese: "旅行"
-            },
-            // 97年
-            { 
-                id: "97-1", 
-                sentence: "Listening to music is a hobby you can enjoy for a lifetime.", 
-                sentence_ch: "聽音樂是一個你可以終生享受的嗜好。", 
-                word: "lifetime", part: "n.", chinese: "終生"
-            },
-            { 
-                id: "97-2", 
-                sentence: "But being able to play musical instruments can bring you more joy.", 
-                sentence_ch: "但能彈奏樂器可以為你帶來更多喜悅。", 
-                word: "instrument", part: "n.", chinese: "樂器"
-            },
-            { 
-                id: "97-3", 
-                sentence: "The global food crisis has caused serious social problems in many areas of the world.", 
-                sentence_ch: "全球糧食危機已經在世界許多地區造成嚴重的社會問題。", 
-                word: "crisis", part: "n.", chinese: "危機"
-            },
-            { 
-                id: "97-4", 
-                sentence: "Experts warn us that we should no longer take cheap food prices for granted.", 
-                sentence_ch: "專家警告我們不應再將食物價格低廉視為理所當然。", 
-                word: "expert", part: "n.", chinese: "專家"
-            },
-            // 98年
-            { 
-                id: "98-1", 
-                sentence: "Most students are not used to solving problems by themselves; they always expect teachers to provide standard answers.", 
-                sentence_ch: "大部分學生不習慣自己解決問題，他們總是期待老師提供標準答案。", 
-                word: "expect", part: "v.", chinese: "期待"
-            },
-            { 
-                id: "98-2", 
-                sentence: "Besides studying hard to acquire knowledge, students should also cultivate the ability of independent thinking.", 
-                sentence_ch: "除了用功讀書獲取知識外，學生也應培養獨立思考的能力。", 
-                word: "cultivate", part: "v.", chinese: "培養"
-            },
-            { 
-                id: "98-3", 
-                sentence: "Jade Mountain is the highest peak in East Asia, famous for its biodiversity.", 
-                sentence_ch: "玉山是東亞第一高峰，以生態多樣聞名。", 
-                word: "biodiversity", part: "n.", chinese: "生物多樣性"
-            },
-            { 
-                id: "98-4", 
-                sentence: "People voted for it on the Internet to make it one of the New 7 Wonders of Nature.", 
-                sentence_ch: "大家在網路上投票給它，要讓它成為世界 7 大奇觀之一。", 
-                word: "vote", part: "v.", chinese: "投票"
-            },
-            // 99年
-            { 
-                id: "99-1", 
-                sentence: "In the past, bicycles were mainly used as a means of transportation.", 
-                sentence_ch: "在過去，腳踏車主要是作為一種交通工具。", 
-                word: "means", part: "n.", chinese: "手段；方法"
-            },
-            { 
-                id: "99-2", 
-                sentence: "However, riding bicycles has now become a popular leisure activity.", 
-                sentence_ch: "然而，騎腳踏車現在已成為一種熱門的休閒活動。", 
-                word: "leisure", part: "n.", chinese: "休閒"
-            },
-            { 
-                id: "99-3", 
-                sentence: "The birth rate in our country has decreased rapidly in the last twenty years.", 
-                sentence_ch: "近 20 年來我國的出生率快速下滑。", 
-                word: "decrease", part: "v.", chinese: "減少"
-            },
-            { 
-                id: "99-4", 
-                sentence: "This may lead to a serious shortage of human resources in the future.", 
-                sentence_ch: "這可能導致我們未來人力資源的嚴重不足。", 
-                word: "shortage", part: "n.", chinese: "短缺"
-            },
-            // 100年
-            { 
-                id: "100-1", 
-                sentence: "Night markets in Taiwan have long been considered representative of our local culture.", 
-                sentence_ch: "台灣的夜市早已被認為足以代表我們的在地文化。", 
-                word: "representative", part: "adj.", chinese: "具代表性的"
-            },
-            { 
-                id: "100-2", 
-                sentence: "Every year they attract thousands of tourists from different countries.", 
-                sentence_ch: "每年它們都吸引了成千上萬來自不同國家的觀光客。", 
-                word: "attract", part: "v.", chinese: "吸引"
-            },
-            { 
-                id: "100-3", 
-                sentence: "The explosion at the nuclear power plant in Japan has raised global concerns about nuclear energy safety.", 
-                sentence_ch: "日本的核電廠爆炸已經引起全球對核子能源安全的疑慮。", 
-                word: "concern", part: "n.", chinese: "疑慮；關切"
-            },
-            { 
-                id: "100-4", 
-                sentence: "Scientists are looking for safe, clean, and inexpensive green energy to meet our demand for electricity.", 
-                sentence_ch: "科學家正在尋求安全、乾淨又不昂貴的綠色能源，以滿足我們對電的需求。", 
-                word: "demand", part: "n.", chinese: "需求"
-            },
-            // 101年
-            { 
-                id: "101-1", 
-                sentence: "In recent years, many films made in Taiwan have received international attention.", 
-                sentence_ch: "近年來，許多台灣製作的影片已經受到國際的重視。", 
-                word: "attention", part: "n.", chinese: "注意；重視"
-            },
-            { 
-                id: "101-2", 
-                sentence: "The locations where these movies were filmed have also become popular tourist attractions.", 
-                sentence_ch: "拍攝這些電影的地點也成為熱門的觀光景點。", 
-                word: "attraction", part: "n.", chinese: "景點；吸引力"
-            },
-            { 
-                id: "101-3", 
-                sentence: "Some packaged foods we consider safe may contain ingredients harmful to the human body.", 
-                sentence_ch: "有些我們認為安全的包裝食品可能含有對人體有害的成分。", 
-                word: "ingredient", part: "n.", chinese: "成分"
-            },
-            { 
-                id: "101-4", 
-                sentence: "For the sake of our own health, we should read the instructions on the packages carefully before buying food.", 
-                sentence_ch: "為了我們自身的健康，在購買食物前我們應仔細閱讀包裝上的說明。", 
-                word: "instruction", part: "n.", chinese: "說明；指示"
-            },
-            // 102年
-            { 
-                id: "102-1", 
-                sentence: "High housing prices in urban areas have had a serious impact on society.", 
-                sentence_ch: "都會地區的高房價對社會產生了嚴重的影響。", 
-                word: "impact", part: "n.", chinese: "衝擊；影響"
-            },
-            { 
-                id: "102-2", 
-                sentence: "The government is launching new policies to meet people's housing demands.", 
-                sentence_ch: "政府正推出新的政策，以滿足人們的住房需求。", 
-                word: "policy", part: "n.", chinese: "政策"
-            },
-            { 
-                id: "102-3", 
-                sentence: "For many students nowadays, striking a balance between schoolwork and extracurricular activities is a big challenge.", 
-                sentence_ch: "對現今的許多學生而言，在課業或課外活動間取得平衡是一大挑戰。", 
-                word: "challenge", part: "n.", chinese: "挑戰"
-            },
-            { 
-                id: "102-4", 
-                sentence: "Effective time management is the most important lesson every responsible student must learn.", 
-                sentence_ch: "有效的時間管理是每位有責任感的學生必須學習的首要課題。", 
-                word: "management", part: "n.", chinese: "管理"
-            },
-            // 103年
-            { 
-                id: "103-1", 
-                sentence: "Some young people quit their high-paying jobs in the city and return to their hometowns to grow organic vegetables.", 
-                sentence_ch: "有些年輕人辭掉都市裡的高薪工作，返回家鄉種植有機蔬菜。", 
-                word: "organic", part: "adj.", chinese: "有機的"
-            },
-            { 
-                id: "103-2", 
-                sentence: "Through determination and effort, many of them have succeeded, not only making more profits but also living healthier lives.", 
-                sentence_ch: "藉由決心和努力，很多人成功了，不但獲利更多，還過著更健康的生活。", 
-                word: "profit", part: "n.", chinese: "利潤"
-            },
-            { 
-                id: "103-3", 
-                sentence: "Eating too much fried food may lead to overweight problems among schoolchildren, or even more serious health issues.", 
-                sentence_ch: "食用過多油炸食物可能會導致學童體重過重，甚至更嚴重的健康問題。", 
-                word: "issue", part: "n.", chinese: "議題；問題"
-            },
-            { 
-                id: "103-4", 
-                sentence: "Therefore, parents and teachers should work together to find effective measures to deal with this thorny issue.", 
-                sentence_ch: "因此，家長和老師應共同合作，找出處理這個棘手議題的有效措施。", 
-                word: "measure", part: "n.", chinese: "措施"
-            },
-            ]
-        },
-        group2: {
-            title: "104-114年 (句子學習 & 單字測驗)",
-            range: "104-114",
-            vocab: [
-            // 104年
-            { 
-                id: "104-1", 
-                sentence: "A successful business should not take making profits as its main goal.", 
-                sentence_ch: "成功的企業不應把獲利當作最主要的目標。", 
-                word: "goal", part: "n.", chinese: "目標"
-            },
-            { 
-                id: "104-2", 
-                sentence: "It should shoulder social responsibilities to improve the public welfare.", 
-                sentence_ch: "它應該負起社會責任，以增進大眾的福祉。", 
-                word: "welfare", part: "n.", chinese: "福祉；福利"
-            },
-            { 
-                id: "104-3", 
-                sentence: "The density of convenience stores in Taiwan is the highest in the world, with one store for every two thousand people on average.", 
-                sentence_ch: "台灣便利商店的密集度是全世界最高的，平均每兩千人就有一家。", 
-                word: "density", part: "n.", chinese: "密度"
-            },
-            { 
-                id: "104-4", 
-                sentence: "In addition to buying daily necessities, customers can also pay bills and even pick up items ordered online at these stores.", 
-                sentence_ch: "除了購買生活必需品，顧客也可以在這些店家繳費，甚至領取網路訂購之物品。", 
-                word: "necessity", part: "n.", chinese: "必需品"
-            },
-            // 105年
-            { 
-                id: "105-1", 
-                sentence: "Compared with their parents' generation, young people nowadays enjoy more freedom and prosperity.", 
-                sentence_ch: "相較於他們父母的世代，現今年輕人享受較多的自由和繁榮。", 
-                word: "prosperity", part: "n.", chinese: "繁榮"
-            },
-            { 
-                id: "105-2", 
-                sentence: "But in this rapidly changing world, they must learn how to deal with new challenges effectively.", 
-                sentence_ch: "但是在這個快速改變的世界中，他們必須學會如何有效地因應新的挑戰。", 
-                word: "effectively", part: "adv.", chinese: "有效地"
-            },
-            { 
-                id: "105-3", 
-                sentence: "Once mosquitoes bite patients with certain infectious diseases, they may spread the virus to other people.", 
-                sentence_ch: "蚊子一旦叮咬過某些傳染病的患者，就可能將病毒傳染給其他人。", 
-                word: "infectious", part: "adj.", chinese: "傳染性的"
-            },
-            { 
-                id: "105-4", 
-                sentence: "They spread diseases rapidly among humans, causing deaths far beyond what we can imagine.", 
-                sentence_ch: "它們在人類中快速傳播疾病，造成的死亡遠超乎我們所能想像。", 
-                word: "imagine", part: "v.", chinese: "想像"
-            },
-            // 106年
-            { 
-                id: "106-1", 
-                sentence: "Jade Mountain is often covered with thick snow in winter, making the entire peak shine like jade.", 
-                sentence_ch: "玉山在冬天常常覆蓋著厚厚的積雪，使整個山頂閃耀如玉。", 
-                word: "peak", part: "n.", chinese: "山頂"
-            },
-            { 
-                id: "106-2", 
-                sentence: "Conquering Jade Mountain has always been one of the most difficult challenges for domestic and foreign mountain climbers.", 
-                sentence_ch: "征服玉山一直是國內外登山者最困難的挑戰之一。", 
-                word: "conquer", part: "v.", chinese: "征服"
-            },
-            { 
-                id: "106-3", 
-                sentence: "The World Universiade is an international sports and cultural event hosted by different cities every two years.", 
-                sentence_ch: "世界大學運動會是一項國際體育及文化盛事，每兩年一次由不同城市舉辦。", 
-                word: "host", part: "v.", chinese: "主辦"
-            },
-            { 
-                id: "106-4", 
-                sentence: "In the competitions, student athletes from universities around the world build friendships and learn the true meaning of sportsmanship.", 
-                sentence_ch: "在比賽中，來自全球大學的學生運動員建立友誼，並學習運動家精神的真諦。", 
-                word: "sportsmanship", part: "n.", chinese: "運動家精神"
-            },
-            // 107年
-            { 
-                id: "107-1", 
-                sentence: "In recent years, there have been more and more super typhoons, usually causing serious disasters.", 
-                sentence_ch: "近年來，有越來越多超級颱風，通常造成嚴重災害。", 
-                word: "disaster", part: "n.", chinese: "災難"
-            },
-            { 
-                id: "107-2", 
-                sentence: "When a typhoon strikes, we should prepare enough food and stay indoors, and move to a safe place quickly if necessary.", 
-                sentence_ch: "颱風來襲時，我們應該準備足夠的食物，並待在室內，若有必要應迅速移動至安全的地方。", 
-                word: "necessary", part: "adj.", chinese: "必要的"
-            },
-            { 
-                id: "107-3", 
-                sentence: "Fast fashion features speed and low prices, allowing people to buy trendy clothes at affordable prices.", 
-                sentence_ch: "快速時尚以速度與低價為特色，讓人們可以用負擔得起的價格買到流行的服飾。", 
-                word: "affordable", part: "adj.", chinese: "負擔得起的"
-            },
-            { 
-                id: "107-4", 
-                sentence: "However, the 'fast consumption' it encourages has created a large amount of waste, causing huge pollution problems.", 
-                sentence_ch: "然而，它所鼓勵的「快速消費」卻製造了大量的廢棄物，造成巨大的污染問題。", 
-                word: "consumption", part: "n.", chinese: "消費"
-            },
-            // 108年
-            { 
-                id: "108-1", 
-                sentence: "Since it started operating in 2007, the High Speed Rail has become one of the most convenient and fastest means of transportation in Taiwan.", 
-                sentence_ch: "自 2007 年營運以來，高鐵已成為台灣最便利、最快速的交通工具之一。", 
-                word: "operate", part: "v.", chinese: "營運；操作"
-            },
-            { 
-                id: "108-2", 
-                sentence: "For those who emphasize efficiency in the workplace, the High Speed Rail is certainly the first choice for business travel.", 
-                sentence_ch: "對於強調職場效率的人而言，高鐵當然是商務旅遊的首選。", 
-                word: "efficiency", part: "n.", chinese: "效率"
-            },
-            { 
-                id: "108-3", 
-                sentence: "Creative banners have recently become effective advertising tools in night markets and also stimulated the growth of buying spirit.", 
-                sentence_ch: "創意布條最近在夜市成了有效的廣告工具，也刺激了買氣的成長。", 
-                word: "stimulate", part: "v.", chinese: "刺激"
-            },
-            { 
-                id: "108-4", 
-                sentence: "Some of them seem meaningless, but they are quite eye-catching and often bring a knowing smile to people.", 
-                sentence_ch: "其中有些看似無意義，但卻相當引人注目，且常能帶給人們會心的一笑。", 
-                word: "eye-catching", part: "adj.", chinese: "引人注目的"
-            },
-            // 109年
-            { 
-                id: "109-1", 
-                sentence: "We sometimes go against our own will to do certain things just to please friends.", 
-                sentence_ch: "我們有時會違背自己的意願去做某些事情，就只為了要取悅朋友。", 
-                word: "will", part: "n.", chinese: "意願；意志"
-            },
-            { 
-                id: "109-2", 
-                sentence: "In fact, when facing peer pressure, we should learn to stick to our own principles.", 
-                sentence_ch: "其實，在面對同儕壓力的時候，我們應該學習堅持自己的原則。", 
-                word: "principle", part: "n.", chinese: "原則"
-            },
-            { 
-                id: "109-3", 
-                sentence: "Early museums were open only to the upper and middle classes, and visitors had to apply for entry permits in advance.", 
-                sentence_ch: "早期的博物館只開放給中上階層，而且參觀者必須事先申請進入許可。", 
-                word: "permit", part: "n.", chinese: "許可"
-            },
-            { 
-                id: "109-4", 
-                sentence: "Nowadays, most people can enjoy the fun of exploring cultural treasures in person or through online tours.", 
-                sentence_ch: "現今多數人可以親自或透過線上導覽，享受探索文化珍寶的樂趣。", 
-                word: "treasure", part: "n.", chinese: "珍寶"
-            },
-            // 110年
-            { 
-                id: "110-1", 
-                sentence: "According to news reports, more than one million people lose their lives in road accidents worldwide every year.", 
-                sentence_ch: "根據新聞報導，每年全球有超過百萬人在道路事故中喪失性命。", 
-                word: "worldwide", part: "adv.", chinese: "全球地"
-            },
-            { 
-                id: "110-2", 
-                sentence: "Therefore, traffic regulations must be strictly enforced to ensure the safety of all road users.", 
-                sentence_ch: "因此，交通法規必須嚴格執行，以確保所有用路人的安全。", 
-                word: "regulation", part: "n.", chinese: "法規"
-            },
-            { 
-                id: "110-3", 
-                sentence: "Many people are curious about whether the record-breaking low temperatures in the US early this year were related to global warming.", 
-                sentence_ch: "很多人好奇今年年初在美國破紀錄的低溫是否與全球暖化有關。", 
-                word: "related", part: "adj.", chinese: "有關的"
-            },
-            { 
-                id: "110-4", 
-                sentence: "No matter what the answer is, climate experts predict that this kind of abnormal weather will become the new normal.", 
-                sentence_ch: "不論答案為何，氣候專家預告這種不正常的天氣將會變成新的常態。", 
-                word: "abnormal", part: "adj.", chinese: "不正常的"
-            },
-            // 111年
-            { 
-                id: "111-1", 
-                sentence: "Keeping pets is not a temporary life experience but a lifelong commitment to animals.", 
-                sentence_ch: "飼養寵物並非一項短暫的人生體驗，而是一個對動物的終生承諾。", 
-                word: "commitment", part: "n.", chinese: "承諾"
-            },
-            { 
-                id: "111-2", 
-                sentence: "While enjoying the joy pets bring, we should not neglect the responsibility of taking good care of them.", 
-                sentence_ch: "在享受寵物所帶來的歡樂時，我們不該忽略要善盡照顧他們的責任。", 
-                word: "neglect", part: "v.", chinese: "忽略"
-            },
-            // 112年
-            { 
-                id: "112-1", 
-                sentence: "History has proved time and again that war causes terrible disasters.", 
-                sentence_ch: "歷史一再證明，戰爭會造成極為可怕的災難。", 
-                word: "prove", part: "v.", chinese: "證明"
-            },
-            { 
-                id: "112-2", 
-                sentence: "Avoiding conflict and ensuring world peace should be the goal that all mankind pursues.", 
-                sentence_ch: "避免衝突、確保世界和平應該是所有人類追求的目標。", 
-                word: "conflict", part: "n.", chinese: "衝突"
-            },
-            // 113年
-            { 
-                id: "113-1", 
-                sentence: "During every election season, politicians are always seen visiting famous temples everywhere.", 
-                sentence_ch: "每逢選舉季節，總會看到政治人物造訪各地著名廟宇。", 
-                word: "politician", part: "n.", chinese: "政治人物"
-            },
-            { 
-                id: "113-2", 
-                sentence: "Besides praying for good election results, they also hope to show respect for local culture and customs.", 
-                sentence_ch: "除了祈求好的選舉結果，他們也希望展現對在地文化與習俗的尊重。", 
-                word: "custom", part: "n.", chinese: "習俗"
-            },
-            // 114年
-            { 
-                id: "114-1", 
-                sentence: "Human imagination and creativity are the biggest driving forces for technological progress.", 
-                sentence_ch: "人類的想像和創意是科技進步最大的驅動力。", 
-                word: "creativity", part: "n.", chinese: "創意"
-            },
-            { 
-                id: "114-2", 
-                sentence: "Magic objects that appeared in sci-fi movies in the past are now coming true one by one.", 
-                sentence_ch: "過去在科幻電影中出現的神奇物件，現在正逐一成真。", 
-                word: "progress", part: "n.", chinese: "進步"
-            } 
-            ]
-        }
-        };
+// --- 元件 1: 單字學習模式 (顯示完整句子) ---
+const StudyMode = ({ data }) => {
+  const [mode, setMode] = useState('card');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [showTips, setShowTips] = useState(false); // 控制問答視窗
 
-        // --- 常見連接詞/轉折詞/介系詞列表 (簡易模式用) ---
-        const COMMON_CONNECTORS = new Set([
-        "although", "however", "but", "and", "so", "because", "therefore", "if", "when", "while", "since", "after", "before", 
-        "in", "on", "at", "to", "for", "with", "by", "of", "about", "as", "from", 
-        "besides", "also", "generally", "speaking", "according", "during", "once", "no", "matter", "what", "compared"
-        ]);
+  useEffect(() => {
+    setCurrentIndex(0);
+    setIsFlipped(false);
+    setShowTips(false);
+  }, [data]);
 
-        // --- 工具函式 ---
-        const shuffleArray = (array) => {
-        const newArray = [...array];
-        for (let i = newArray.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-        }
-        return newArray;
-        };
+  const currentItem = data[currentIndex];
 
-        const speakText = (text) => {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.9;
-        window.speechSynthesis.speak(utterance);
-        };
+  const handleNext = () => {
+    setIsFlipped(false);
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev + 1) % data.length);
+    }, 200);
+  };
 
-        // --- AI API 呼叫函式 ---
-        const callGeminiChat = async (userQuestion, contextItem, apiKey) => {
-        // 建構 Prompt，包含當前題目的完整資訊
-        const contextPrompt = `
-            你是一位親切、專業的英文老師，正在教導一位台灣學生。
-            
-            目前正在討論的題目如下：
-            - 英文句子: "${contextItem.sentence}"
-            - 中文翻譯: "${contextItem.sentence_ch}"
-            - 重點單字: "${contextItem.word}" (${contextItem.part}, ${contextItem.chinese})
+  const handlePrev = () => {
+    setIsFlipped(false);
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev - 1 + data.length) % data.length);
+    }, 200);
+  };
 
-            學生的問題是： "${userQuestion}"
+  const getFontSize = (text) => {
+      if (text.length > 100) return "text-base";
+      if (text.length > 60) return "text-lg";
+      return "text-xl";
+  };
 
-            請根據上述「當前句子」的情境來回答學生的問題。
-            如果是問同義詞，請給出適合這句語境的同義詞。
-            如果是問改寫，請示範如何改寫這句話。
-            如果是問文法，請解釋這句話的文法結構。
-            
-            回答請用繁體中文，語氣鼓勵且簡潔，長度不要太長。
-            
-            **重要規則：請給出「純文字」的回答，絕對不要使用任何 Markdown 格式（例如：不要用 **粗體**，不要用 # 標題，不要用 * 列表），因為這些符號會讓學生閱讀困難。請直接分段或用空格排版即可。**
-        `;
+  return (
+    <div className="flex flex-col h-full animate-in fade-in relative">
+      {/* 老師問答視窗 */}
+      <TeacherChatModal 
+         isOpen={showTips} 
+         onClose={() => setShowTips(false)} 
+         currentItem={currentItem}
+      />
 
-        try {
-            const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                contents: [{ parts: [{ text: contextPrompt }] }]
-                })
-            }
-            );
+      <div className="flex justify-center mb-6 gap-3">
+        <GameButton onClick={() => setMode('card')} active={mode === 'card'} color="white" className="text-sm">
+          <Layers className="w-4 h-4" /> 卡牌
+        </GameButton>
+        <GameButton onClick={() => setMode('list')} active={mode === 'list'} color="white" className="text-sm">
+          <LayoutList className="w-4 h-4" /> 列表
+        </GameButton>
+      </div>
 
-            const data = await response.json();
-            if (data.error) {
-            console.error("Gemini API Error:", data.error);
-            return "抱歉，AI 老師現在有點忙碌，請稍後再試 (請檢查 API Key 是否正確)。";
-            }
-            return data.candidates?.[0]?.content?.parts?.[0]?.text || "抱歉，我沒有聽清楚。";
-        } catch (error) {
-            console.error("Fetch Error:", error);
-            return "連線發生錯誤，請檢查網路。";
-        }
-        };
-
-        // --- 共用樣式：遊戲風格按鈕 ---
-        const GameButton = ({ children, onClick, color = "blue", className = "", disabled = false, active = false, title = "" }) => {
-        const colorStyles = {
-            blue: "bg-sky-400 border-sky-600 text-white hover:bg-sky-300",
-            green: "bg-emerald-400 border-emerald-600 text-white hover:bg-emerald-300",
-            yellow: "bg-yellow-400 border-yellow-600 text-yellow-900 hover:bg-yellow-300",
-            red: "bg-rose-400 border-rose-600 text-white hover:bg-rose-300",
-            purple: "bg-violet-400 border-violet-600 text-white hover:bg-violet-300",
-            white: "bg-white border-slate-200 text-slate-700 hover:bg-slate-50",
-            gray: "bg-slate-200 border-slate-400 text-slate-600 hover:bg-slate-300",
-            active: "bg-yellow-400 border-yellow-600 text-yellow-900 ring-2 ring-yellow-200 ring-offset-2",
-        };
-
-        const finalColor = active ? colorStyles.active : (colorStyles[color] || colorStyles.blue);
-
-        return (
-            <button
-            onClick={onClick}
-            disabled={disabled}
-            title={title}
-            className={`
-                ${finalColor} 
-                border-b-4 active:border-b-0 active:translate-y-1 
-                rounded-2xl px-4 py-2 font-black tracking-wide 
-                transition-all duration-100 shadow-md 
-                flex items-center justify-center gap-2
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:active:border-b-4 disabled:active:translate-y-0
-                ${className}
-            `}
+      {mode === 'card' ? (
+        <div className="flex-1 flex flex-col items-center justify-start min-h-[400px]">
+          <div 
+            className="relative w-full max-w-sm h-80 cursor-pointer group perspective-1000 z-10"
+            onClick={() => setIsFlipped(!isFlipped)}
+            style={{ perspective: '1000px' }}
+          >
+            <div 
+                className="relative w-full h-full transition-transform duration-500"
+                style={{ 
+                    transformStyle: 'preserve-3d', 
+                    transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' 
+                }}
             >
-            {children}
-            </button>
-        );
-        };
-
-        // --- AI 老師動態聊天室窗元件 ---
-        const TeacherChatModal = ({ isOpen, onClose, currentItem, apiKey }) => {
-        const [messages, setMessages] = useState([]);
-        const [input, setInput] = useState("");
-        const [isLoading, setIsLoading] = useState(false);
-        const chatEndRef = useRef(null);
-
-        // 初始化或切換題目時重置聊天
-        useEffect(() => {
-            if (isOpen && currentItem) {
-            setMessages([
-                {
-                role: 'ai',
-                text: `Hi! 我是你的 AI 英文老師。我們現在正在討論這句話：\n\n"${currentItem.sentence}"\n(${currentItem.sentence_ch})\n\n關於這句話或單字 "${currentItem.word}"，你有什麼想問的嗎？`
-                }
-            ]);
-            }
-        }, [isOpen, currentItem]);
-
-        // 自動捲動到底部
-        useEffect(() => {
-            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, [messages]);
-
-        const handleSend = async (textToSend = input) => {
-            if (!textToSend.trim()) return;
-            
-            // 1. 顯示使用者訊息
-            const userMsg = textToSend;
-            setInput("");
-            setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
-            setIsLoading(true);
-
-            // 2. 呼叫 Gemini API (使用傳入的 apiKey)
-            const aiResponseText = await callGeminiChat(userMsg, currentItem, apiKey);
-
-            // 3. 顯示 AI 回覆
-            setMessages(prev => [...prev, { role: 'ai', text: aiResponseText }]);
-            setIsLoading(false);
-        };
-
-        if (!isOpen) return null;
-
-        return (
-            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in">
-            <div className="bg-white w-full max-w-sm h-[500px] rounded-3xl border-4 border-indigo-200 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in">
-                {/* Header */}
-                <div className="bg-indigo-100 p-3 border-b-2 border-indigo-200 flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-2">
-                    <div className="bg-indigo-500 p-2 rounded-full text-white">
-                    <Bot size={20} />
-                    </div>
-                    <div>
-                    <div className="font-black text-indigo-700 leading-tight">AI Teacher</div>
-                    <div className="text-xs text-indigo-400 font-bold">Always Online</div>
-                    </div>
-                </div>
-                <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-1">
-                    <X size={24} />
+              {/* 正面：英文句子 */}
+              <div 
+                className="absolute inset-0 bg-white border-4 border-sky-400 rounded-3xl shadow-[0_8px_0_rgba(56,189,248,0.3)] flex flex-col items-center justify-center p-6 text-center"
+                style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+              >
+                {/* 左上角：問老師按鈕 */}
+                <button 
+                    onClick={(e) => { e.stopPropagation(); setShowTips(true); }}
+                    className="absolute top-4 left-4 p-2 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition-colors shadow-sm z-20"
+                    title="問老師 (Ask Teacher)"
+                >
+                    <MessageCircle size={20} />
                 </button>
+
+                <div className="absolute top-4 right-6 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-black border-2 border-yellow-600 shadow-sm rotate-3">
+                    Sentence {currentIndex + 1}
                 </div>
                 
-                {/* Chat Area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
-                {messages.map((msg, idx) => (
-                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div 
-                        className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm font-medium leading-relaxed whitespace-pre-wrap shadow-sm
-                        ${msg.role === 'user' 
-                            ? 'bg-indigo-500 text-white rounded-br-none' 
-                            : 'bg-white border-2 border-slate-100 text-slate-700 rounded-bl-none'}
-                        `}
-                    >
-                        {msg.text}
-                    </div>
-                    </div>
-                ))}
-                {isLoading && (
-                    <div className="flex justify-start">
-                    <div className="bg-slate-200 px-4 py-3 rounded-2xl rounded-bl-none animate-pulse text-slate-500 text-xs font-bold">
-                        AI 老師正在思考...
-                    </div>
-                    </div>
-                )}
-                <div ref={chatEndRef} />
+                <h2 className={`${getFontSize(currentItem.sentence)} font-black text-slate-800 mb-4 tracking-tight leading-relaxed`}>{currentItem.sentence}</h2>
+                
+                <div className="mt-4 text-slate-400 text-xs font-bold flex items-center gap-1 animate-pulse bg-slate-100 px-3 py-1 rounded-full">
+                    <RefreshCw className="w-3 h-3" /> CLICK FOR CHINESE
                 </div>
-
-                {/* Suggestion Chips */}
-                {!isLoading && messages.length < 3 && (
-                    <div className="px-4 pb-2 flex gap-2 overflow-x-auto scrollbar-hide">
-                    <button onClick={() => handleSend("這句話可以怎麼改寫？")} className="whitespace-nowrap px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 hover:bg-indigo-100">
-                        🔄 怎麼改寫？
-                    </button>
-                    <button onClick={() => handleSend(`"${currentItem.word}" 有同義詞嗎？`)} className="whitespace-nowrap px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 hover:bg-indigo-100">
-                        📚 同義詞？
-                    </button>
-                    <button onClick={() => handleSend("這句話的文法結構是什麼？")} className="whitespace-nowrap px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full border border-indigo-100 hover:bg-indigo-100">
-                        🔍 文法分析
-                    </button>
-                    </div>
-                )}
-
-                {/* Input Area */}
-                <div className="p-3 bg-white border-t border-slate-100 flex gap-2 shrink-0">
-                    <input 
-                    type="text" 
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                    placeholder="輸入你的問題..."
-                    disabled={isLoading}
-                    className="flex-1 bg-slate-100 border-transparent focus:border-indigo-300 focus:bg-white focus:ring-0 rounded-xl px-4 py-2 text-sm font-bold text-slate-700 transition-all outline-none"
-                    />
-                    <button 
-                    onClick={() => handleSend()}
-                    disabled={isLoading || !input.trim()}
-                    className="bg-indigo-500 text-white p-2 rounded-xl hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                    <Send size={20} />
-                    </button>
-                </div>
-            </div>
-            </div>
-        );
-        };
-
-
-        // --- 元件 1: 單字學習模式 (顯示完整句子) ---
-        const StudyMode = ({ data, apiKey }) => {
-        const [mode, setMode] = useState('card');
-        const [currentIndex, setCurrentIndex] = useState(0);
-        const [isFlipped, setIsFlipped] = useState(false);
-        const [showTips, setShowTips] = useState(false); // 控制問答視窗
-
-        useEffect(() => {
-            setCurrentIndex(0);
-            setIsFlipped(false);
-            setShowTips(false);
-        }, [data]);
-
-        const currentItem = data[currentIndex];
-
-        const handleNext = () => {
-            setIsFlipped(false);
-            setTimeout(() => {
-            setCurrentIndex((prev) => (prev + 1) % data.length);
-            }, 200);
-        };
-
-        const handlePrev = () => {
-            setIsFlipped(false);
-            setTimeout(() => {
-            setCurrentIndex((prev) => (prev - 1 + data.length) % data.length);
-            }, 200);
-        };
-
-        const getFontSize = (text) => {
-            if (text.length > 100) return "text-base";
-            if (text.length > 60) return "text-lg";
-            return "text-xl";
-        };
-
-        return (
-            <div className="flex flex-col h-full animate-in fade-in relative">
-            {/* 老師問答視窗 */}
-            <TeacherChatModal 
-                isOpen={showTips} 
-                onClose={() => setShowTips(false)} 
-                currentItem={currentItem}
-                apiKey={apiKey}
-            />
-
-            <div className="flex justify-center mb-6 gap-3">
-                <GameButton onClick={() => setMode('card')} active={mode === 'card'} color="white" className="text-sm">
-                <Layers className="w-4 h-4" /> 卡牌
-                </GameButton>
-                <GameButton onClick={() => setMode('list')} active={mode === 'list'} color="white" className="text-sm">
-                <LayoutList className="w-4 h-4" /> 列表
-                </GameButton>
-            </div>
-
-            {mode === 'card' ? (
-                <div className="flex-1 flex flex-col items-center justify-start min-h-[400px]">
-                <div 
-                    className="relative w-full max-w-sm h-80 cursor-pointer group perspective-1000 z-10"
-                    onClick={() => setIsFlipped(!isFlipped)}
-                    style={{ perspective: '1000px' }}
+                
+                <button 
+                   onClick={(e) => { e.stopPropagation(); speakText(currentItem.sentence); }}
+                   className="absolute bottom-5 right-1/2 translate-x-1/2 p-3 bg-rose-400 text-white rounded-full border-b-4 border-rose-600 active:border-b-0 active:translate-y-1 transition-all shadow-md"
                 >
-                    <div 
-                        className="relative w-full h-full transition-transform duration-500"
-                        style={{ 
-                            transformStyle: 'preserve-3d', 
-                            transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' 
-                        }}
-                    >
-                    {/* 正面：英文句子 */}
-                    <div 
-                        className="absolute inset-0 bg-white border-4 border-sky-400 rounded-3xl shadow-[0_8px_0_rgba(56,189,248,0.3)] flex flex-col items-center justify-center p-6 text-center"
-                        style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
-                    >
-                        {/* 左上角：問老師按鈕 */}
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setShowTips(true); }}
-                            className="absolute top-4 left-4 p-2 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition-colors shadow-sm z-20"
-                            title="問老師 (Ask Teacher)"
-                        >
-                            <MessageCircle size={20} />
-                        </button>
+                  <Volume2 className="w-6 h-6" />
+                </button>
+              </div>
 
-                        <div className="absolute top-4 right-6 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-black border-2 border-yellow-600 shadow-sm rotate-3">
-                            Sentence {currentIndex + 1}
-                        </div>
-                        
-                        <h2 className={`${getFontSize(currentItem.sentence)} font-black text-slate-800 mb-4 tracking-tight leading-relaxed`}>{currentItem.sentence}</h2>
-                        
-                        <div className="mt-4 text-slate-400 text-xs font-bold flex items-center gap-1 animate-pulse bg-slate-100 px-3 py-1 rounded-full">
-                            <RefreshCw className="w-3 h-3" /> CLICK FOR CHINESE
-                        </div>
-                        
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); speakText(currentItem.sentence); }}
-                            className="absolute bottom-5 right-1/2 translate-x-1/2 p-3 bg-rose-400 text-white rounded-full border-b-4 border-rose-600 active:border-b-0 active:translate-y-1 transition-all shadow-md"
-                        >
-                        <Volume2 className="w-6 h-6" />
-                        </button>
-                    </div>
+              {/* 背面：中文句子 + 單字重點 */}
+              <div 
+                className="absolute inset-0 bg-violet-500 border-4 border-violet-700 text-white rounded-3xl shadow-[0_8px_0_rgba(109,40,217,0.3)] flex flex-col items-center justify-center p-6 text-center"
+                style={{ 
+                    backfaceVisibility: 'hidden', 
+                    WebkitBackfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg)'
+                }}
+              >
+                {/* 左上角：問老師按鈕 (背面也加一個，方便隨時問) */}
+                <button 
+                    onClick={(e) => { e.stopPropagation(); setShowTips(true); }}
+                    className="absolute top-4 left-4 p-2 bg-white/20 text-white rounded-full hover:bg-white/30 transition-colors shadow-sm z-20"
+                    title="問老師 (Ask Teacher)"
+                >
+                    <MessageCircle size={20} />
+                </button>
 
-                    {/* 背面：中文句子 + 單字重點 */}
-                    <div 
-                        className="absolute inset-0 bg-violet-500 border-4 border-violet-700 text-white rounded-3xl shadow-[0_8px_0_rgba(109,40,217,0.3)] flex flex-col items-center justify-center p-6 text-center"
-                        style={{ 
-                            backfaceVisibility: 'hidden', 
-                            WebkitBackfaceVisibility: 'hidden',
-                            transform: 'rotateY(180deg)'
-                        }}
-                    >
-                        {/* 左上角：問老師按鈕 (背面也加一個，方便隨時問) */}
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setShowTips(true); }}
-                            className="absolute top-4 left-4 p-2 bg-white/20 text-white rounded-full hover:bg-white/30 transition-colors shadow-sm z-20"
-                            title="問老師 (Ask Teacher)"
-                        >
-                            <MessageCircle size={20} />
-                        </button>
-
-                        <h3 className="text-xl font-black mb-4 leading-relaxed drop-shadow-md bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm border-2 border-white/30 transform -rotate-1">{currentItem.sentence_ch}</h3>
-                        
-                        <div className="bg-black/20 p-3 rounded-xl border-2 border-white/10 w-full relative mt-2">
-                            <Sparkles className="absolute -top-3 -right-3 text-yellow-300 w-6 h-6 animate-bounce" />
-                            <p className="text-yellow-200 text-xs font-bold uppercase mb-1">Keyword</p>
-                            <p className="text-white font-black text-lg">{currentItem.word}</p>
-                            <p className="text-slate-300 text-sm">{currentItem.chinese}</p>
-                        </div>
-                        
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); speakText(currentItem.sentence); }}
-                            className="mt-4 p-3 bg-yellow-400 text-yellow-900 rounded-full border-b-4 border-yellow-600 active:border-b-0 active:translate-y-1 transition-all shadow-md"
-                        >
-                        <Volume2 className="w-5 h-5" />
-                        </button>
-                    </div>
-                    </div>
+                <h3 className="text-xl font-black mb-4 leading-relaxed drop-shadow-md bg-white/20 px-4 py-2 rounded-xl backdrop-blur-sm border-2 border-white/30 transform -rotate-1">{currentItem.sentence_ch}</h3>
+                
+                <div className="bg-black/20 p-3 rounded-xl border-2 border-white/10 w-full relative mt-2">
+                    <Sparkles className="absolute -top-3 -right-3 text-yellow-300 w-6 h-6 animate-bounce" />
+                    <p className="text-yellow-200 text-xs font-bold uppercase mb-1">Keyword</p>
+                    <p className="text-white font-black text-lg">{currentItem.word}</p>
+                    <p className="text-slate-300 text-sm">{currentItem.chinese}</p>
                 </div>
+                
+                <button 
+                   onClick={(e) => { e.stopPropagation(); speakText(currentItem.sentence); }}
+                   className="mt-4 p-3 bg-yellow-400 text-yellow-900 rounded-full border-b-4 border-yellow-600 active:border-b-0 active:translate-y-1 transition-all shadow-md"
+                >
+                  <Volume2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
 
-                <div className="flex gap-4 mt-8 w-full max-w-sm px-4">
-                    <GameButton onClick={handlePrev} color="white" className="flex-1">
-                    <ChevronLeft className="w-6 h-6" /> 上一個
-                    </GameButton>
-                    
-                    <GameButton onClick={handleNext} color="blue" className="flex-1 text-lg">
-                    下一個 <ChevronRight className="w-6 h-6" />
+          <div className="flex gap-4 mt-8 w-full max-w-sm px-4">
+            <GameButton onClick={handlePrev} color="white" className="flex-1">
+              <ChevronLeft className="w-6 h-6" /> 上一個
+            </GameButton>
+            
+            <GameButton onClick={handleNext} color="blue" className="flex-1 text-lg">
+              下一個 <ChevronRight className="w-6 h-6" />
+            </GameButton>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto max-h-[70vh] pr-1 space-y-3 pb-20 relative">
+           {/* 列表模式也可以有問答彈窗，共用同一個 state */}
+           <TeacherChatModal 
+              isOpen={showTips} 
+              onClose={() => setShowTips(false)} 
+              currentItem={data[currentIndex]}
+           />
+
+          {data.map((item, index) => (
+            <div key={item.id} className="bg-white p-4 rounded-2xl border-b-4 border-slate-200 flex flex-col gap-2 hover:translate-x-1 transition-all group relative">
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-bold text-sm text-slate-700 group-hover:text-sky-500 transition-colors leading-tight">{item.sentence}</span>
+                 <button onClick={() => speakText(item.sentence)} className="p-2 bg-sky-100 text-sky-500 rounded-xl hover:bg-sky-200 active:scale-95 transition-colors shrink-0">
+                    <Volume2 className="w-4 h-4" />
+                 </button>
+              </div>
+              <div className="flex justify-between items-end border-t border-slate-100 pt-2">
+                 <div className="text-slate-500 text-sm font-bold">{item.sentence_ch}</div>
+                 <button 
+                    onClick={() => { setCurrentIndex(index); setShowTips(true); }}
+                    className="p-1.5 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200"
+                    title="問老師"
+                 >
+                    <MessageCircle size={16} />
+                 </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- 元件 2: 測驗模式 (重點單字測驗) ---
+const QuizMode = ({ data }) => {
+  const [currentQIndex, setCurrentQIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [showResult, setShowResult] = useState(false);
+  const [quizData, setQuizData] = useState([]);
+  const [selectedOption, setSelectedOption] = useState(null);
+
+  useEffect(() => {
+    startQuiz();
+  }, [data]);
+
+  const startQuiz = () => {
+    const shuffledVocab = shuffleArray([...data]).slice(0, 10);
+    const questions = shuffledVocab.map(target => {
+      const type = Math.random() > 0.5 ? 'en-to-ch' : 'ch-to-en';
+      const distractors = shuffleArray(data.filter(w => w.id !== target.id)).slice(0, 3);
+      const options = shuffleArray([target, ...distractors]);
+      return { target, type, options };
+    });
+    setQuizData(questions);
+    setCurrentQIndex(0);
+    setScore(0);
+    setShowResult(false);
+    setSelectedOption(null);
+  };
+
+  const handleOptionClick = (option) => {
+    if (selectedOption) return; 
+    setSelectedOption(option);
+    const currentQ = quizData[currentQIndex];
+    
+    speakText(currentQ.target.word);
+
+    if (option.id === currentQ.target.id) {
+        setScore(prev => prev + 10);
+    }
+  };
+
+  const nextQuestion = () => {
+    if (currentQIndex < quizData.length - 1) {
+      setCurrentQIndex(prev => prev + 1);
+      setSelectedOption(null);
+    } else {
+      setShowResult(true);
+    }
+  };
+
+  if (quizData.length === 0) return <div>Loading...</div>;
+
+  if (showResult) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full animate-in zoom-in py-10">
+        <div className="relative">
+             <Trophy className="w-32 h-32 text-yellow-400 drop-shadow-xl animate-bounce" strokeWidth={1.5} />
+             <Star className="absolute top-0 right-0 w-10 h-10 text-orange-400 fill-orange-400 animate-spin-slow" />
+        </div>
+        <h2 className="text-4xl font-black text-slate-800 mb-2 mt-4 text-stroke-white">單字挑戰完成！</h2>
+        <div className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-400 to-orange-500 drop-shadow-sm mb-8">{score}</div>
+        <GameButton onClick={startQuiz} color="green" className="w-64 text-xl py-4">
+           再挑戰一次
+        </GameButton>
+      </div>
+    );
+  }
+
+  const currentQ = quizData[currentQIndex];
+  const isEnToCh = currentQ.type === 'en-to-ch';
+
+  return (
+    <div className="flex flex-col h-full max-w-md mx-auto">
+      <div className="mb-4 px-1 flex items-center justify-between">
+        <div className="bg-white border-2 border-slate-200 px-3 py-1 rounded-full font-black text-slate-400 text-xs shadow-sm">
+            STAGE {currentQIndex + 1} / {quizData.length}
+        </div>
+        <div className="bg-yellow-100 border-2 border-yellow-300 px-3 py-1 rounded-full font-black text-yellow-700 text-xs shadow-sm">
+            SCORE: {score}
+        </div>
+      </div>
+      
+      <div className="h-4 bg-slate-200 rounded-full overflow-hidden border-2 border-slate-300 mb-6 mx-1">
+        <div className="h-full bg-gradient-to-r from-lime-400 to-emerald-500 transition-all duration-300 border-r-2 border-white/50" style={{ width: `${((currentQIndex + 1) / quizData.length) * 100}%` }}></div>
+      </div>
+
+      <div className="bg-white border-4 border-b-8 border-violet-200 rounded-3xl p-6 mb-6 text-center relative overflow-hidden shadow-sm group">
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-violet-100 text-violet-600 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider">
+            {isEnToCh ? "Word Meaning" : "Vocabulary"}
+        </div>
+        <h2 className={`font-black text-slate-800 mt-6 text-4xl leading-relaxed`}>
+            {isEnToCh ? currentQ.target.word : currentQ.target.chinese}
+        </h2>
+        {isEnToCh && (
+             <button onClick={() => speakText(currentQ.target.word)} className="mt-4 p-2 bg-slate-100 rounded-full text-slate-400 hover:text-violet-500 hover:bg-violet-50 border-2 border-slate-200 hover:border-violet-200 transition-colors">
+                <Volume2 className="w-6 h-6 mx-auto" />
+             </button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 pb-8">
+        {currentQ.options.map((option) => {
+            const isSelected = selectedOption?.id === option.id;
+            const isTarget = currentQ.target.id === option.id;
+            
+            let color = "white";
+            if (selectedOption) {
+                if (isTarget) color = "green";
+                else if (isSelected && !isTarget) color = "red";
+            }
+            
+            return (
+                <GameButton
+                    key={option.id}
+                    disabled={!!selectedOption}
+                    onClick={() => handleOptionClick(option)}
+                    color={color}
+                    className={`justify-between py-4 text-left ${!selectedOption && "hover:bg-slate-50"}`}
+                >
+                    <span className="text-lg font-bold">{isEnToCh ? option.chinese : option.word}</span>
+                    {selectedOption && isTarget && <CheckCircle className="w-6 h-6 animate-bounce" />}
+                    {selectedOption && isSelected && !isTarget && <XCircle className="w-6 h-6 animate-pulse" />}
+                </GameButton>
+            );
+        })}
+      </div>
+
+      {selectedOption && (
+        <div className="fixed bottom-6 left-0 right-0 p-4 bg-transparent pointer-events-none flex justify-center z-20">
+             <button onClick={nextQuestion} className="pointer-events-auto bg-slate-800 text-white px-8 py-4 rounded-2xl font-black text-xl shadow-2xl hover:bg-slate-900 hover:scale-105 transition-all flex items-center gap-2 animate-in slide-in-from-bottom-4 border-b-8 border-black">
+                {currentQIndex < quizData.length - 1 ? "NEXT STAGE" : "FINISH"} <ChevronRight className="w-6 h-6" />
+             </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- 元件 3: 重組句子模式 (完整句子 - 支援分級制度) ---
+const ScrambleMode = ({ data }) => {
+    const [questions, setQuestions] = useState([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [score, setScore] = useState(0);
+    const [showResult, setShowResult] = useState(false);
+    
+    // Difficulty: 'easy' (hints), 'medium' (grids), 'hard' (none)
+    const [difficulty, setDifficulty] = useState('easy');
+
+    // slots: Array of { id, text, status: 'locked' | 'filled' | 'empty' }
+    const [slots, setSlots] = useState([]);
+    const [availableWords, setAvailableWords] = useState([]); 
+    
+    const [feedback, setFeedback] = useState(null); 
+    const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false); 
+    const [showHelperHint, setShowHelperHint] = useState(false); 
+    const [showTips, setShowTips] = useState(false); // 控制問答視窗
+
+    // 1. 初始化遊戲 (只有當資料源改變時才重置)
+    useEffect(() => {
+      resetGame();
+    }, [data]); 
+
+    // 2. 難度改變時，重新載入當前題目 (保持在同一題)
+    useEffect(() => {
+        if (questions.length > 0) {
+            // 重置當前題目的狀態 (slots, feedback etc)
+            loadQuestion(questions[currentIndex]);
+        }
+    }, [difficulty]);
+  
+    const resetGame = () => {
+      const count = Math.min(data.length, 5);
+      const shuffledQuestions = shuffleArray([...data]).slice(0, count); 
+      setQuestions(shuffledQuestions);
+      setCurrentIndex(0);
+      setScore(0);
+      setShowResult(false);
+      setShowTips(false);
+      loadQuestion(shuffledQuestions[0]);
+    };
+
+    const isEasyLockWord = (word) => {
+        const cleanWord = word.toLowerCase().replace(/[^a-z]/g, '');
+        if (/^[.,!?;:]+$/.test(word)) return true;
+        if (COMMON_CONNECTORS.has(cleanWord)) return true;
+        return false;
+    };
+
+    const isMediumLockWord = (word) => {
+        if (/^[.,!?;:]+$/.test(word)) return true;
+        return false;
+    };
+  
+    const loadQuestion = (question) => {
+      if (!question) return;
+      const rawSentence = question.sentence;
+      const spacedSentence = rawSentence.replace(/([.,!?])/g, ' $1 ');
+      const tokens = spacedSentence.trim().split(/\s+/).filter(w => w.length > 0);
+      
+      const newSlots = [];
+      const newAvailable = [];
+
+      tokens.forEach((word, index) => {
+          const id = `${index}-${word}`;
+          const wordObj = { id, text: word };
+
+          let shouldLock = false;
+
+          if (difficulty === 'easy') {
+              shouldLock = isEasyLockWord(word);
+          } else if (difficulty === 'medium') {
+              shouldLock = isMediumLockWord(word);
+          } else {
+              shouldLock = false;
+          }
+
+          if (shouldLock) {
+              newSlots.push({ ...wordObj, status: 'locked' });
+          } else {
+              newSlots.push({ id: `slot-${index}`, status: 'empty' }); 
+              newAvailable.push(wordObj);
+          }
+      });
+
+      if (difficulty === 'hard') {
+          setSlots([]); 
+      } else {
+          setSlots(newSlots);
+      }
+      
+      setAvailableWords(shuffleArray(newAvailable));
+      setFeedback(null);
+      setShowGiveUpConfirm(false);
+      setShowHelperHint(false);
+    };
+
+    const handleChangeQuestion = () => {
+        const currentQuestionIds = new Set(questions.map(q => q.id));
+        const candidates = data.filter(q => !currentQuestionIds.has(q.id));
+
+        if (candidates.length === 0) {
+             const otherCandidates = data.filter(q => q.id !== questions[currentIndex].id);
+             if(otherCandidates.length > 0) {
+                 const fallback = otherCandidates[Math.floor(Math.random() * otherCandidates.length)];
+                 const newQs = [...questions];
+                 newQs[currentIndex] = fallback;
+                 setQuestions(newQs);
+                 loadQuestion(fallback);
+             }
+             return;
+        }
+
+        const newQuestion = candidates[Math.floor(Math.random() * candidates.length)];
+        const newQuestions = [...questions];
+        newQuestions[currentIndex] = newQuestion;
+        setQuestions(newQuestions);
+        loadQuestion(newQuestion);
+    };
+  
+    const handleAvailableWordClick = (wordObj) => {
+      if (feedback === 'correct') return;
+      if (feedback === 'wrong') setFeedback(null);
+
+      if (difficulty === 'hard') {
+          setUserSlotsHard(prev => [...prev, { ...wordObj, status: 'filled' }]);
+      } else {
+          const firstEmptyIndex = slots.findIndex(s => s.status === 'empty');
+          if (firstEmptyIndex !== -1) {
+              const newSlots = [...slots];
+              newSlots[firstEmptyIndex] = { ...wordObj, status: 'filled' };
+              setSlots(newSlots);
+          }
+      }
+      setAvailableWords(prev => prev.filter(w => w.id !== wordObj.id));
+    };
+
+    const handleSlotClick = (index, slotObj) => {
+        if (feedback === 'correct') return;
+        if (slotObj.status === 'locked' || slotObj.status === 'empty') return;
+        if (feedback === 'wrong') setFeedback(null);
+
+        const originalWordObj = { id: slotObj.id, text: slotObj.text };
+        setAvailableWords(prev => [...prev, originalWordObj]);
+
+        if (difficulty === 'hard') {
+            setUserSlotsHard(prev => prev.filter((_, i) => i !== index));
+        } else {
+            const newSlots = [...slots];
+            newSlots[index] = { id: `slot-${index}`, status: 'empty' };
+            setSlots(newSlots);
+        }
+    };
+    
+    const setUserSlotsHard = (action) => {
+        if (typeof action === 'function') {
+            setSlots(prev => action(prev));
+        } else {
+            setSlots(action);
+        }
+    };
+  
+    const handleMagicHint = () => {
+        if (feedback === 'correct') return;
+        setFeedback(null); 
+
+        const rawSentence = questions[currentIndex].sentence;
+        const spacedSentence = rawSentence.replace(/([.,!?])/g, ' $1 ');
+        const targetTokens = spacedSentence.trim().split(/\s+/).filter(w => w.length > 0);
+
+        let firstWrongIndex = -1;
+        
+        for (let i = 0; i < targetTokens.length; i++) {
+            const targetWord = targetTokens[i];
+            const currentSlot = slots[i];
+
+            if (!currentSlot) { 
+                firstWrongIndex = i;
+                break;
+            }
+
+            if (currentSlot.status === 'empty') {
+                firstWrongIndex = i;
+                break;
+            }
+
+            if (currentSlot.text !== targetWord) {
+                firstWrongIndex = i;
+                break;
+            }
+        }
+
+        if (firstWrongIndex === -1) return; 
+
+        const targetWordText = targetTokens[firstWrongIndex];
+        
+        if (difficulty !== 'hard' && slots[firstWrongIndex].status === 'filled') {
+            handleSlotClick(firstWrongIndex, slots[firstWrongIndex]);
+        }
+        
+        const correctWordInAvailable = availableWords.find(w => w.text === targetWordText);
+        
+        if (correctWordInAvailable) {
+            handleAvailableWordClick(correctWordInAvailable);
+        } else {
+            if (difficulty !== 'hard') {
+                 const wrongPlaceIndex = slots.findIndex((s, idx) => idx > firstWrongIndex && s.text === targetWordText && s.status === 'filled');
+                 if (wrongPlaceIndex !== -1) {
+                     const wordToMove = slots[wrongPlaceIndex];
+                     const newSlots = [...slots];
+                     newSlots[wrongPlaceIndex] = { id: `slot-${wrongPlaceIndex}`, status: 'empty' };
+                     
+                     newSlots[firstWrongIndex] = { ...wordToMove, status: 'filled' };
+                     setSlots(newSlots);
+                     speakText(wordToMove.text);
+                 }
+            }
+        }
+    };
+
+    const handleGiveUpClick = () => {
+        setFeedback(null);
+        setShowGiveUpConfirm(true);
+    };
+
+    const confirmGiveUp = () => {
+        const rawSentence = questions[currentIndex].sentence;
+        const spacedSentence = rawSentence.replace(/([.,!?])/g, ' $1 ');
+        const targetTokens = spacedSentence.trim().split(/\s+/).filter(w => w.length > 0);
+        
+        const correctSlots = targetTokens.map((t, i) => ({
+            id: `ans-${i}`,
+            text: t,
+            status: 'locked' 
+        }));
+        
+        setSlots(correctSlots);
+        setAvailableWords([]);
+        setFeedback('correct'); 
+        setShowGiveUpConfirm(false);
+    };
+  
+    const checkAnswer = () => {
+      const userText = slots.map(s => (s.status === 'empty' ? '' : s.text)).join(' ').trim();
+      
+      const currentQuestion = questions[currentIndex];
+      const rawSentence = currentQuestion.sentence;
+      const spacedSentence = rawSentence.replace(/([.,!?])/g, ' $1 ');
+      const targetText = spacedSentence.trim().split(/\s+/).join(' ');
+
+      if (difficulty !== 'hard' && slots.some(s => s.status === 'empty')) {
+          speakText("Not finished yet");
+          return;
+      }
+
+      if (userText === targetText) {
+        setFeedback('correct');
+        setScore(prev => prev + 20); 
+        speakText(currentQuestion.sentence);
+      } else {
+        setFeedback('wrong');
+        speakText("Oops");
+      }
+    };
+    
+    const handleTryAgain = () => {
+        setFeedback(null); 
+        setShowHelperHint(true); 
+        setTimeout(() => setShowHelperHint(false), 5000);
+    };
+  
+    const nextQuestion = () => {
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+        loadQuestion(questions[currentIndex + 1]);
+      } else {
+        setShowResult(true);
+      }
+    };
+  
+    const currentQ = questions[currentIndex];
+
+    if (showResult) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full animate-in zoom-in py-10 relative overflow-hidden">
+          <Star className="w-32 h-32 text-yellow-400 mb-6 fill-yellow-400 drop-shadow-[0_4px_0_rgba(234,179,8,1)] animate-bounce" />
+          <h2 className="text-4xl font-black text-slate-800 mb-2 tracking-tight">挑戰成功！</h2>
+          <div className="text-7xl font-black text-indigo-600 mb-8 drop-shadow-sm">{score}</div>
+          <GameButton onClick={resetGame} color="purple" className="w-64 py-4 text-xl">
+            <RefreshCw className="w-6 h-6" /> 再玩一次
+          </GameButton>
+        </div>
+      );
+    }
+  
+    return (
+      <div className="flex flex-col h-full max-w-2xl mx-auto pb-24 relative">
+         {/* 老師問答視窗 (共用) */}
+        <TeacherChatModal 
+            isOpen={showTips} 
+            onClose={() => setShowTips(false)} 
+            currentItem={currentQ}
+        />
+
+        {/* 難度選擇器 */}
+        <div className="flex justify-center gap-2 mb-4">
+            {[
+                { id: 'easy', label: '簡易', icon: <CheckCircle className="w-4 h-4"/>, color: 'green' },
+                { id: 'medium', label: '中等', icon: <LayoutList className="w-4 h-4"/>, color: 'blue' },
+                { id: 'hard', label: '困難', icon: <AlertCircle className="w-4 h-4"/>, color: 'red' }
+            ].map(d => (
+                <button
+                    key={d.id}
+                    onClick={() => setDifficulty(d.id)}
+                    className={`
+                        flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black transition-all border-b-4 active:border-b-0 active:translate-y-1
+                        ${difficulty === d.id 
+                            ? `bg-${d.color}-500 border-${d.color}-700 text-white` 
+                            : 'bg-white border-slate-200 text-slate-400'}
+                    `}
+                >
+                    {d.icon} {d.label}
+                </button>
+            ))}
+        </div>
+
+        <div className="bg-white border-4 border-b-8 border-orange-200 rounded-3xl p-6 mb-6 text-center relative z-10 shadow-sm">
+             {/* 調整右上角按鈕位置: Hints On 移到左側或與Q並排，右上角放問老師 */}
+             <div className="flex justify-between items-start mb-2">
+                 <div className="flex flex-col items-start gap-1">
+                    <div className="inline-block bg-orange-100 text-orange-600 font-black px-3 py-1 rounded-lg text-xs border-2 border-orange-200">
+                        Q {currentIndex + 1}
+                    </div>
+                    <div className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">
+                        {difficulty === 'easy' ? 'Hints On' : difficulty === 'medium' ? 'Grids On' : 'No Hints'}
+                    </div>
+                 </div>
+                 
+                 {/* 右上角：問老師按鈕 */}
+                 <button 
+                    onClick={() => setShowTips(true)} 
+                    className="p-2 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition-colors shadow-sm"
+                    title="問老師 (Ask Teacher)"
+                 >
+                    <MessageCircle size={20} />
+                 </button>
+             </div>
+             
+             <h2 className="font-black text-xl text-slate-800 mb-4 leading-relaxed drop-shadow-sm">
+                {currentQ?.sentence_ch}
+             </h2>
+             
+             <p className="text-orange-500 text-xs font-bold bg-orange-50 px-4 py-1.5 rounded-full inline-block border-2 border-orange-100 animate-pulse">
+                {difficulty === 'easy' ? '已填入轉折詞與標點，請完成句子' : '請依序排列出正確的英文句子'}
+             </p>
+        </div>
+  
+        {/* 答案區 */}
+        <div className="bg-slate-200/50 rounded-3xl shadow-inner border-4 border-slate-300 min-h-[160px] p-4 mb-6 flex flex-wrap content-start justify-center gap-2 relative transition-all z-10">
+           {slots.length === 0 && availableWords.length > 0 && difficulty === 'hard' && (
+               <div className="text-slate-400 font-black pointer-events-none flex flex-col items-center mt-10 w-full">
+                   <Puzzle className="w-10 h-10 mb-2 opacity-50" />
+                   點擊下方單字開始
+               </div>
+           )}
+
+           {slots.map((slot, index) => {
+               if (slot.status === 'empty') {
+                   // 空格子 (Medium/Easy)
+                   return (
+                       <div key={slot.id} className="w-12 h-10 rounded-lg border-2 border-dashed border-slate-300 bg-slate-100/50 flex items-center justify-center">
+                       </div>
+                   );
+               } else if (slot.status === 'locked') {
+                   // 預先填入的 (Easy/Medium)
+                   return (
+                       <div key={slot.id} className="bg-slate-300 text-slate-600 px-3 py-2 rounded-lg font-bold border-b-2 border-slate-400 text-sm select-none">
+                           {slot.text}
+                       </div>
+                   );
+               } else {
+                   // 使用者填入的 (Filled)
+                   return (
+                        <button 
+                          key={slot.id} 
+                          onClick={() => handleSlotClick(index, slot)} 
+                          className="bg-indigo-500 text-white px-3 py-2 rounded-lg font-bold shadow-[0_2px_0_rgb(55,48,163)] active:shadow-none active:translate-y-1 transition-all border-b-2 border-indigo-700 text-sm animate-in zoom-in"
+                        >
+                          {slot.text}
+                        </button>
+                   );
+               }
+           })}
+        </div>
+  
+        <div className="h-16 mb-4 flex items-center justify-center gap-2 z-10 relative">
+            {feedback === 'correct' ? (
+                <div className="w-full bg-emerald-100 border-4 border-emerald-300 text-emerald-700 px-6 py-2 rounded-3xl flex items-center justify-between shadow-lg animate-in slide-in-from-bottom-2">
+                    <div className="flex items-center gap-2 font-black text-lg"><CheckCircle className="w-6 h-6 text-emerald-500" /> CORRECT!</div>
+                    <GameButton onClick={nextQuestion} color="green" className="text-xs">
+                        NEXT <ChevronRight className="w-4 h-4" />
                     </GameButton>
                 </div>
+            ) : feedback === 'wrong' ? (
+                <div className="w-full flex justify-center animate-in shake">
+                     <button 
+                        onClick={handleTryAgain}
+                        className="bg-rose-500 text-white border-b-4 border-rose-700 active:border-b-0 active:translate-y-1 px-8 py-3 rounded-2xl font-black text-lg shadow-xl flex items-center gap-2 hover:bg-rose-600 transition-all w-full justify-center"
+                     >
+                        <XCircle className="w-6 h-6" /> TRY AGAIN!
+                     </button>
                 </div>
             ) : (
-                <div className="flex-1 overflow-y-auto max-h-[70vh] pr-1 space-y-3 pb-20 relative">
-                    {/* 列表模式也可以有問答彈窗，共用同一個 state */}
-                    <TeacherChatModal 
-                        isOpen={showTips} 
-                        onClose={() => setShowTips(false)} 
-                        currentItem={data[currentIndex]}
-                        apiKey={apiKey}
-                    />
+                <>
+                   {/* 工具列 */}
+                   <div className="flex gap-1.5 relative">
+                        {showHelperHint && (
+                            <div className="absolute -top-20 left-0 bg-white border-4 border-sky-400 p-3 rounded-2xl w-48 shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2">
+                                <p className="text-sky-600 text-xs font-black mb-1">💡 需要幫忙？</p>
+                                <div className="absolute -bottom-3 left-6 w-4 h-4 bg-white border-b-4 border-r-4 border-sky-400 transform rotate-45"></div>
+                            </div>
+                        )}
+                        <GameButton onClick={handleChangeQuestion} color="white" className="py-2 px-2" title="換一題">
+                            <RefreshCw className="w-5 h-5" />
+                        </GameButton>
+                        <GameButton onClick={handleMagicHint} color="yellow" className="py-2 px-2" title="提示下一個字">
+                            <Wand2 className="w-5 h-5" />
+                        </GameButton>
+                        <GameButton onClick={handleGiveUpClick} color="red" className="py-2 px-2" title="查看答案">
+                            <Flag className="w-5 h-5" />
+                        </GameButton>
+                   </div>
+                   
+                   <GameButton onClick={checkAnswer} disabled={availableWords.length > 0} color="blue" className="flex-1 py-3 text-lg shadow-lg">
+                        <CheckCircle className="w-5 h-5" /> 檢查
+                   </GameButton>
+                </>
+            )}
+        </div>
+  
+        {/* 下方單字庫 */}
+        <div className="flex flex-wrap gap-2 justify-center z-10 relative pb-4">
+            {availableWords.map((wordObj) => (
+              <button 
+                key={wordObj.id} 
+                onClick={() => handleAvailableWordClick(wordObj)} 
+                className="bg-white text-slate-700 px-3 py-2 rounded-lg font-bold shadow-[0_2px_0_rgb(203,213,225)] active:shadow-none active:translate-y-1 transition-all border-b-2 border-slate-300 text-sm hover:border-indigo-300 hover:text-indigo-600"
+              >
+                {wordObj.text}
+              </button>
+            ))}
+        </div>
 
-                {data.map((item, index) => (
-                    <div key={item.id} className="bg-white p-4 rounded-2xl border-b-4 border-slate-200 flex flex-col gap-2 hover:translate-x-1 transition-all group relative">
-                    <div className="flex items-start justify-between gap-2">
-                        <span className="font-bold text-sm text-slate-700 group-hover:text-sky-500 transition-colors leading-tight">{item.sentence}</span>
-                        <button onClick={() => speakText(item.sentence)} className="p-2 bg-sky-100 text-sky-500 rounded-xl hover:bg-sky-200 active:scale-95 transition-colors shrink-0">
-                            <Volume2 className="w-4 h-4" />
-                        </button>
+        {showGiveUpConfirm && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-3xl animate-in fade-in">
+                <div className="bg-white p-6 rounded-3xl border-4 border-slate-200 shadow-2xl max-w-xs text-center transform scale-100 animate-in zoom-in">
+                    <h3 className="text-xl font-black text-slate-800 mb-4">放棄挑戰？</h3>
+                    <div className="flex gap-3 justify-center">
+                        <GameButton onClick={() => setShowGiveUpConfirm(false)} color="blue" className="text-sm">
+                            繼續嘗試
+                        </GameButton>
+                        <GameButton onClick={confirmGiveUp} color="gray" className="text-sm">
+                            顯示答案
+                        </GameButton>
                     </div>
-                    <div className="flex justify-between items-end border-t border-slate-100 pt-2">
-                        <div className="text-slate-500 text-sm font-bold">{item.sentence_ch}</div>
-                        <button 
-                            onClick={() => { setCurrentIndex(index); setShowTips(true); }}
-                            className="p-1.5 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200"
-                            title="問老師"
-                        >
-                            <MessageCircle size={16} />
-                        </button>
-                    </div>
-                    </div>
+                </div>
+            </div>
+        )}
+      </div>
+    );
+  };
+
+// --- Main App Container ---
+export default function Unit34App() {
+  const [activeTab, setActiveTab] = useState('study');
+  const [currentGroup, setCurrentGroup] = useState('group1');
+
+  const groupTitle = EXAM_DATA[currentGroup].title;
+  const unitData = EXAM_DATA[currentGroup].vocab;
+
+  return (
+    <div className="min-h-screen font-sans text-slate-800 flex flex-col bg-sky-50 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]">
+      <div className="bg-white/90 backdrop-blur-sm sticky top-0 z-50 border-b-4 border-slate-200">
+        <div className="max-w-md mx-auto px-4 py-3">
+          <div className="flex justify-between items-center mb-3 bg-slate-100 p-2 rounded-2xl border-2 border-slate-200">
+             <div className="flex items-center gap-2 font-black text-slate-600 text-sm tracking-tight ml-2">
+                <Map className="w-4 h-4 text-sky-500" />
+                <span>SELECT RANGE</span>
+             </div>
+             
+             {/* 兩個大區間按鈕 */}
+             <div className="flex gap-2">
+                {['group1', 'group2'].map(gKey => (
+                  <button
+                    key={gKey}
+                    onClick={() => setCurrentGroup(gKey)}
+                    className={`
+                      px-4 py-2 text-sm font-black rounded-xl transition-all border-b-4 active:border-b-0 active:translate-y-1
+                      ${currentGroup === gKey 
+                        ? 'bg-sky-500 border-sky-700 text-white shadow-sky-200' 
+                        : 'bg-white border-slate-300 text-slate-400 hover:bg-slate-50'}
+                    `}
+                  >
+                    {EXAM_DATA[gKey].range}
+                  </button>
                 ))}
-                </div>
-            )}
-            </div>
-        );
-        };
+             </div>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-2">
+            <GameButton 
+              onClick={() => setActiveTab('study')} 
+              active={activeTab === 'study'}
+              color={activeTab === 'study' ? 'active' : 'white'}
+              className="text-xs py-3"
+            >
+              <Layers className="w-4 h-4" /> 句子學習
+            </GameButton>
+            <GameButton 
+              onClick={() => setActiveTab('quiz')} 
+              active={activeTab === 'quiz'}
+              color={activeTab === 'quiz' ? 'active' : 'white'}
+              className="text-xs py-3"
+            >
+              <CheckCircle className="w-4 h-4" /> 單字測驗
+            </GameButton>
+            <GameButton 
+              onClick={() => setActiveTab('sentences')} 
+              active={activeTab === 'sentences'}
+              color={activeTab === 'sentences' ? 'active' : 'white'}
+              className="text-xs py-3"
+            >
+              <Puzzle className="w-4 h-4" /> 句子重組
+            </GameButton>
+          </div>
+        </div>
+      </div>
 
-        // --- 元件 2: 測驗模式 (重點單字測驗) ---
-        const QuizMode = ({ data }) => {
-        const [currentQIndex, setCurrentQIndex] = useState(0);
-        const [score, setScore] = useState(0);
-        const [showResult, setShowResult] = useState(false);
-        const [quizData, setQuizData] = useState([]);
-        const [selectedOption, setSelectedOption] = useState(null);
-
-        useEffect(() => {
-            startQuiz();
-        }, [data]);
-
-        const startQuiz = () => {
-            const shuffledVocab = shuffleArray([...data]).slice(0, 10);
-            const questions = shuffledVocab.map(target => {
-            const type = Math.random() > 0.5 ? 'en-to-ch' : 'ch-to-en';
-            const distractors = shuffleArray(data.filter(w => w.id !== target.id)).slice(0, 3);
-            const options = shuffleArray([target, ...distractors]);
-            return { target, type, options };
-            });
-            setQuizData(questions);
-            setCurrentQIndex(0);
-            setScore(0);
-            setShowResult(false);
-            setSelectedOption(null);
-        };
-
-        const handleOptionClick = (option) => {
-            if (selectedOption) return; 
-            setSelectedOption(option);
-            const currentQ = quizData[currentQIndex];
-            
-            speakText(currentQ.target.word);
-
-            if (option.id === currentQ.target.id) {
-                setScore(prev => prev + 10);
-            }
-        };
-
-        const nextQuestion = () => {
-            if (currentQIndex < quizData.length - 1) {
-            setCurrentQIndex(prev => prev + 1);
-            setSelectedOption(null);
-            } else {
-            setShowResult(true);
-            }
-        };
-
-        if (quizData.length === 0) return <div>Loading...</div>;
-
-        if (showResult) {
-            return (
-            <div className="flex flex-col items-center justify-center h-full animate-in zoom-in py-10">
-                <div className="relative">
-                    <Trophy className="w-32 h-32 text-yellow-400 drop-shadow-xl animate-bounce" strokeWidth={1.5} />
-                    <Star className="absolute top-0 right-0 w-10 h-10 text-orange-400 fill-orange-400 animate-spin-slow" />
-                </div>
-                <h2 className="text-4xl font-black text-slate-800 mb-2 mt-4 text-stroke-white">單字挑戰完成！</h2>
-                <div className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-400 to-orange-500 drop-shadow-sm mb-8">{score}</div>
-                <GameButton onClick={startQuiz} color="green" className="w-64 text-xl py-4">
-                    再挑戰一次
-                </GameButton>
-            </div>
-            );
-        }
-
-        const currentQ = quizData[currentQIndex];
-        const isEnToCh = currentQ.type === 'en-to-ch';
-
-        return (
-            <div className="flex flex-col h-full max-w-md mx-auto">
-            <div className="mb-4 px-1 flex items-center justify-between">
-                <div className="bg-white border-2 border-slate-200 px-3 py-1 rounded-full font-black text-slate-400 text-xs shadow-sm">
-                    STAGE {currentQIndex + 1} / {quizData.length}
-                </div>
-                <div className="bg-yellow-100 border-2 border-yellow-300 px-3 py-1 rounded-full font-black text-yellow-700 text-xs shadow-sm">
-                    SCORE: {score}
-                </div>
-            </div>
-            
-            <div className="h-4 bg-slate-200 rounded-full overflow-hidden border-2 border-slate-300 mb-6 mx-1">
-                <div className="h-full bg-gradient-to-r from-lime-400 to-emerald-500 transition-all duration-300 border-r-2 border-white/50" style={{ width: `${((currentQIndex + 1) / quizData.length) * 100}%` }}></div>
-            </div>
-
-            <div className="bg-white border-4 border-b-8 border-violet-200 rounded-3xl p-6 mb-6 text-center relative overflow-hidden shadow-sm group">
-                <div className="absolute top-3 left-1/2 -translate-x-1/2 bg-violet-100 text-violet-600 px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wider">
-                    {isEnToCh ? "Word Meaning" : "Vocabulary"}
-                </div>
-                <h2 className={`font-black text-slate-800 mt-6 text-4xl leading-relaxed`}>
-                    {isEnToCh ? currentQ.target.word : currentQ.target.chinese}
-                </h2>
-                {isEnToCh && (
-                    <button onClick={() => speakText(currentQ.target.word)} className="mt-4 p-2 bg-slate-100 rounded-full text-slate-400 hover:text-violet-500 hover:bg-violet-50 border-2 border-slate-200 hover:border-violet-200 transition-colors">
-                        <Volume2 className="w-6 h-6 mx-auto" />
-                    </button>
-                )}
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 pb-8">
-                {currentQ.options.map((option) => {
-                    const isSelected = selectedOption?.id === option.id;
-                    const isTarget = currentQ.target.id === option.id;
-                    
-                    let color = "white";
-                    if (selectedOption) {
-                        if (isTarget) color = "green";
-                        else if (isSelected && !isTarget) color = "red";
-                    }
-                    
-                    return (
-                        <GameButton
-                            key={option.id}
-                            disabled={!!selectedOption}
-                            onClick={() => handleOptionClick(option)}
-                            color={color}
-                            className={`justify-between py-4 text-left ${!selectedOption && "hover:bg-slate-50"}`}
-                        >
-                            <span className="text-lg font-bold">{isEnToCh ? option.chinese : option.word}</span>
-                            {selectedOption && isTarget && <CheckCircle className="w-6 h-6 animate-bounce" />}
-                            {selectedOption && isSelected && !isTarget && <XCircle className="w-6 h-6 animate-pulse" />}
-                        </GameButton>
-                    );
-                })}
-            </div>
-
-            {selectedOption && (
-                <div className="fixed bottom-6 left-0 right-0 p-4 bg-transparent pointer-events-none flex justify-center z-20">
-                    <button onClick={nextQuestion} className="pointer-events-auto bg-slate-800 text-white px-8 py-4 rounded-2xl font-black text-xl shadow-2xl hover:bg-slate-900 hover:scale-105 transition-all flex items-center gap-2 animate-in slide-in-from-bottom-4 border-b-8 border-black">
-                        {currentQIndex < quizData.length - 1 ? "NEXT STAGE" : "FINISH"} <ChevronRight className="w-6 h-6" />
-                    </button>
-                </div>
-            )}
-            </div>
-        );
-        };
-
-        // --- 元件 3: 重組句子模式 (完整句子 - 支援分級制度) ---
-        const ScrambleMode = ({ data, apiKey }) => {
-            const [questions, setQuestions] = useState([]);
-            const [currentIndex, setCurrentIndex] = useState(0);
-            const [score, setScore] = useState(0);
-            const [showResult, setShowResult] = useState(false);
-            
-            // Difficulty: 'easy' (hints), 'medium' (grids), 'hard' (none)
-            const [difficulty, setDifficulty] = useState('easy');
-
-            // slots: Array of { id, text, status: 'locked' | 'filled' | 'empty' }
-            const [slots, setSlots] = useState([]);
-            const [availableWords, setAvailableWords] = useState([]); 
-            
-            const [feedback, setFeedback] = useState(null); 
-            const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false); 
-            const [showHelperHint, setShowHelperHint] = useState(false); 
-            const [showTips, setShowTips] = useState(false); // 控制問答視窗
-
-            useEffect(() => {
-            resetGame();
-            }, [data, difficulty]); 
-            
-            const resetGame = () => {
-            const count = Math.min(data.length, 5);
-            const shuffledQuestions = shuffleArray([...data]).slice(0, count); 
-            setQuestions(shuffledQuestions);
-            setCurrentIndex(0);
-            setScore(0);
-            setShowResult(false);
-            setShowTips(false);
-            loadQuestion(shuffledQuestions[0]);
-            };
-
-            const isEasyLockWord = (word) => {
-                const cleanWord = word.toLowerCase().replace(/[^a-z]/g, '');
-                if (/^[.,!?;:]+$/.test(word)) return true;
-                if (COMMON_CONNECTORS.has(cleanWord)) return true;
-                return false;
-            };
-
-            const isMediumLockWord = (word) => {
-                if (/^[.,!?;:]+$/.test(word)) return true;
-                return false;
-            };
-            
-            const loadQuestion = (question) => {
-            if (!question) return;
-            const rawSentence = question.sentence;
-            const spacedSentence = rawSentence.replace(/([.,!?])/g, ' $1 ');
-            const tokens = spacedSentence.trim().split(/\s+/).filter(w => w.length > 0);
-            
-            const newSlots = [];
-            const newAvailable = [];
-
-            tokens.forEach((word, index) => {
-                const id = `${index}-${word}`;
-                const wordObj = { id, text: word };
-
-                let shouldLock = false;
-
-                if (difficulty === 'easy') {
-                    shouldLock = isEasyLockWord(word);
-                } else if (difficulty === 'medium') {
-                    shouldLock = isMediumLockWord(word);
-                } else {
-                    shouldLock = false;
-                }
-
-                if (shouldLock) {
-                    newSlots.push({ ...wordObj, status: 'locked' });
-                } else {
-                    newSlots.push({ id: `slot-${index}`, status: 'empty' }); 
-                    newAvailable.push(wordObj);
-                }
-            });
-
-            if (difficulty === 'hard') {
-                setSlots([]); 
-            } else {
-                setSlots(newSlots);
-            }
-            
-            setAvailableWords(shuffleArray(newAvailable));
-            setFeedback(null);
-            setShowGiveUpConfirm(false);
-            setShowHelperHint(false);
-            };
-
-            const handleChangeQuestion = () => {
-                const currentQuestionIds = new Set(questions.map(q => q.id));
-                const candidates = data.filter(q => !currentQuestionIds.has(q.id));
-
-                if (candidates.length === 0) {
-                    const otherCandidates = data.filter(q => q.id !== questions[currentIndex].id);
-                    if(otherCandidates.length > 0) {
-                        const fallback = otherCandidates[Math.floor(Math.random() * otherCandidates.length)];
-                        const newQs = [...questions];
-                        newQs[currentIndex] = fallback;
-                        setQuestions(newQs);
-                        loadQuestion(fallback);
-                    }
-                    return;
-                }
-
-                const newQuestion = candidates[Math.floor(Math.random() * candidates.length)];
-                const newQuestions = [...questions];
-                newQuestions[currentIndex] = newQuestion;
-                setQuestions(newQuestions);
-                loadQuestion(newQuestion);
-            };
-            
-            const handleAvailableWordClick = (wordObj) => {
-            if (feedback === 'correct') return;
-            if (feedback === 'wrong') setFeedback(null);
-
-            if (difficulty === 'hard') {
-                setUserSlotsHard(prev => [...prev, { ...wordObj, status: 'filled' }]);
-            } else {
-                const firstEmptyIndex = slots.findIndex(s => s.status === 'empty');
-                if (firstEmptyIndex !== -1) {
-                    const newSlots = [...slots];
-                    newSlots[firstEmptyIndex] = { ...wordObj, status: 'filled' };
-                    setSlots(newSlots);
-                }
-            }
-            setAvailableWords(prev => prev.filter(w => w.id !== wordObj.id));
-            };
-
-            const handleSlotClick = (index, slotObj) => {
-                if (feedback === 'correct') return;
-                if (slotObj.status === 'locked' || slotObj.status === 'empty') return;
-                if (feedback === 'wrong') setFeedback(null);
-
-                const originalWordObj = { id: slotObj.id, text: slotObj.text };
-                setAvailableWords(prev => [...prev, originalWordObj]);
-
-                if (difficulty === 'hard') {
-                    setUserSlotsHard(prev => prev.filter((_, i) => i !== index));
-                } else {
-                    const newSlots = [...slots];
-                    newSlots[index] = { id: `slot-${index}`, status: 'empty' };
-                    setSlots(newSlots);
-                }
-            };
-            
-            const setUserSlotsHard = (action) => {
-                if (typeof action === 'function') {
-                    setSlots(prev => action(prev));
-                } else {
-                    setSlots(action);
-                }
-            };
-            
-            const handleMagicHint = () => {
-                if (feedback === 'correct') return;
-                setFeedback(null); 
-
-                const rawSentence = questions[currentIndex].sentence;
-                const spacedSentence = rawSentence.replace(/([.,!?])/g, ' $1 ');
-                const targetTokens = spacedSentence.trim().split(/\s+/).filter(w => w.length > 0);
-
-                let firstWrongIndex = -1;
-                
-                for (let i = 0; i < targetTokens.length; i++) {
-                    const targetWord = targetTokens[i];
-                    const currentSlot = slots[i];
-
-                    if (!currentSlot) { 
-                        firstWrongIndex = i;
-                        break;
-                    }
-
-                    if (currentSlot.status === 'empty') {
-                        firstWrongIndex = i;
-                        break;
-                    }
-
-                    if (currentSlot.text !== targetWord) {
-                        firstWrongIndex = i;
-                        break;
-                    }
-                }
-
-                if (firstWrongIndex === -1) return; 
-
-                const targetWordText = targetTokens[firstWrongIndex];
-                
-                if (difficulty !== 'hard' && slots[firstWrongIndex].status === 'filled') {
-                    handleSlotClick(firstWrongIndex, slots[firstWrongIndex]);
-                }
-                
-                const correctWordInAvailable = availableWords.find(w => w.text === targetWordText);
-                
-                if (correctWordInAvailable) {
-                    handleAvailableWordClick(correctWordInAvailable);
-                } else {
-                    if (difficulty !== 'hard') {
-                        const wrongPlaceIndex = slots.findIndex((s, idx) => idx > firstWrongIndex && s.text === targetWordText && s.status === 'filled');
-                        if (wrongPlaceIndex !== -1) {
-                            const wordToMove = slots[wrongPlaceIndex];
-                            const newSlots = [...slots];
-                            newSlots[wrongPlaceIndex] = { id: `slot-${wrongPlaceIndex}`, status: 'empty' };
-                            
-                            newSlots[firstWrongIndex] = { ...wordToMove, status: 'filled' };
-                            setSlots(newSlots);
-                            speakText(wordToMove.text);
-                        }
-                    }
-                }
-            };
-
-            const handleGiveUpClick = () => {
-                setFeedback(null);
-                setShowGiveUpConfirm(true);
-            };
-
-            const confirmGiveUp = () => {
-                const rawSentence = questions[currentIndex].sentence;
-                const spacedSentence = rawSentence.replace(/([.,!?])/g, ' $1 ');
-                const targetTokens = spacedSentence.trim().split(/\s+/).filter(w => w.length > 0);
-                
-                const correctSlots = targetTokens.map((t, i) => ({
-                    id: `ans-${i}`,
-                    text: t,
-                    status: 'locked' 
-                }));
-                
-                setSlots(correctSlots);
-                setAvailableWords([]);
-                setFeedback('correct'); 
-                setShowGiveUpConfirm(false);
-            };
-            
-            const checkAnswer = () => {
-            const userText = slots.map(s => (s.status === 'empty' ? '' : s.text)).join(' ').trim();
-            
-            const currentQuestion = questions[currentIndex];
-            const rawSentence = currentQuestion.sentence;
-            const spacedSentence = rawSentence.replace(/([.,!?])/g, ' $1 ');
-            const targetText = spacedSentence.trim().split(/\s+/).join(' ');
-
-            if (difficulty !== 'hard' && slots.some(s => s.status === 'empty')) {
-                speakText("Not finished yet");
-                return;
-            }
-
-            if (userText === targetText) {
-                setFeedback('correct');
-                setScore(prev => prev + 20); 
-                speakText(currentQuestion.sentence);
-            } else {
-                setFeedback('wrong');
-                speakText("Oops");
-            }
-            };
-            
-            const handleTryAgain = () => {
-                setFeedback(null); 
-                setShowHelperHint(true); 
-                setTimeout(() => setShowHelperHint(false), 5000);
-            };
-            
-            const nextQuestion = () => {
-            if (currentIndex < questions.length - 1) {
-                setCurrentIndex(prev => prev + 1);
-                loadQuestion(questions[currentIndex + 1]);
-            } else {
-                setShowResult(true);
-            }
-            };
-            
-            const currentQ = questions[currentIndex];
-
-            if (showResult) {
-            return (
-                <div className="flex flex-col items-center justify-center h-full animate-in zoom-in py-10 relative overflow-hidden">
-                <Star className="w-32 h-32 text-yellow-400 mb-6 fill-yellow-400 drop-shadow-[0_4px_0_rgba(234,179,8,1)] animate-bounce" />
-                <h2 className="text-4xl font-black text-slate-800 mb-2 tracking-tight">挑戰成功！</h2>
-                <div className="text-7xl font-black text-indigo-600 mb-8 drop-shadow-sm">{score}</div>
-                <GameButton onClick={resetGame} color="purple" className="w-64 py-4 text-xl">
-                    <RefreshCw className="w-6 h-6" /> 再玩一次
-                </GameButton>
-                </div>
-            );
-            }
-            
-            return (
-            <div className="flex flex-col h-full max-w-2xl mx-auto pb-24 relative">
-                {/* 老師問答視窗 (共用) */}
-                <TeacherChatModal 
-                    isOpen={showTips} 
-                    onClose={() => setShowTips(false)} 
-                    currentItem={currentQ}
-                    apiKey={apiKey}
-                />
-
-                {/* 難度選擇器 */}
-                <div className="flex justify-center gap-2 mb-4">
-                    {[
-                        { id: 'easy', label: '簡易', icon: <CheckCircle className="w-4 h-4"/>, color: 'green' },
-                        { id: 'medium', label: '中等', icon: <LayoutList className="w-4 h-4"/>, color: 'blue' },
-                        { id: 'hard', label: '困難', icon: <AlertCircle className="w-4 h-4"/>, color: 'red' }
-                    ].map(d => (
-                        <button
-                            key={d.id}
-                            onClick={() => setDifficulty(d.id)}
-                            className={`
-                                flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black transition-all border-b-4 active:border-b-0 active:translate-y-1
-                                ${difficulty === d.id 
-                                    ? `bg-${d.color}-500 border-${d.color}-700 text-white` 
-                                    : 'bg-white border-slate-200 text-slate-400'}
-                            `}
-                        >
-                            {d.icon} {d.label}
-                        </button>
-                    ))}
-                </div>
-
-                <div className="bg-white border-4 border-b-8 border-orange-200 rounded-3xl p-6 mb-6 text-center relative z-10 shadow-sm">
-                    {/* 調整右上角按鈕位置: Hints On 移到左側或與Q並排，右上角放問老師 */}
-                    <div className="flex justify-between items-start mb-2">
-                        <div className="flex flex-col items-start gap-1">
-                            <div className="inline-block bg-orange-100 text-orange-600 font-black px-3 py-1 rounded-lg text-xs border-2 border-orange-200">
-                                Q {currentIndex + 1}
-                            </div>
-                            <div className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">
-                                {difficulty === 'easy' ? 'Hints On' : difficulty === 'medium' ? 'Grids On' : 'No Hints'}
-                            </div>
-                        </div>
-                        
-                        {/* 右上角：問老師按鈕 */}
-                        <button 
-                            onClick={() => setShowTips(true)} 
-                            className="p-2 bg-yellow-100 text-yellow-600 rounded-full hover:bg-yellow-200 transition-colors shadow-sm"
-                            title="問老師 (Ask Teacher)"
-                        >
-                            <MessageCircle size={20} />
-                        </button>
-                    </div>
-                    
-                    <h2 className="font-black text-xl text-slate-800 mb-4 leading-relaxed drop-shadow-sm">
-                        {currentQ?.sentence_ch}
-                    </h2>
-                    
-                    <p className="text-orange-500 text-xs font-bold bg-orange-50 px-4 py-1.5 rounded-full inline-block border-2 border-orange-100 animate-pulse">
-                        {difficulty === 'easy' ? '已填入轉折詞與標點，請完成句子' : '請依序排列出正確的英文句子'}
-                    </p>
-                </div>
-            
-                {/* 答案區 */}
-                <div className="bg-slate-200/50 rounded-3xl shadow-inner border-4 border-slate-300 min-h-[160px] p-4 mb-6 flex flex-wrap content-start justify-center gap-2 relative transition-all z-10">
-                    {slots.length === 0 && availableWords.length > 0 && difficulty === 'hard' && (
-                        <div className="text-slate-400 font-black pointer-events-none flex flex-col items-center mt-10 w-full">
-                            <Puzzle className="w-10 h-10 mb-2 opacity-50" />
-                            點擊下方單字開始
-                        </div>
-                    )}
-
-                    {slots.map((slot, index) => {
-                        if (slot.status === 'empty') {
-                            // 空格子 (Medium/Easy)
-                            return (
-                                <div key={slot.id} className="w-12 h-10 rounded-lg border-2 border-dashed border-slate-300 bg-slate-100/50 flex items-center justify-center">
-                                </div>
-                            );
-                        } else if (slot.status === 'locked') {
-                            // 預先填入的 (Easy/Medium)
-                            return (
-                                <div key={slot.id} className="bg-slate-300 text-slate-600 px-3 py-2 rounded-lg font-bold border-b-2 border-slate-400 text-sm select-none">
-                                    {slot.text}
-                                </div>
-                            );
-                        } else {
-                            // 使用者填入的 (Filled)
-                            return (
-                                <button 
-                                key={slot.id} 
-                                onClick={() => handleSlotClick(index, slot)} 
-                                className="bg-indigo-500 text-white px-3 py-2 rounded-lg font-bold shadow-[0_2px_0_rgb(55,48,163)] active:shadow-none active:translate-y-1 transition-all border-b-2 border-indigo-700 text-sm animate-in zoom-in"
-                                >
-                                {slot.text}
-                                </button>
-                            );
-                        }
-                    })}
-                </div>
-            
-                <div className="h-16 mb-4 flex items-center justify-center gap-2 z-10 relative">
-                    {feedback === 'correct' ? (
-                        <div className="w-full bg-emerald-100 border-4 border-emerald-300 text-emerald-700 px-6 py-2 rounded-3xl flex items-center justify-between shadow-lg animate-in slide-in-from-bottom-2">
-                            <div className="flex items-center gap-2 font-black text-lg"><CheckCircle className="w-6 h-6 text-emerald-500" /> CORRECT!</div>
-                            <GameButton onClick={nextQuestion} color="green" className="text-xs">
-                                NEXT <ChevronRight className="w-4 h-4" />
-                            </GameButton>
-                        </div>
-                    ) : feedback === 'wrong' ? (
-                        <div className="w-full flex justify-center animate-in shake">
-                            <button 
-                                onClick={handleTryAgain}
-                                className="bg-rose-500 text-white border-b-4 border-rose-700 active:border-b-0 active:translate-y-1 px-8 py-3 rounded-2xl font-black text-lg shadow-xl flex items-center gap-2 hover:bg-rose-600 transition-all w-full justify-center"
-                            >
-                                <XCircle className="w-6 h-6" /> TRY AGAIN!
-                            </button>
-                        </div>
-                    ) : (
-                        <>
-                            {/* 工具列 */}
-                            <div className="flex gap-1.5 relative">
-                                {showHelperHint && (
-                                    <div className="absolute -top-20 left-0 bg-white border-4 border-sky-400 p-3 rounded-2xl w-48 shadow-xl z-50 animate-in fade-in slide-in-from-bottom-2">
-                                        <p className="text-sky-600 text-xs font-black mb-1">💡 需要幫忙？</p>
-                                        <div className="absolute -bottom-3 left-6 w-4 h-4 bg-white border-b-4 border-r-4 border-sky-400 transform rotate-45"></div>
-                                    </div>
-                                )}
-                                <GameButton onClick={handleChangeQuestion} color="white" className="py-2 px-2" title="換一題">
-                                    <RefreshCw className="w-5 h-5" />
-                                </GameButton>
-                                <GameButton onClick={handleMagicHint} color="yellow" className="py-2 px-2" title="提示下一個字">
-                                    <Wand2 className="w-5 h-5" />
-                                </GameButton>
-                                <GameButton onClick={handleGiveUpClick} color="red" className="py-2 px-2" title="查看答案">
-                                    <Flag className="w-5 h-5" />
-                                </GameButton>
-                            </div>
-                            
-                            <GameButton onClick={checkAnswer} disabled={availableWords.length > 0} color="blue" className="flex-1 py-3 text-lg shadow-lg">
-                                <CheckCircle className="w-5 h-5" /> 檢查
-                            </GameButton>
-                        </>
-                    )}
-                </div>
-            
-                {/* 下方單字庫 */}
-                <div className="flex flex-wrap gap-2 justify-center z-10 relative pb-4">
-                    {availableWords.map((wordObj) => (
-                    <button 
-                        key={wordObj.id} 
-                        onClick={() => handleAvailableWordClick(wordObj)} 
-                        className="bg-white text-slate-700 px-3 py-2 rounded-lg font-bold shadow-[0_2px_0_rgb(203,213,225)] active:shadow-none active:translate-y-1 transition-all border-b-2 border-slate-300 text-sm hover:border-indigo-300 hover:text-indigo-600"
-                    >
-                        {wordObj.text}
-                    </button>
-                    ))}
-                </div>
-
-                {showGiveUpConfirm && (
-                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm rounded-3xl animate-in fade-in">
-                        <div className="bg-white p-6 rounded-3xl border-4 border-slate-200 shadow-2xl max-w-xs text-center transform scale-100 animate-in zoom-in">
-                            <h3 className="text-xl font-black text-slate-800 mb-4">放棄挑戰？</h3>
-                            <div className="flex gap-3 justify-center">
-                                <GameButton onClick={() => setShowGiveUpConfirm(false)} color="blue" className="text-sm">
-                                    繼續嘗試
-                                </GameButton>
-                                <GameButton onClick={confirmGiveUp} color="gray" className="text-sm">
-                                    顯示答案
-                                </GameButton>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-            );
-        };
-
-        // --- Main App Container ---
-        function Unit34App() {
-            const [activeTab, setActiveTab] = useState('study');
-            const [currentGroup, setCurrentGroup] = useState('group1');
-            
-            // 直接使用全域設定的 API KEY，不再使用 useState 管理
-            const apiKey = USER_API_KEY;
-
-            const groupTitle = EXAM_DATA[currentGroup].title;
-            const unitData = EXAM_DATA[currentGroup].vocab;
-
-            return (
-                <div className="min-h-screen font-sans text-slate-800 flex flex-col bg-sky-50 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]">
-                <div className="bg-white/90 backdrop-blur-sm sticky top-0 z-50 border-b-4 border-slate-200">
-                    <div className="max-w-md mx-auto px-4 py-3">
-                    <div className="flex justify-between items-center mb-3 bg-slate-100 p-2 rounded-2xl border-2 border-slate-200">
-                        <div className="flex items-center gap-2 font-black text-slate-600 text-sm tracking-tight ml-2">
-                            <Map className="w-4 h-4 text-sky-500" />
-                            <span>SELECT RANGE</span>
-                        </div>
-                        
-                        {/* 兩個大區間按鈕 */}
-                        <div className="flex gap-2">
-                            {['group1', 'group2'].map(gKey => (
-                            <button
-                                key={gKey}
-                                onClick={() => setCurrentGroup(gKey)}
-                                className={`
-                                px-4 py-2 text-sm font-black rounded-xl transition-all border-b-4 active:border-b-0 active:translate-y-1
-                                ${currentGroup === gKey 
-                                    ? 'bg-sky-500 border-sky-700 text-white shadow-sky-200' 
-                                    : 'bg-white border-slate-300 text-slate-400 hover:bg-slate-50'}
-                                `}
-                            >
-                                {EXAM_DATA[gKey].range}
-                            </button>
-                            ))}
-                        </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-2">
-                        <GameButton 
-                        onClick={() => setActiveTab('study')} 
-                        active={activeTab === 'study'}
-                        color={activeTab === 'study' ? 'active' : 'white'}
-                        className="text-xs py-3"
-                        >
-                        <Layers className="w-4 h-4" /> 句子學習
-                        </GameButton>
-                        <GameButton 
-                        onClick={() => setActiveTab('quiz')} 
-                        active={activeTab === 'quiz'}
-                        color={activeTab === 'quiz' ? 'active' : 'white'}
-                        className="text-xs py-3"
-                        >
-                        <CheckCircle className="w-4 h-4" /> 單字測驗
-                        </GameButton>
-                        <GameButton 
-                        onClick={() => setActiveTab('sentences')} 
-                        active={activeTab === 'sentences'}
-                        color={activeTab === 'sentences' ? 'active' : 'white'}
-                        className="text-xs py-3"
-                        >
-                        <Puzzle className="w-4 h-4" /> 句子重組
-                        </GameButton>
-                    </div>
-                    </div>
-                </div>
-
-                <div className="flex-1 max-w-md mx-auto w-full p-4 pt-6">
-                    <div className="mb-6 text-center">
-                        <span className="inline-flex items-center gap-2 bg-slate-800 text-white text-xs font-black px-4 py-1.5 rounded-full border-2 border-slate-600 shadow-md">
-                            <Map className="w-3 h-3 text-yellow-400" />
-                            目前進度：{groupTitle}
-                        </span>
-                    </div>
-                    
-                    {activeTab === 'study' && <StudyMode data={unitData} apiKey={apiKey} />}
-                    {activeTab === 'quiz' && <QuizMode data={unitData} />}
-                    {activeTab === 'sentences' && <ScrambleMode data={unitData} apiKey={apiKey} />}
-                </div>
-                </div>
-            );
-        }
-
-        // 啟動 React
-        const root = createRoot(document.getElementById('root'));
-        root.render(<Unit34App />);
-    </script>
-</body>
-</html>
+      <div className="flex-1 max-w-md mx-auto w-full p-4 pt-6">
+        <div className="mb-6 text-center">
+            <span className="inline-flex items-center gap-2 bg-slate-800 text-white text-xs font-black px-4 py-1.5 rounded-full border-2 border-slate-600 shadow-md">
+                <Map className="w-3 h-3 text-yellow-400" />
+                目前進度：{groupTitle}
+            </span>
+        </div>
+        
+        {activeTab === 'study' && <StudyMode data={unitData} />}
+        {activeTab === 'quiz' && <QuizMode data={unitData} />}
+        {activeTab === 'sentences' && <ScrambleMode data={unitData} />}
+      </div>
+    </div>
+  );
+}
