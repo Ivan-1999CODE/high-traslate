@@ -1121,18 +1121,9 @@ const ScrambleMode = ({ data }) => {
     const [showHelperHint, setShowHelperHint] = useState(false); 
     const [showTips, setShowTips] = useState(false); // 控制問答視窗
 
-    // 1. 初始化遊戲 (只有當資料源改變時才重置)
     useEffect(() => {
       resetGame();
-    }, [data]); 
-
-    // 2. 難度改變時，重新載入當前題目 (保持在同一題)
-    useEffect(() => {
-        if (questions.length > 0) {
-            // 重置當前題目的狀態 (slots, feedback etc)
-            loadQuestion(questions[currentIndex]);
-        }
-    }, [difficulty]);
+    }, [data, difficulty]); 
   
     const resetGame = () => {
       const count = Math.min(data.length, 5);
