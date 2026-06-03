@@ -629,32 +629,11 @@
         // --- AI API 呼叫函式 ---
         const callGeminiChat = async (userQuestion, contextItem) => {
             // -------------------------------------------------------------------------
-            // AI 設定：正式給學生使用時，請填入自己的後端 / serverless endpoint。
-            // 不要把 Google Gemini API Key 直接放在這個 HTML，學生瀏覽器會看得到。
-            // endpoint 建議接收 { question, item }，回傳 { text: "..." }。
+            // AI 設定：Cloudflare Pages Functions endpoint。
+            // Google Gemini API Key 請放在 Cloudflare 環境變數 GEMINI_API_KEY。
+            // 不要把 API Key 直接放在這個 HTML，學生瀏覽器會看得到。
             // -------------------------------------------------------------------------
-            const AI_PROXY_ENDPOINT = ""; // 例：https://your-domain.com/api/ai-teacher
-
-            // 建構 Prompt，包含當前題目的完整資訊
-            const contextPrompt = `
-            你是一位親切、專業的英文老師，正在教導一位台灣學生。
-            
-            目前正在討論的題目如下：
-            - 英文句子: "${contextItem.sentence}"
-            - 中文翻譯: "${contextItem.sentence_ch}"
-            - 重點單字: "${contextItem.word}" (${contextItem.part}, ${contextItem.chinese})
-
-            學生的問題是： "${userQuestion}"
-
-            請根據上述「當前句子」的情境來回答學生的問題。
-            如果是問同義詞，請給出適合這句語境的同義詞。
-            如果是問改寫，請示範如何改寫這句話。
-            如果是問文法，請解釋這句話的文法結構。
-            
-            回答請用繁體中文，語氣鼓勵且簡潔，長度不要太長。
-            
-            **重要規則：請給出「純文字」的回答，絕對不要使用任何 Markdown 格式（例如：不要用 **粗體**，不要用 # 標題，不要用 * 列表），因為這些符號會讓學生閱讀困難。請直接分段或用空格排版即可。**
-        `;
+            const AI_PROXY_ENDPOINT = "/api/ai-teacher";
 
             if (!AI_PROXY_ENDPOINT) {
                 return "AI 老師尚未啟用。之後請把 Google API Key 放在後端或 serverless function，再把這裡的 AI_PROXY_ENDPOINT 設成你的後端網址。不要把 API Key 直接貼在 HTML 裡。";
@@ -668,8 +647,7 @@
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             question: userQuestion,
-                            item: contextItem,
-                            prompt: contextPrompt
+                            item: contextItem
                         })
                     }
                 );
