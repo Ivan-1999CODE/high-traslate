@@ -143,10 +143,15 @@
     .topbar {
       min-height: 70px;
       padding: 14px 22px;
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      justify-content: space-between;
       gap: 16px;
+    }
+
+    .top-mode {
+      display: flex;
+      justify-content: center;
     }
 
     @keyframes attention-shake {
@@ -401,7 +406,9 @@
     }
 
     .stage-bridge[hidden],
-    .prompt[hidden] {
+    .prompt[hidden],
+    .stage-panel[hidden],
+    .analysis-box[hidden] {
       display: none;
     }
 
@@ -740,6 +747,22 @@
     .slot.detail.filled {
       background: var(--amber-soft);
       border-color: var(--amber);
+    }
+
+    /* 句首導入 / 全句框架：用橘色，和補充細節的琥珀色區隔 */
+    .token.lead,
+    .slot.lead.filled,
+    .lead-lane .slot.filled {
+      background: #ffedd5;
+      border-color: #f97316;
+    }
+
+    /* 子句連接（連接詞）：用紫色，放在子句之間 */
+    .token.connector,
+    .slot.connector.filled,
+    .connector-lane .slot.filled {
+      background: var(--violet-soft);
+      border-color: var(--violet);
     }
 
     .tense-grid {
@@ -1157,8 +1180,8 @@
       }
 
       .topbar {
+        grid-template-columns: 1fr;
         align-items: stretch;
-        flex-direction: column;
       }
 
       .main {
@@ -1187,6 +1210,55 @@
       .chinese-question h3 {
         font-size: 20px;
       }
+    }
+
+    /* 單字／片語翻譯小幫手（僅第三、四階段）：桌機 hover、手機長按 */
+    .glossable {
+      cursor: help;
+      text-decoration: underline dotted rgba(37, 99, 235, .55);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1.5px;
+    }
+
+    .answer-box .glossable {
+      text-decoration-color: rgba(2, 122, 72, .5);
+    }
+
+    .gloss-tip {
+      position: absolute;
+      z-index: 60;
+      max-width: 260px;
+      padding: 9px 11px;
+      border-radius: 8px;
+      border: 1px solid #c7d2fe;
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, .16);
+      display: grid;
+      gap: 3px;
+      pointer-events: none;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .gloss-tip[hidden] {
+      display: none;
+    }
+
+    .gloss-tip .gloss-en {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    .gloss-tip .gloss-zh {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .gloss-tip .gloss-note {
+      color: var(--muted);
+      font-size: 12px;
     }
   </style>
 </head>
@@ -1228,8 +1300,10 @@
             <h2 id="titleText">題目</h2>
             <p id="subtitleText">請先閱讀中文題目。</p>
           </div>
+          <div class="top-mode">
+            <button class="btn" id="modeButton">進階模式：關</button>
+          </div>
           <div class="top-actions">
-            <button class="btn warning" id="hintButton">給我提示</button>
             <button class="btn" id="resetButton">重做本題</button>
             <button class="btn primary" id="revealButton">顯示英文答案</button>
             <button class="btn auth-button" id="authButton" type="button">Google 登入</button>
@@ -1259,6 +1333,7 @@
             </section>
             <section class="stage-panel" id="stageOne"></section>
             <section class="stage-panel" id="stageTwo"></section>
+            <section class="stage-panel" id="stagePhrase" hidden></section>
             <section class="stage-panel" id="stageThree"></section>
 
             <div class="feedback" id="feedback">一開始不顯示英文答案。請先把中文拆成主詞、動詞、受詞。</div>
@@ -1437,18 +1512,27 @@
         slot: detail.slot || `detail-${index + 1}`,
         label: detail.label,
         text: detail.text,
-        role: detail.role || "detail"
+        role: detail.role || "detail",
+        group: detail.group,
+        beforeClause: detail.beforeClause
       }));
+      // 非子句題型：core 只有兩個元素（主詞、動詞）時視為沒有受詞（SV 句），不建受詞格。
+      // 給第 4 個元素時，預設為雙受詞（SVOO）：core[2] 間接受詞、core[3] 直接受詞；
+      // 若設 objectComplement: true 則為 SVOC：core[2] 受詞、core[3] 受詞補語（see/watch sb doing 這類）。
+      const hasObject = !data.clauses && Boolean(data.core && data.core[2]);
+      const hasFourth = hasObject && Boolean(data.core[3]);
+      const isObjectComplement = hasFourth && data.objectComplement === true;
+      const hasIndirect = hasFourth && !isObjectComplement;
       const coreGroups = data.clauses
         ? data.clauses.map((clause, clauseIndex) => {
             const clauseId = clause.id || `clause-${clauseIndex + 1}`;
             return {
               id: clauseId,
               label: clause.label || `${String.fromCharCode(65 + clauseIndex)} 句主幹`,
-              slots: ["subject", "verb", "object"].map((slot) => `${clauseId}-${slot}`)
+              slots: ["subject", "verb", "object"].slice(0, clause.core.length).map((slot) => `${clauseId}-${slot}`)
             };
           })
-        : [{ id: "main", label: "主幹", slots: ["subject", "verb", "object"] }];
+        : [{ id: "main", label: "主幹", slots: hasIndirect ? ["subject", "verb", "object-indirect", "object"] : isObjectComplement ? ["subject", "verb", "object", "object-complement"] : hasObject ? ["subject", "verb", "object"] : ["subject", "verb"] }];
       const core = data.clauses
         ? data.clauses.flatMap((clause, clauseIndex) => {
             const clauseId = clause.id || `clause-${clauseIndex + 1}`;
@@ -1466,11 +1550,23 @@
         : [
             { id: "s", slot: "subject", label: "主詞", text: data.core[0], role: "subject" },
             { id: "v", slot: "verb", label: "動詞", text: data.core[1], role: "verb" },
-            { id: "o", slot: "object", label: data.coreLabel || "受詞", text: data.core[2], role: "object" }
+            ...(hasIndirect
+              ? [
+                  { id: "io", slot: "object-indirect", label: "間接受詞", text: data.core[2], role: "object" },
+                  { id: "o", slot: "object", label: "直接受詞", text: data.core[3], role: "object" }
+                ]
+              : isObjectComplement
+                ? [
+                    { id: "o", slot: "object", label: "受詞", text: data.core[2], role: "object" },
+                    { id: "oc", slot: "object-complement", label: "受詞補語", text: data.core[3], role: "object" }
+                  ]
+                : hasObject
+                  ? [{ id: "o", slot: "object", label: data.coreLabel || "受詞", text: data.core[2], role: "object" }]
+                  : [])
           ];
       const allTokenIds = data.clauses
         ? [...detailTokens.map((detail) => detail.id), ...core.map((token) => token.id)]
-        : ["o", ...detailTokens.map((detail) => detail.id), "s", "v"];
+        : [...(hasIndirect ? ["o", "io"] : isObjectComplement ? ["o", "oc"] : hasObject ? ["o"] : []), ...detailTokens.map((detail) => detail.id), "s", "v"];
       const answerPieces = data.pieces.map((text, index) => ({ id: `p${index + 1}`, text }));
       const pieceOrder = data.pieceOrder || answerPieces.map((piece) => piece.id).slice().reverse();
       return {
@@ -1602,7 +1698,7 @@
         orderReason: "英文先放主詞 Human imagination and creativity，再放 are，接著放 the greatest driving forces，最後用 behind technological advancement 補充驅動的對象。",
         summary: "這句是 SVC 結構：想像與創意 / 是 / 最大驅動力；behind technological advancement 作為補充細節接在補語後。",
         phrases: [
-          ["driving forces behind", "背後的驅動力", "behind 用來說明推動某事的來源。"],
+          ["driving forces", "驅動力", "driving force 指推動某事發展的力量，常用複數。"],
           ["technological advancement", "科技進步", "也可說 technological progress。"]
         ],
         vocab: [
@@ -1621,11 +1717,10 @@
         tenseLabel: "現在進行式",
         voice: "active",
         coreLabel: "補語",
-        core: ["神奇物件", "正成為", "現實"],
+        core: ["神奇物件", "正逐一成為", "現實"],
         details: [
           { label: "時間", text: "過去" },
-          { label: "地點", text: "在科幻電影中" },
-          { label: "方式", text: "逐一" }
+          { label: "地點", text: "在科幻電影中" }
         ],
         subclauses: [
           {
@@ -1664,30 +1759,32 @@
         year: 113,
         no: 1,
         chinese: "每逢選舉季節，總會看到政治人物造訪各地著名廟宇。",
-        answer: "During every election season, it is common to see politicians visiting renowned temples throughout the country.",
+        answer: "During every election season, people always see politicians visiting renowned temples throughout the country.",
         pattern: "SVO",
         tense: "present-simple",
         tenseLabel: "現在簡單式",
         voice: "active",
-        core: ["人們", "看到", "政治人物造訪廟宇"],
+        core: ["人們", "看到", "政治人物"],
         details: [
           { label: "時間", text: "每逢選舉季節" },
           { label: "地點", text: "各地" },
-          { label: "描述", text: "著名廟宇" }
+          { label: "行為", text: "造訪著名廟宇" }
         ],
         pieces: [
           "During every election season,",
-          "it is common to see",
-          "politicians visiting renowned temples",
+          "people always see",
+          "politicians",
+          "visiting renowned temples",
           "throughout the country."
         ],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
-        tenseReason: "這句描述選舉季節常見的現象，英文用 it is common to see，所以選現在簡單式。",
-        voiceReason: "英文主句是 it is common to see，後面描述人們常看到的現象，不是被動結構。",
-        orderReason: "英文先放 During every election season 交代時間，再放 it is common to see，最後放政治人物造訪廟宇與 throughout the country。",
-        summary: "it is common to see... 可用來翻譯「總會看到……」這種常見現象。",
+        pieceOrder: ["p4", "p1", "p5", "p2", "p3"],
+        tenseReason: "這句描述選舉季節常見的現象，英文用 people always see，所以選現在簡單式。",
+        voiceReason: "英文主詞是 people，主動看到這個現象，所以是主動語態。",
+        orderReason: "英文先放 During every election season 交代時間，再放主句 people always see，接著放受詞 politicians 與受詞補語 visiting renowned temples，最後補 throughout the country。",
+        summary: "see + 受詞 + V-ing 表示「看到某人正在做某事」：politicians 是受詞，visiting renowned temples 是受詞補語。",
         phrases: [
           ["during every election season", "每逢選舉季節", "during 放在時間範圍前。"],
+          ["see somebody doing something", "看到某人正在做某事", "see / watch / hear + 受詞 + V-ing，受詞後面接受詞補語。"],
           ["throughout the country", "全國各地", "throughout 表示遍及整個範圍。"]
         ],
         vocab: [
@@ -1705,11 +1802,10 @@
         tense: "present-simple",
         tenseLabel: "現在簡單式",
         voice: "active",
-        core: ["他們", "希望展現", "尊重"],
+        core: ["他們", "希望", "展現尊重"],
         details: [
-          { label: "附加", text: "除了祈求選舉結果" },
-          { label: "對象", text: "在地文化與習俗" },
-          { label: "描述", text: "好的" }
+          { label: "附加", text: "除了祈求好的選舉結果" },
+          { label: "對象", text: "在地文化與習俗" }
         ],
         pieces: [
           "In addition to praying for favorable election results,",
@@ -1742,11 +1838,8 @@
         tenseLabel: "情態助動詞",
         voice: "active",
         coreLabel: "補語",
-        core: ["避免衝突並確保和平", "應該是", "目標"],
-        details: [
-          { label: "範圍", text: "所有人類" },
-          { label: "內容", text: "世界和平" }
-        ],
+        core: ["避免衝突並確保世界和平", "應該是", "所有人類的目標"],
+        details: [],
         pieces: ["Avoiding conflict and ensuring world peace", "should be", "the goal", "of all humanity."],
         pieceOrder: ["p3", "p1", "p4", "p2"],
         tenseReason: "中文有「應該」，英文答案用 should be，所以要選情態助動詞。",
@@ -1772,11 +1865,9 @@
         tense: "modal-simple",
         tenseLabel: "情態助動詞",
         voice: "active",
-        core: ["我們", "不該忽略", "責任"],
+        core: ["我們", "不該忽略", "照顧牠們的責任"],
         details: [
-          { label: "時間", text: "在享受歡樂時" },
-          { label: "來源", text: "寵物帶來的" },
-          { label: "內容", text: "照顧牠們" }
+          { label: "時間", text: "在享受寵物帶來的歡樂時", role: "lead" }
         ],
         pieces: ["While enjoying the joy that pets bring,", "we should not neglect", "the responsibility", "to take care of them."],
         pieceOrder: ["p2", "p4", "p1", "p3"],
@@ -1803,11 +1894,10 @@
         tense: "modal-simple",
         tenseLabel: "情態助動詞",
         voice: "passive",
-        core: ["主管機關", "執行", "交通法規"],
+        core: ["主管機關", "嚴格地執行", "交通法規"],
         details: [
           { label: "轉折", text: "因此" },
-          { label: "方式", text: "嚴格" },
-          { label: "目的", text: "確保安全" }
+          { label: "目的", text: "確保所有用路人的安全" }
         ],
         pieces: ["Therefore,", "traffic regulations", "must be strictly enforced", "to ensure the safety of all road users."],
         pieceOrder: ["p4", "p2", "p1", "p3"],
@@ -1865,11 +1955,22 @@
         tenseLabel: "現在簡單式",
         voice: "active",
         coreLabel: "補語",
-        core: ["高鐵", "是", "首選"],
+        core: ["高鐵", "當然是", "首選"],
         details: [
           { label: "對象", text: "強調職場效率的人" },
-          { label: "用途", text: "商務旅行" },
-          { label: "語氣", text: "當然" }
+          { label: "用途", text: "商務旅行" }
+        ],
+        subclauses: [
+          {
+            type: "形容詞子句",
+            role: "修飾名詞",
+            marker: "who",
+            text: "who emphasize workplace efficiency",
+            target: "those",
+            core: "who / emphasize / efficiency",
+            note: "who 子句修飾 those，限定是哪一種人（強調職場效率的人）。",
+            position: "before-core"
+          }
         ],
         pieces: ["For those who emphasize workplace efficiency,", "the High-Speed Rail", "is undoubtedly", "the preferred choice for business travel."],
         pieceOrder: ["p4", "p2", "p1", "p3"],
@@ -1896,11 +1997,9 @@
         tense: "present-perfect",
         tenseLabel: "現在完成式",
         voice: "active",
-        core: ["超級颱風", "出現", "嚴重災害"],
+        core: ["越來越多的超級颱風", "通常出現", "嚴重災害"],
         details: [
-          { label: "時間", text: "近年來" },
-          { label: "數量", text: "越來越多" },
-          { label: "頻率", text: "通常" }
+          { label: "時間", text: "近年來" }
         ],
         pieces: ["In recent years,", "there have been increasingly more super typhoons,", "usually causing", "severe disasters."],
         pieceOrder: ["p2", "p4", "p1", "p3"],
@@ -1942,7 +2041,7 @@
         ],
         details: [
           { label: "時間", text: "颱風來襲時" },
-          { label: "條件", text: "若有必要" }
+          { label: "條件", text: "若有必要", role: "connector", group: "connector", beforeClause: "clause-b" }
         ],
         pieces: ["When a typhoon approaches,", "we should prepare enough food and stay indoors;", "if necessary,", "we should quickly move to a safe place."],
         pieceOrder: ["p4", "p2", "p1", "p3"],
@@ -1969,10 +2068,9 @@
         tense: "present-simple",
         tenseLabel: "現在簡單式",
         voice: "active",
-        core: ["現在年輕人", "享受", "自由與繁榮"],
+        core: ["現在年輕人", "享受", "較多的自由與繁榮"],
         details: [
-          { label: "比較", text: "相較於父母世代" },
-          { label: "程度", text: "較多" }
+          { label: "比較", text: "相較於父母世代", group: "lead" }
         ],
         pieces: ["Compared to their parents' generation,", "today's young people", "enjoy more freedom", "and prosperity."],
         pieceOrder: ["p3", "p1", "p4", "p2"],
@@ -1999,11 +2097,21 @@
         tense: "modal-simple",
         tenseLabel: "情態助動詞",
         voice: "active",
-        core: ["他們", "必須學習", "因應挑戰"],
+        core: ["他們", "必須學習", "有效地因應新的挑戰"],
         details: [
           { label: "轉折", text: "但是" },
-          { label: "環境", text: "快速改變的世界中" },
-          { label: "方式", text: "有效地" }
+          { label: "環境", text: "快速改變的世界中" }
+        ],
+        subclauses: [
+          {
+            type: "疑問詞＋不定詞",
+            role: "當受詞",
+            marker: "how to",
+            text: "how to effectively cope with new challenges",
+            target: "learn",
+            core: "how to / cope with / challenges",
+            note: "learn 後面接「how + to V」當受詞，是名詞性質；它由名詞子句 how they should cope... 簡化而來，但沒有自己的主詞與限定動詞，所以不算完整名詞子句。"
+          }
         ],
         pieces: ["However,", "in this rapidly changing world,", "they must learn", "how to effectively cope with new challenges."],
         pieceOrder: ["p4", "p1", "p3", "p2"],
@@ -2032,8 +2140,7 @@
         voice: "active",
         core: ["成功的企業", "不應該把……當作", "獲利"],
         details: [
-          { label: "目標", text: "最主要的目標" },
-          { label: "評價", text: "成功的" }
+          { label: "目標", text: "最主要的目標" }
         ],
         pieces: ["A successful business", "should not prioritize", "profits", "as the main goal."],
         pieceOrder: ["p3", "p1", "p4", "p2"],
@@ -2092,8 +2199,7 @@
         core: ["有些年輕人", "辭掉", "高薪工作"],
         details: [
           { label: "地點", text: "都市裡" },
-          { label: "目的", text: "返回家鄉種植蔬菜" },
-          { label: "描述", text: "有機" }
+          { label: "目的", text: "返回家鄉種植有機蔬菜" }
         ],
         pieces: ["Some young people", "quit high-paying jobs", "in the city", "to return to their hometowns and cultivate organic vegetables."],
         pieceOrder: ["p4", "p1", "p3", "p2"],
@@ -2120,10 +2226,11 @@
         tense: "present-perfect",
         tenseLabel: "現在完成式",
         voice: "active",
-        core: ["很多人", "成功了", "更健康的生活"],
+        core: ["很多人", "成功了"],
         details: [
-          { label: "方式", text: "藉由決心與努力" },
-          { label: "結果", text: "獲利更多" }
+          { label: "方式", text: "藉由決心與努力", group: "lead" },
+          { label: "結果", text: "不但獲利更多" },
+          { label: "結果", text: "還過著更健康的生活" }
         ],
         pieces: ["Through determination and effort,", "many have succeeded,", "not only making more profits", "but also living a healthier life."],
         pieceOrder: ["p3", "p1", "p4", "p2"],
@@ -2151,11 +2258,8 @@
         tenseLabel: "現在完成式",
         voice: "active",
         coreLabel: "補語",
-        core: ["拍攝地點", "也成為", "觀光景點"],
-        details: [
-          { label: "修飾", text: "這些電影的" },
-          { label: "描述", text: "熱門的" }
-        ],
+        core: ["這些電影的拍攝地點", "也成為", "熱門的觀光景點"],
+        details: [],
         subclauses: [
           {
             type: "形容詞子句",
@@ -2192,10 +2296,20 @@
         tense: "present-simple",
         tenseLabel: "現在簡單式",
         voice: "active",
-        core: ["大部分學生", "不習慣", "解決問題"],
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["大部分學生", "不習慣", "解決問題"]
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["他們", "總是期待", "老師提供標準答案"]
+          }
+        ],
         details: [
-          { label: "方式", text: "靠自己" },
-          { label: "期待", text: "老師提供標準答案" }
+          { label: "方式", text: "靠自己", group: "supplemental" }
         ],
         pieces: ["Most students", "are not accustomed to solving problems", "on their own;", "they always expect teachers to provide standard answers."],
         pieceOrder: ["p4", "p1", "p3", "p2"],
@@ -2222,11 +2336,9 @@
         tense: "modal-simple",
         tenseLabel: "情態助動詞",
         voice: "active",
-        core: ["學生", "應該培養", "能力"],
+        core: ["學生", "應該培養", "獨立思考的能力"],
         details: [
-          { label: "附加", text: "除了用功讀書" },
-          { label: "目的", text: "獲取知識" },
-          { label: "能力", text: "獨立思考" }
+          { label: "附加", text: "除了用功讀書獲取知識外" }
         ],
         pieces: ["In addition to studying hard to acquire knowledge,", "students should also cultivate", "the ability", "to think independently."],
         pieceOrder: ["p3", "p1", "p4", "p2"],
@@ -2254,22 +2366,9 @@
         tenseLabel: "現在簡單式",
         voice: "active",
         coreLabel: "補語",
-        core: ["聽音樂", "是", "嗜好"],
-        details: [
-          { label: "時間", text: "終生" },
-          { label: "對象", text: "你可以享受" }
-        ],
-        subclauses: [
-          {
-            type: "形容詞子句",
-            role: "修飾補語",
-            marker: "省略 that / which",
-            text: "you can enjoy",
-            target: "hobby",
-            core: "you / can enjoy",
-            note: "關係代名詞省略，功能仍是形容前面的 hobby。"
-          }
-        ],
+        core: ["聽音樂", "是", "你可以終生享受的嗜好"],
+        details: [],
+        subclauses: [],
         pieces: ["Listening to music", "is a hobby", "you can enjoy", "for a lifetime."],
         pieceOrder: ["p2", "p4", "p1", "p3"],
         tenseReason: "這句在定義一種嗜好，英文用 is，所以是現在簡單式。",
@@ -2295,10 +2394,9 @@
         tense: "modal-simple",
         tenseLabel: "情態助動詞",
         voice: "active",
-        core: ["能彈奏樂器", "可以帶來", "更多喜悅"],
+        core: ["能彈奏樂器", "可以帶給", "你", "更多喜悅"],
         details: [
-          { label: "轉折", text: "但" },
-          { label: "對象", text: "為你" }
+          { label: "轉折", text: "但" }
         ],
         pieces: ["However,", "being able to play a musical instrument", "can bring you", "even more joy."],
         pieceOrder: ["p3", "p1", "p4", "p2"],
@@ -2325,10 +2423,22 @@
         tense: "future-simple",
         tenseLabel: "未來簡單式",
         voice: "active",
-        core: ["我們", "不會感到", "快樂"],
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["我們", "活著"]
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["我們", "將不會真正地感到", "快樂"],
+            coreLabel: "補語"
+          }
+        ],
         details: [
-          { label: "條件", text: "只為自己而活" },
-          { label: "程度", text: "真正地" }
+          { label: "連接", text: "如果", role: "connector", group: "connector", beforeClause: "clause-a" },
+          { label: "方式", text: "只為自己", group: "supplemental" }
         ],
         pieces: ["If we live only for ourselves,", "we will not truly feel", "happy."],
         pieceOrder: ["p2", "p1", "p3"],
@@ -2355,9 +2465,21 @@
         tense: "future-simple",
         tenseLabel: "未來簡單式",
         voice: "active",
-        core: ["快樂之門", "會開啟", "自然"],
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["我們", "開始"]
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["快樂之門", "會自然地開啟"]
+          }
+        ],
         details: [
-          { label: "時間", text: "當我們開始為他人著想" }
+          { label: "連接", text: "當", role: "connector", group: "connector", beforeClause: "clause-a" },
+          { label: "對象", text: "為他人著想", group: "supplemental" }
         ],
         pieces: ["When we start to consider others,", "the door to happiness", "will naturally open."],
         pieceOrder: ["p3", "p1", "p2"],
@@ -2426,8 +2548,7 @@
         voice: "active",
         core: ["老師", "應該鼓勵", "學生"],
         details: [
-          { label: "行為", text: "借書" },
-          { label: "地點", text: "到圖書館" },
+          { label: "行為", text: "到圖書館借書" },
           { label: "程度", text: "多" }
         ],
         pieces: ["Teachers", "should encourage students", "to borrow books", "from the library more."],
@@ -2455,10 +2576,22 @@
         tense: "present-perfect",
         tenseLabel: "現在完成式",
         voice: "passive",
-        core: ["我們", "感興趣", "外太空"],
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["人類對外太空的知識", "是", "非常有限"],
+            coreLabel: "補語"
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["我們", "很感興趣"]
+          }
+        ],
         details: [
-          { label: "對比", text: "所知有限" },
-          { label: "時間", text: "長久以來" }
+          { label: "轉折", text: "但", role: "connector", group: "connector", beforeClause: "clause-b" },
+          { label: "時間", text: "長久以來", group: "supplemental" }
         ],
         pieces: ["Humanity's knowledge of outer space is very limited,", "but we have been fascinated by it", "for a long time."],
         pieceOrder: ["p2", "p1", "p3"],
@@ -2485,9 +2618,21 @@
         tense: "present-perfect",
         tenseLabel: "現在完成式",
         voice: "passive",
-        core: ["她", "從來沒有", "氣餒"],
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["Lily", "生來", "又瞎又聾"],
+            coreLabel: "補語"
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["她", "從不氣餒"]
+          }
+        ],
         details: [
-          { label: "讓步", text: "雖然生來又瞎又聾" }
+          { label: "讓步", text: "雖然", role: "connector", group: "connector", beforeClause: "clause-a" }
         ],
         pieces: ["Although Lily was born blind and deaf,", "she has never been", "discouraged."],
         pieceOrder: ["p3", "p1", "p2"],
@@ -2522,13 +2667,10 @@
         answer: "History repeatedly proves that war causes extremely dreadful disasters.",
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "歷史", role: "subject" },
-          { id: "v", slot: "verb", label: "動詞", text: "證明", role: "verb" },
-          { id: "o", slot: "object", label: "受詞", text: "戰爭會造成災難", role: "object" }
+          { id: "v", slot: "verb", label: "動詞", text: "一再地證明", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "戰爭會造成極為可怕的災難", role: "object" }
         ],
-        details: [
-          { id: "d-frequency", slot: "detail-frequency", label: "頻率", text: "一再", role: "detail" },
-          { id: "d-degree", slot: "detail-degree", label: "程度", text: "極為可怕", role: "detail" }
-        ],
+        details: [],
         subclauses: [
           {
             type: "名詞子句",
@@ -2540,7 +2682,7 @@
             note: "that 子句說明歷史證明的內容，整段接在 proves 後。"
           }
         ],
-        bankOrder: ["o", "d-frequency", "s", "d-degree", "v"],
+        bankOrder: ["o", "s", "v"],
         answerPieces: [
           { id: "p1", text: "History" },
           { id: "p2", text: "repeatedly proves" },
@@ -2573,14 +2715,13 @@
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "高鐵", role: "subject" },
           { id: "v", slot: "verb", label: "動詞", text: "已成為", role: "verb" },
-          { id: "o", slot: "object", label: "補語", text: "交通工具之一", role: "object" }
+          { id: "o", slot: "object", label: "補語", text: "最快速、最便利的交通工具之一", role: "object" }
         ],
         details: [
           { id: "d-time", slot: "detail-time", label: "時間", text: "自 2007 年營運以來", role: "detail" },
-          { id: "d-place", slot: "detail-place", label: "地點", text: "在臺灣", role: "detail" },
-          { id: "d-degree", slot: "detail-degree", label: "描述", text: "最便利、最快速", role: "detail" }
+          { id: "d-place", slot: "detail-place", label: "地點", text: "在臺灣", role: "detail" }
         ],
-        bankOrder: ["d-time", "o", "s", "d-place", "v", "d-degree"],
+        bankOrder: ["d-time", "o", "s", "d-place", "v"],
         answerPieces: [
           { id: "p1", text: "Since its operation in 2007," },
           { id: "p2", text: "the High-Speed Rail" },
@@ -2617,10 +2758,9 @@
           { id: "o", slot: "object", label: "受詞", text: "國際的重視", role: "object" }
         ],
         details: [
-          { id: "d-time", slot: "detail-time", label: "時間", text: "近年來", role: "detail" },
-          { id: "d-place", slot: "detail-place", label: "來源", text: "臺灣製作", role: "detail" }
+          { id: "d-time", slot: "detail-time", label: "時間", text: "近年來", role: "detail" }
         ],
-        bankOrder: ["s", "d-time", "o", "v", "d-place"],
+        bankOrder: ["s", "d-time", "o", "v"],
         answerPieces: [
           { id: "p1", text: "In recent years," },
           { id: "p2", text: "many films produced in Taiwan" },
@@ -2653,14 +2793,13 @@
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "它們", role: "subject" },
           { id: "v", slot: "verb", label: "動詞", text: "吸引", role: "verb" },
-          { id: "o", slot: "object", label: "受詞", text: "觀光客", role: "object" }
+          { id: "o", slot: "object", label: "受詞", text: "成千上萬觀光客", role: "object" }
         ],
         details: [
           { id: "d-time", slot: "detail-time", label: "時間", text: "每年", role: "detail" },
-          { id: "d-amount", slot: "detail-amount", label: "數量", text: "成千上萬", role: "detail" },
           { id: "d-source", slot: "detail-source", label: "來源", text: "來自不同國家", role: "detail" }
         ],
-        bankOrder: ["d-amount", "s", "d-time", "o", "v", "d-source"],
+        bankOrder: ["s", "d-time", "o", "v", "d-source"],
         answerPieces: [
           { id: "p1", text: "Every year," },
           { id: "p2", text: "they" },
@@ -2692,16 +2831,15 @@
         orderReason: "英文先放時間 In the past，再放 Bicycles were primarily used，最後用 as a means of transportation 說明用途。",
         answer: "In the past, bicycles were primarily used as a means of transportation.",
         core: [
-          { id: "s", slot: "subject", label: "主詞", text: "人們", role: "subject" },
-          { id: "v", slot: "verb", label: "動詞", text: "使用", role: "verb" },
-          { id: "o", slot: "object", label: "受詞", text: "腳踏車", role: "object" }
+          { id: "s", slot: "subject", label: "主詞", text: "腳踏車", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "被使用", role: "verb" }
         ],
+        coreGroups: [{ id: "main", label: "主幹", slots: ["subject", "verb"] }],
         details: [
           { id: "d-time", slot: "detail-time", label: "時間", text: "在過去", role: "detail" },
-          { id: "d-purpose", slot: "detail-purpose", label: "用途", text: "作為交通工具", role: "detail" },
-          { id: "d-degree", slot: "detail-degree", label: "程度", text: "主要", role: "detail" }
+          { id: "d-purpose", slot: "detail-purpose", label: "用途", text: "作為主要交通工具", role: "detail" }
         ],
-        bankOrder: ["o", "d-time", "s", "d-purpose", "v", "d-degree"],
+        bankOrder: ["d-time", "s", "d-purpose", "v"],
         answerPieces: [
           { id: "p1", text: "In the past," },
           { id: "p2", text: "bicycles" },
@@ -2734,11 +2872,9 @@
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "她的故事", role: "subject" },
           { id: "v", slot: "verb", label: "動詞", text: "證明", role: "verb" },
-          { id: "o", slot: "object", label: "受詞", text: "努力必能成功", role: "object" }
+          { id: "o", slot: "object", label: "受詞", text: "只要努力必能成功", role: "object" }
         ],
-        details: [
-          { id: "d-condition", slot: "detail-condition", label: "條件", text: "只要努力", role: "detail" }
-        ],
+        details: [],
         subclauses: [
           {
             type: "名詞子句",
@@ -2750,7 +2886,7 @@
             note: "that 子句是被證明的整件事；as long as we strive 是子句內的條件。"
           }
         ],
-        bankOrder: ["o", "s", "d-condition", "v"],
+        bankOrder: ["o", "s", "v"],
         answerPieces: [
           { id: "p1", text: "Her story" },
           { id: "p2", text: "proves" },
@@ -2782,14 +2918,15 @@
         answer: "Keeping a pet is not a short-term life experience but a lifelong commitment to animals.",
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "飼養寵物", role: "subject" },
-          { id: "v", slot: "verb", label: "動詞", text: "並非，而是", role: "verb" },
-          { id: "o", slot: "object", label: "補語", text: "終生承諾", role: "object" }
+          { id: "v", slot: "verb", label: "動詞", text: "不是", role: "verb" },
+          { id: "o", slot: "object", label: "補語", text: "短暫的人生體驗", role: "object" }
         ],
         details: [
-          { id: "d-contrast", slot: "detail-contrast", label: "對比", text: "短暫的人生體驗", role: "detail" },
+          { id: "d-but", slot: "detail-but", label: "轉折", text: "而是", role: "detail" },
+          { id: "d-commitment", slot: "detail-commitment", label: "定位", text: "一個終生承諾", role: "detail" },
           { id: "d-target", slot: "detail-target", label: "對象", text: "對動物", role: "detail" }
         ],
-        bankOrder: ["d-contrast", "s", "o", "v", "d-target"],
+        bankOrder: ["d-but", "s", "o", "v", "d-commitment", "d-target"],
         answerPieces: [
           { id: "p1", text: "Keeping a pet" },
           { id: "p2", text: "is not a short-term life experience" },
@@ -2825,9 +2962,9 @@
           { id: "o", slot: "object", label: "受詞", text: "性命", role: "object" }
         ],
         details: [
-          { id: "d-source", slot: "detail-source", label: "來源", text: "根據新聞報導", role: "detail" },
-          { id: "d-place", slot: "detail-place", label: "地點", text: "全球、道路事故中", role: "detail" },
-          { id: "d-time", slot: "detail-time", label: "時間", text: "每年", role: "detail" }
+          { id: "d-source", slot: "detail-source", label: "來源", text: "根據新聞報導", role: "detail", group: "lead" },
+          { id: "d-place", slot: "detail-place", label: "地點", text: "全球、道路事故中", role: "detail", group: "supplemental" },
+          { id: "d-time", slot: "detail-time", label: "時間", text: "每年", role: "detail", group: "supplemental" }
         ],
         bankOrder: ["d-source", "o", "s", "d-place", "v", "d-time"],
         answerPieces: [
@@ -2866,7 +3003,7 @@
           { id: "o", slot: "object", label: "受詞", text: "自己的意願", role: "object" }
         ],
         details: [
-          { id: "d-frequency", slot: "detail-frequency", label: "頻率", text: "有時", role: "detail" },
+          { id: "d-frequency", slot: "detail-frequency", label: "頻率", text: "有時", role: "detail", group: "lead" },
           { id: "d-action", slot: "detail-action", label: "行為", text: "去做某些事情", role: "detail" },
           { id: "d-purpose", slot: "detail-purpose", label: "目的", text: "取悅朋友", role: "detail" }
         ],
@@ -2902,12 +3039,12 @@
         answer: "Jade Mountain is often covered with thick snow in winter, making the entire summit shimmer like jade.",
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "玉山", role: "subject" },
-          { id: "v", slot: "verb", label: "動詞", text: "覆蓋著", role: "verb" },
+          { id: "v", slot: "verb", label: "動詞", text: "常常覆蓋著", role: "verb" },
           { id: "o", slot: "object", label: "受詞", text: "厚厚的積雪", role: "object" }
         ],
         details: [
           { id: "d-time", slot: "detail-time", label: "時間", text: "在冬天", role: "detail" },
-          { id: "d-result", slot: "detail-result", label: "結果", text: "山頂閃耀如玉", role: "detail" }
+          { id: "d-result", slot: "detail-result", label: "結果", text: "使整個山頂閃耀如玉", role: "detail" }
         ],
         bankOrder: ["o", "s", "d-result", "v", "d-time"],
         answerPieces: [
@@ -3059,15 +3196,12 @@
         orderReason: "英文先放 Taiwan's night markets，再放 have long been considered，最後放 representative of our local culture。",
         answer: "Taiwan's night markets have long been considered representative of our local culture.",
         core: [
-          { id: "s", slot: "subject", label: "主詞", text: "人們", role: "subject" },
-          { id: "v", slot: "verb", label: "動詞", text: "認為", role: "verb" },
-          { id: "o", slot: "object", label: "受詞", text: "臺灣的夜市", role: "object" }
+          { id: "s", slot: "subject", label: "主詞", text: "臺灣的夜市", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "早已被認為", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "代表在地文化", role: "object" }
         ],
-        details: [
-          { id: "d-time", slot: "detail-time", label: "時間", text: "早已", role: "detail" },
-          { id: "d-feature", slot: "detail-feature", label: "特色", text: "代表在地文化", role: "detail" }
-        ],
-        bankOrder: ["o", "d-time", "s", "d-feature", "v"],
+        details: [],
+        bankOrder: ["o", "s", "v"],
         answerPieces: [
           { id: "p1", text: "Taiwan's night markets" },
           { id: "p2", text: "have long been considered" },
@@ -3099,15 +3233,13 @@
         answer: "However, cycling has now become a popular recreational activity.",
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "騎腳踏車", role: "subject" },
-          { id: "v", slot: "verb", label: "動詞", text: "已經成為", role: "verb" },
-          { id: "o", slot: "object", label: "補語", text: "休閒活動", role: "object" }
+          { id: "v", slot: "verb", label: "動詞", text: "現在已經成為", role: "verb" },
+          { id: "o", slot: "object", label: "補語", text: "熱門的休閒活動", role: "object" }
         ],
         details: [
-          { id: "d-transition", slot: "detail-transition", label: "轉折", text: "然而", role: "detail" },
-          { id: "d-time", slot: "detail-time", label: "時間", text: "現在", role: "detail" },
-          { id: "d-feature", slot: "detail-feature", label: "描述", text: "熱門的", role: "detail" }
+          { id: "d-transition", slot: "detail-transition", label: "轉折", text: "然而", role: "detail" }
         ],
-        bankOrder: ["d-transition", "o", "s", "d-feature", "v", "d-time"],
+        bankOrder: ["d-transition", "o", "s", "v"],
         answerPieces: [
           { id: "p1", text: "However," },
           { id: "p2", text: "cycling" },
@@ -3140,13 +3272,12 @@
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "太空科技的快速發展", role: "subject" },
           { id: "v", slot: "verb", label: "動詞", text: "使", role: "verb" },
-          { id: "o", slot: "object", label: "受詞", text: "我們得以探索奧秘", role: "object" }
+          { id: "o", slot: "object", label: "受詞", text: "我們", role: "object" }
         ],
         details: [
-          { id: "d-field", slot: "detail-field", label: "領域", text: "太空", role: "detail" },
-          { id: "d-target", slot: "detail-target", label: "對象", text: "它的奧秘", role: "detail" }
+          { id: "d-explore", slot: "detail-explore", label: "行為", text: "探索它的奧秘", role: "detail" }
         ],
-        bankOrder: ["o", "d-field", "s", "v", "d-target"],
+        bankOrder: ["o", "s", "v", "d-explore"],
         answerPieces: [
           { id: "p1", text: "The rapid development" },
           { id: "p2", text: "of space technology" },
@@ -3417,6 +3548,13 @@
     ];
 
     const progressStorageKey = "exam-structure-practice-progress-v1";
+    const practiceModeKey = "exam-structure-practice-mode";
+    let practiceMode = "simple";
+    try {
+      if (localStorage.getItem(practiceModeKey) === "advanced") practiceMode = "advanced";
+    } catch {
+      // localStorage 可能在隱私模式下不可用，維持簡單模式即可。
+    }
     let lastCloudProgressSave = Promise.resolve();
     const initialProgressStore = readSavedProgress();
     const initialQuestionId = initialProgressStore.lastQuestionId || "exam-115-01";
@@ -3432,10 +3570,17 @@
     let selectedTense = null;
     let selectedVoice = null;
     let builtPieces = [];
+    let phraseWordBuilds = {};
     let revealed = false;
     let shakeSlot = null;
+
+    // 開發用：true = 每題都能直接按「顯示英文答案」（方便校對翻譯）。
+    // 校對完請改回 false，恢復「未完成作答就不能看完整解答」的設定。
+    const DEV_ALWAYS_REVEAL = true;
     let analysisMessage = null;
     let attentionShakeTimer = null;
+    let hasAttempted = false;
+    let hintMessage = "";
 
     const els = {
       progressText: document.getElementById("progressText"),
@@ -3444,7 +3589,7 @@
       subtitleText: document.getElementById("subtitleText"),
       authStatus: document.getElementById("authStatus"),
       authButton: document.getElementById("authButton"),
-      hintButton: document.getElementById("hintButton"),
+      modeButton: document.getElementById("modeButton"),
       resetButton: document.getElementById("resetButton"),
       revealButton: document.getElementById("revealButton"),
       promptPanel: document.getElementById("promptPanel"),
@@ -3456,6 +3601,7 @@
       stageHighlight: document.getElementById("stageHighlight"),
       stageOne: document.getElementById("stageOne"),
       stageTwo: document.getElementById("stageTwo"),
+      stagePhrase: document.getElementById("stagePhrase"),
       stageThree: document.getElementById("stageThree"),
       feedback: document.getElementById("feedback"),
       analysisBox: document.getElementById("analysisBox"),
@@ -3660,12 +3806,14 @@
       selectedTense = null;
       selectedVoice = null;
       builtPieces = [];
+      phraseWordBuilds = {};
       revealed = false;
       shakeSlot = null;
       analysisMessage = null;
+      hasAttempted = false;
+      hintMessage = "";
       els.feedback.className = "feedback";
       els.feedback.textContent = "先用螢光筆標出你看到的中文結構；這一段不評分。";
-      els.hintText.innerHTML = "<p>答題完成後，這裡會解鎖本題關鍵、固定片語、可替換單字與 AI 小老師問答。</p>";
     }
 
     function saveCurrentProgress() {
@@ -3681,7 +3829,9 @@
         selectedTense,
         selectedVoice,
         builtPieces,
+        phraseWordBuilds,
         revealed,
+        hasAttempted,
         completed: isSentenceDone() || revealed,
         updatedAt: Date.now()
       };
@@ -3713,7 +3863,25 @@
       selectedTense = tenseById(saved.selectedTense) ? saved.selectedTense : null;
       selectedVoice = voiceById(saved.selectedVoice) ? saved.selectedVoice : null;
       builtPieces = Array.isArray(saved.builtPieces) ? saved.builtPieces.filter((id) => pieceIds.has(id)) : [];
+      phraseWordBuilds = {};
+      if (saved.phraseWordBuilds && typeof saved.phraseWordBuilds === "object") {
+        const validWordIds = new Set();
+        question().answerPieces.forEach((piece) => pieceWordTokens(piece).forEach((token) => validWordIds.add(token.id)));
+        Object.entries(saved.phraseWordBuilds).forEach(([pieceId, ids]) => {
+          if (!Array.isArray(ids)) return;
+          const filtered = ids.filter((id) => validWordIds.has(id));
+          if (filtered.length) phraseWordBuilds[pieceId] = filtered;
+        });
+      }
       revealed = Boolean(saved.revealed || saved.completed);
+      hasAttempted = Boolean(
+        saved.hasAttempted
+        || saved.revealed
+        || saved.completed
+        || saved.selectedTense
+        || saved.selectedVoice
+        || Object.keys(saved.placements || {}).length
+      );
       stage = Math.min(Math.max(Number(saved.stage) || 1, 1), 4);
 
       if (!isHighlightDone()) stage = 1;
@@ -3729,6 +3897,90 @@
 
     function voiceById(id) {
       return voiceOptions.find((voice) => voice.id === id);
+    }
+
+    function seededShuffle(items, seedText) {
+      let seed = 0;
+      for (let i = 0; i < seedText.length; i += 1) {
+        seed = (seed * 31 + seedText.charCodeAt(i)) >>> 0;
+      }
+      const result = items.slice();
+      for (let i = result.length - 1; i > 0; i -= 1) {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        const j = seed % (i + 1);
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    }
+
+    // 進階模式用：把一個英文片段按空白拆成單字（連字號詞、標點都黏在原本的字上）。
+    function tokenizePieceWords(text) {
+      return String(text).split(/\s+/).filter(Boolean);
+    }
+
+    function pieceWordTokens(piece) {
+      return tokenizePieceWords(piece.text).map((text, index) => ({ id: `${piece.id}::w${index}`, text }));
+    }
+
+    function wordTextById(piece, wordId) {
+      const token = pieceWordTokens(piece).find((item) => item.id === wordId);
+      return token ? token.text : "";
+    }
+
+    // 3 個字以上的片語才需要學生逐字重組；2 個字以下視為自動完成。
+    function isPieceBuilt(piece) {
+      const tokens = pieceWordTokens(piece);
+      if (tokens.length < 3) return true;
+      const placed = phraseWordBuilds[piece.id] || [];
+      if (placed.length !== tokens.length) return false;
+      const builtText = placed.map((id) => wordTextById(piece, id)).join(" ");
+      return builtText === tokens.map((token) => token.text).join(" ");
+    }
+
+    function buildablePieces(data) {
+      return data.answerPieces.filter((piece) => pieceWordTokens(piece).length >= 3);
+    }
+
+    function isPhraseStageDone(data) {
+      if (practiceMode !== "advanced") return true;
+      return data.answerPieces.every(isPieceBuilt);
+    }
+
+    function togglePracticeMode() {
+      practiceMode = practiceMode === "advanced" ? "simple" : "advanced";
+      try {
+        localStorage.setItem(practiceModeKey, practiceMode);
+      } catch {
+        // 無法寫入時仍能在本次操作中使用該模式。
+      }
+      render();
+    }
+
+    function addPhraseWord(wordId) {
+      const pieceId = wordId.split("::")[0];
+      const current = phraseWordBuilds[pieceId] || [];
+      if (current.includes(wordId)) return;
+      phraseWordBuilds[pieceId] = [...current, wordId];
+      hasAttempted = true;
+
+      const piece = question().answerPieces.find((item) => item.id === pieceId);
+      if (piece) {
+        const total = pieceWordTokens(piece).length;
+        if (isPieceBuilt(piece)) {
+          els.feedback.className = "feedback correct";
+          els.feedback.textContent = `片語「${piece.text}」組好了。`;
+        } else if (phraseWordBuilds[pieceId].length >= total) {
+          els.feedback.className = "feedback error";
+          els.feedback.textContent = "這個片語的單字順序還不對，點一下已放的字可以移除重排。";
+        }
+      }
+      render();
+    }
+
+    function removePhraseWord(wordId) {
+      const pieceId = wordId.split("::")[0];
+      phraseWordBuilds[pieceId] = (phraseWordBuilds[pieceId] || []).filter((id) => id !== wordId);
+      render();
     }
 
     function completedStages() {
@@ -3758,7 +4010,7 @@
     }
 
     function canRevealAnswer() {
-      return revealed || isSentenceDone();
+      return DEV_ALWAYS_REVEAL || revealed || hasAttempted || isSentenceDone();
     }
 
     function currentStageElement() {
@@ -3766,6 +4018,7 @@
       if (!isHighlightDone()) return els.stageHighlight;
       if (!isStageOneDone()) return els.stageOne;
       if (!isDecisionDone()) return els.stageTwo;
+      if (practiceMode === "advanced" && !isPhraseStageDone(question())) return els.stagePhrase;
       return els.stageThree;
     }
 
@@ -3792,11 +4045,13 @@
       selectedTense = null;
       selectedVoice = null;
       builtPieces = [];
+      phraseWordBuilds = {};
       revealed = false;
       analysisMessage = null;
+      hasAttempted = false;
+      hintMessage = "先找中文句子的「誰做事、做什麼、作用到誰或什麼」，再用顏色標出來。";
       els.feedback.className = "feedback";
       els.feedback.textContent = "先用螢光筆標出你看到的中文結構；這一段不評分。";
-      els.hintText.textContent = "先找中文句子的「誰做事、做什麼、作用到誰或什麼」，再用顏色標出來。";
       render();
     }
 
@@ -3867,6 +4122,8 @@
     function detailGroupSlots(data, group) {
       return data.details
         .filter((detail) => {
+          // 題目可用 detail.group（"lead" / "bound" / "supplemental"）明確指定欄位，覆寫依中文位置判斷的啟發式。
+          if (detail.group) return detail.group === group;
           if (group === "lead") return isSentenceLeadToken(data, detail);
           if (group === "bound") return !isSentenceLeadToken(data, detail) && isBoundModifierToken(detail);
           return !isSentenceLeadToken(data, detail) && !isBoundModifierToken(detail);
@@ -3877,6 +4134,7 @@
     function placeToken(tokenId, slot) {
       const token = tokenById(tokenId);
       if (!token) return;
+      hasAttempted = true;
 
       if (token.slot !== slot) {
         shakeSlot = slot;
@@ -3911,6 +4169,7 @@
 
     function selectTense(id) {
       selectedTense = id;
+      hasAttempted = true;
       if (id !== question().tense) {
         const correct = tenseById(question().tense);
         els.feedback.className = "feedback error";
@@ -3937,6 +4196,7 @@
 
     function selectVoice(id) {
       selectedVoice = id;
+      hasAttempted = true;
       if (id !== question().voice) {
         els.feedback.className = "feedback error";
         els.feedback.textContent = "主被動還不對。請先看底下解析，再重新選擇。";
@@ -3978,6 +4238,7 @@
     }
 
     function checkSentence() {
+      hasAttempted = true;
       if (!isDecisionDone()) {
         els.feedback.className = "feedback error";
         els.feedback.textContent = "請先把時態與主被動都選正確，再檢查英文句子。";
@@ -4016,7 +4277,7 @@
       if (!canRevealAnswer()) {
         shakeCurrentStage();
         els.feedback.className = "feedback";
-        els.feedback.textContent = "先完成目前階段，答過這題後才能直接顯示英文答案。";
+        els.feedback.textContent = "先自己試做一次，卡住的話再按這裡看答案。";
         return;
       }
 
@@ -4030,6 +4291,10 @@
       selectedTense = data.tense;
       selectedVoice = data.voice;
       builtPieces = data.answerPieces.map((piece) => piece.id);
+      phraseWordBuilds = {};
+      data.answerPieces.forEach((piece) => {
+        phraseWordBuilds[piece.id] = pieceWordTokens(piece).map((token) => token.id);
+      });
       stage = 4;
       revealed = true;
       analysisMessage = {
@@ -4070,15 +4335,21 @@
       } else if (stage === 3) {
         els.promptTitle.textContent = "第三階段：時態與主被動";
         els.promptBody.textContent = "先確認時態，再確認主動或被動；兩者都正確後才會解鎖英文組句。";
+      } else if (practiceMode === "advanced" && !isPhraseStageDone(data)) {
+        els.promptTitle.textContent = "第四階段：片語組字";
+        els.promptBody.textContent = "先把每個較長片語的單字排成正確順序，全部完成後才解鎖整句組句。";
       } else {
-        els.promptTitle.textContent = "第四階段：英文組句";
-        els.promptBody.textContent = "時態與主被動都正確後，把英文片段排成完整句子。";
+        els.promptTitle.textContent = practiceMode === "advanced" ? "第五階段：英文組句" : "第四階段：英文組句";
+        els.promptBody.textContent = "把英文片段排成完整句子。";
       }
+
+      els.modeButton.textContent = practiceMode === "advanced" ? "進階模式：開" : "進階模式：關";
 
       renderHighlightStage(data);
       renderStageBridge();
       renderStageOne(data);
       renderStageTwo(data);
+      renderPhraseStage(data);
       renderStageThree(data);
       renderAnalysis();
       renderLearningPanel(data);
@@ -4207,8 +4478,9 @@
       render();
     }
 
-    function renderSubclauses(data) {
-      const subclauses = data.subclauses || [];
+    function renderSubclauses(data, position = "after-core") {
+      // 子句包預設渲染在主幹之後；設 position: "before-core" 則放在句首導入與主幹之間（適合修飾句首名詞的形容詞子句）。
+      const subclauses = (data.subclauses || []).filter((clause) => (clause.position || "after-core") === position);
       if (!subclauses.length) return "";
       return `
           <div>
@@ -4239,6 +4511,7 @@
       const bank = data.bankOrder.map((id) => tokenById(id));
       const placedIds = Object.values(placements);
       const leadSlots = detailGroupSlots(data, "lead");
+      const leadSlotSet = new Set(leadSlots);
       const boundSlots = detailGroupSlots(data, "bound");
       const supplementalSlots = detailGroupSlots(data, "supplemental");
       const coreGroups = data.coreGroups || [{ id: "main", label: "主幹", slots: ["subject", "verb", "object"] }];
@@ -4258,20 +4531,30 @@
           ${leadSlots.length ? `
           <div>
             <p class="line-label">${leadLabel}</p>
-            <div class="detail-lane">
+            <div class="detail-lane lead-lane">
               ${leadSlots.map((slot) => renderSlot(slot)).join("")}
             </div>
           </div>
           ` : ""}
-          ${coreGroups.map((group) => `
+          ${renderSubclauses(data, "before-core")}
+          ${coreGroups.map((group) => {
+            const connectors = data.details.filter((detail) => detail.group === "connector" && detail.beforeClause === group.id);
+            const connectorMarkup = connectors.length ? `
+          <div>
+            <p class="line-label">子句連接（連接詞）</p>
+            <div class="detail-lane connector-lane">
+              ${connectors.map((detail) => renderSlot(detail.slot)).join("")}
+            </div>
+          </div>` : "";
+            return `${connectorMarkup}
           <div>
             <p class="line-label">${group.label}</p>
             <div class="structure-lane">
               ${group.slots.map((slot) => renderSlot(slot)).join("")}
             </div>
-          </div>
-          `).join("")}
-          ${renderSubclauses(data)}
+          </div>`;
+          }).join("")}
+          ${renderSubclauses(data, "after-core")}
           <div>
             <p class="line-label">黏著修飾（adj / adv）</p>
             <div class="detail-lane">
@@ -4290,7 +4573,7 @@
           <div class="token-bank">
             ${bank.map((token) => `
               <button
-                class="token ${token.role} ${selectedTokenId === token.id ? "selected" : ""} ${placedIds.includes(token.id) ? "used" : ""}"
+                class="token ${token.role} ${leadSlotSet.has(token.slot) ? "lead" : ""} ${selectedTokenId === token.id ? "selected" : ""} ${placedIds.includes(token.id) ? "used" : ""}"
                 draggable="${!locked && !structureLocked && !placedIds.includes(token.id)}"
                 data-token-id="${token.id}"
                 ${locked || structureLocked ? "disabled" : ""}
@@ -4407,9 +4690,86 @@
       });
     }
 
-    function renderStageThree(data) {
+    function renderPhraseStage(data) {
+      const advanced = practiceMode === "advanced";
+      els.stagePhrase.hidden = !advanced;
+      if (!advanced) {
+        els.stagePhrase.innerHTML = "";
+        return;
+      }
+
       const locked = !isDecisionDone();
+      els.stagePhrase.classList.toggle("locked", locked);
+      setPanelInteraction(els.stagePhrase, !locked);
+
+      const glossary = getGlossary(data);
+      const pieces = buildablePieces(data);
+      if (!pieces.length) {
+        els.stagePhrase.innerHTML = `
+          <div class="stage-heading">
+            <div>
+              <h3>4. 片語組字（進階）</h3>
+              <p>這題沒有需要逐字重組的長片語，可直接進入英文組句。</p>
+            </div>
+            <span class="stage-badge">略過</span>
+          </div>
+        `;
+        return;
+      }
+
+      const rows = pieces.map((piece) => {
+        if (isPieceBuilt(piece)) {
+          return `
+            <div class="answer-box">
+              <span>片語完成</span>
+              <strong>${glossifyText(piece.text, glossary)}</strong>
+            </div>
+          `;
+        }
+        const tokens = pieceWordTokens(piece);
+        const placed = phraseWordBuilds[piece.id] || [];
+        const usedIds = new Set(placed);
+        const scrambled = seededShuffle(tokens, `${data.id}:${piece.id}`);
+        return `
+          <div class="builder-box">
+            <p class="line-label">把這 ${tokens.length} 個字排成正確片語</p>
+            <div class="built-line">
+              ${placed.length === 0
+                ? `<span class="built-placeholder">點選下方單字，依序組成片語。</span>`
+                : placed.map((id) => `<button class="token" data-word-remove="${id}" type="button">${glossifyText(wordTextById(piece, id), glossary)}</button>`).join("")}
+            </div>
+            <div class="sentence-bank">
+              ${scrambled.map((token) => `<button class="token ${usedIds.has(token.id) ? "used" : ""}" data-word-add="${token.id}" type="button">${glossifyText(token.text, glossary)}</button>`).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      els.stagePhrase.innerHTML = `
+        <div class="stage-heading">
+          <div>
+            <h3>4. 片語組字（進階）</h3>
+            <p>先把每個較長片語的單字排成正確順序，全部完成後才解鎖英文組句。</p>
+          </div>
+          <span class="stage-badge">${isPhraseStageDone(data) ? "完成" : locked ? "未解鎖" : "作答中"}</span>
+        </div>
+        ${rows}
+      `;
+
+      if (locked) return;
+      els.stagePhrase.querySelectorAll("[data-word-add]").forEach((button) => {
+        button.addEventListener("click", () => addPhraseWord(button.dataset.wordAdd));
+      });
+      els.stagePhrase.querySelectorAll("[data-word-remove]").forEach((button) => {
+        button.addEventListener("click", () => removePhraseWord(button.dataset.wordRemove));
+      });
+      bindGloss(els.stagePhrase);
+    }
+
+    function renderStageThree(data) {
+      const locked = !isDecisionDone() || (practiceMode === "advanced" && !isPhraseStageDone(data));
       const used = new Set(builtPieces);
+      const glossary = getGlossary(data);
       const answerById = Object.fromEntries(data.answerPieces.map((piece) => [piece.id, piece]));
 
       els.stageThree.classList.toggle("locked", locked);
@@ -4417,8 +4777,8 @@
       els.stageThree.innerHTML = `
         <div class="stage-heading">
           <div>
-            <h3>4. 英文組句</h3>
-            <p>時態與主被動都正確後，才開始排列英文片段。</p>
+            <h3>${practiceMode === "advanced" ? "5" : "4"}. 英文組句</h3>
+            <p>${practiceMode === "advanced" ? "每個片語都組好後，再把片語排成完整句子。" : "時態與主被動都正確後，才開始排列英文片段。"}</p>
           </div>
           <span class="stage-badge">${isSentenceDone() ? "完成" : locked ? "未解鎖" : "作答中"}</span>
         </div>
@@ -4426,13 +4786,13 @@
           <p class="line-label">英文組句區</p>
           <div class="built-line">
             ${builtPieces.length === 0 ? `<span class="built-placeholder">從下方點選英文片段，依序組成句子。</span>` : builtPieces.map((id) => `
-              <button class="token" data-built-id="${id}" type="button">${answerById[id].text}</button>
+              <button class="token" data-built-id="${id}" type="button">${glossifyText(answerById[id].text, glossary)}</button>
             `).join("")}
           </div>
           <div class="sentence-bank">
             ${data.pieceOrder.map((id) => {
               const piece = answerById[id];
-              return `<button class="token ${used.has(id) ? "used" : ""}" data-piece-id="${id}" type="button">${piece.text}</button>`;
+              return `<button class="token ${used.has(id) ? "used" : ""}" data-piece-id="${id}" type="button">${glossifyText(piece.text, glossary)}</button>`;
             }).join("")}
           </div>
           <div class="top-actions">
@@ -4443,7 +4803,7 @@
         ${revealed ? `
           <div class="answer-box">
             <span>英文答案</span>
-            <strong>${data.answer}</strong>
+            <strong>${glossifyText(data.answer, glossary)}</strong>
             <span>${data.summary}</span>
           </div>
         ` : ""}
@@ -4458,6 +4818,7 @@
       });
       document.getElementById("clearSentenceButton").addEventListener("click", clearBuiltPieces);
       document.getElementById("checkSentenceButton").addEventListener("click", checkSentence);
+      bindGloss(els.stageThree);
     }
 
     function renderAnalysis() {
@@ -4518,6 +4879,245 @@
         .replaceAll("'", "&#039;");
     }
 
+    function normalizeGlossKey(text) {
+      return String(text)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s'-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    // 學生一定會的功能字（冠詞、代名詞、介系詞、be 動詞、助動詞等）不標記，避免整句都是底線。
+    const GLOSS_STOPWORDS = new Set([
+      "a", "an", "the", "and", "but", "or", "nor", "so", "yet", "although", "though",
+      "because", "since", "if", "when", "while", "where", "as", "than", "that", "whether",
+      "however", "therefore", "thus", "then", "i", "you", "he", "she", "it", "we", "they",
+      "me", "him", "her", "us", "them", "my", "your", "his", "its", "our", "their", "this",
+      "these", "those", "who", "whom", "whose", "which", "what", "myself", "yourself",
+      "himself", "herself", "itself", "ourselves", "themselves", "of", "to", "in", "on",
+      "at", "by", "for", "from", "with", "into", "onto", "over", "under", "above", "below",
+      "behind", "through", "throughout", "during", "before", "after", "against", "about",
+      "between", "among", "within", "without", "is", "am", "are", "was", "were", "be",
+      "been", "being", "do", "does", "did", "have", "has", "had", "will", "would", "shall",
+      "should", "can", "could", "may", "might", "must", "not", "no", "all", "any", "some",
+      "many", "much", "more", "most", "both", "each", "every", "few", "little", "very",
+      "too", "also", "just", "only", "even", "ever", "never", "always", "often",
+      "sometimes", "usually", "now", "once", "again", "still", "already", "here", "there",
+      "well", "up", "down", "out", "off", "one", "own", "please", "like", "how", "next",
+      "today", "new", "good", "get"
+    ]);
+
+    // 全域單字表：涵蓋所有題目英文答案用到的實詞，讓沒被固定片語吃掉的單字也能各自查中文。
+    const WORD_GLOSS = {
+      ability: "能力", able: "能夠的", accidents: "事故、意外", according: "根據",
+      accustomed: "習慣於…的", achievable: "可達成的", acquire: "取得、習得",
+      activities: "活動", activity: "活動", addition: "增加；（in addition）此外",
+      advancement: "進步、進展", animals: "動物", answers: "答案；回答", app: "應用程式",
+      appeared: "出現（過去式）", approaches: "方法；接近", areas: "地區、領域",
+      attract: "吸引", attractions: "景點、吸引人的事物", avoiding: "避免",
+      become: "變成", becoming: "變成", beneficial: "有益的", bicycles: "腳踏車",
+      blind: "失明的、盲的", books: "書", born: "出生", borrow: "借（入）", bring: "帶來",
+      business: "商業、生意", care: "照顧；在乎", causes: "造成；原因", causing: "造成",
+      certain: "某些；確定的", challenges: "挑戰", challenging: "有挑戰性的",
+      changing: "改變", children: "孩子、兒童", choice: "選擇", city: "城市",
+      class: "課堂、班級", cleaned: "清理（過去式）", climbers: "登山者",
+      commitment: "承諾、投入", committee: "委員會", common: "常見的、共同的",
+      company: "公司", compared: "比較", completed: "完成", conducting: "進行、舉辦",
+      conflict: "衝突", conquering: "征服", consider: "考慮、認為", considered: "考慮、認為",
+      convenient: "方便的", cope: "應付、處理", countries: "國家", country: "國家",
+      covered: "覆蓋", creativity: "創意", cultivate: "培養", culture: "文化",
+      customs: "習俗；海關", cycling: "騎自行車", data: "資料、數據", deaf: "聾的",
+      demonstrate: "示範、證明", determination: "決心", development: "發展",
+      different: "不同的", disasters: "災難", discouraged: "氣餒的", discussed: "討論",
+      divide: "分開、分成", domestically: "在國內", door: "門", dreadful: "可怕的",
+      driving: "駕駛；驅動", effectively: "有效地", efficiency: "效率", effort: "努力",
+      election: "選舉", emphasize: "強調", encourage: "鼓勵", enforced: "執行、強制實施",
+      english: "英語", enhance: "提升、增強", enjoy: "享受、喜歡", enjoying: "享受",
+      ensure: "確保", ensuring: "確保", entire: "整個的", expect: "期待、預期",
+      experience: "經驗、體驗", explore: "探索", extremely: "極度地", facing: "面對",
+      fact: "事實", fascinated: "著迷的", fastest: "最快的", favorable: "有利的、贊同的",
+      feel: "感覺", filmed: "拍攝", films: "電影", food: "食物", forces: "力量；強迫",
+      freedom: "自由", friends: "朋友", gained: "獲得", generation: "世代", go: "去",
+      goal: "目標", goals: "目標", government: "政府", greatest: "最大的、最偉大的",
+      groups: "群組、組別", happiness: "快樂、幸福", happy: "快樂的",
+      hard: "努力地；困難的", healthier: "更健康的", high: "高的", "high-paying": "高薪的",
+      "high-speed": "高速的", history: "歷史", hobby: "嗜好", hometowns: "家鄉",
+      hope: "希望", human: "人類的", humanity: "人性；人類", "humanity's": "人類的",
+      imagination: "想像力", impact: "影響、衝擊", increased: "增加", increasingly: "越來越",
+      independently: "獨立地", indoors: "在室內", instrument: "樂器；儀器",
+      international: "國際的", internationally: "在國際上", introducing: "介紹、引進",
+      items: "物品、項目", jade: "玉", jobs: "工作", joy: "喜悅", keeping: "保持",
+      knowledge: "知識", launch: "發射；推出", learn: "學習", library: "圖書館",
+      life: "生活、生命", lifelong: "終身的", lifetime: "一生", limited: "有限的",
+      listening: "聆聽", live: "居住；現場的", lives: "生命（複）；居住",
+      living: "生活；居住", local: "當地的", locations: "地點", long: "長的", lose: "失去",
+      magical: "神奇的", main: "主要的", making: "製作；使", markets: "市場",
+      means: "意味著；方法", meet: "遇見；滿足", meeting: "會議", million: "百萬",
+      month: "月", morning: "早晨", mountain: "山", move: "移動、搬家", movies: "電影",
+      music: "音樂", musical: "音樂的", mysteries: "謎、奧秘", naturally: "自然地",
+      necessary: "必要的", needs: "需要", neglect: "忽視", news: "新聞", night: "夜晚",
+      noon: "中午", notes: "筆記；音符", nowadays: "現今", open: "開；開放的",
+      operation: "運作；手術", options: "選項", organic: "有機的", others: "其他人",
+      park: "公園", "parents'": "父母的", past: "過去的；經過", peace: "和平", peer: "同儕",
+      people: "人們", "people's": "人們的", percentage: "百分比", pet: "寵物", pets: "寵物",
+      place: "地方；放置", play: "玩；演奏", policies: "政策", politicians: "政治人物",
+      popular: "受歡迎的", praying: "祈禱", prepare: "準備", preferred: "偏好的",
+      pressure: "壓力", prices: "價格", primarily: "主要地", principles: "原則",
+      prioritize: "優先處理", problem: "問題", problems: "問題", produced: "生產、製作",
+      profits: "利潤", prosperity: "繁榮", proves: "證明", provide: "提供",
+      public: "公共的；大眾", quickly: "快速地", quit: "戒除、放棄", rail: "鐵路",
+      rapid: "快速的", rapidly: "快速地", reading: "閱讀", reality: "現實", recent: "最近的",
+      recognition: "認可、認出", recreational: "休閒的", regulations: "規定、法規",
+      renowned: "著名的", repeatedly: "反覆地", report: "報告", reports: "報告",
+      representative: "代表", respect: "尊重", responsibility: "責任", results: "結果",
+      return: "返回；歸還", reviewed: "檢視、複習", road: "道路", safe: "安全的",
+      safety: "安全", school: "學校", "sci-fi": "科幻", season: "季節", see: "看見",
+      senior: "高年級的；資深的", serious: "嚴重的；認真的", severe: "嚴重的；嚴厲的",
+      shimmer: "微光、閃爍", "short-term": "短期的", snow: "雪", social: "社會的",
+      society: "社會", solving: "解決", space: "太空；空間", speaking: "說話",
+      standard: "標準", start: "開始", stay: "停留", story: "故事", strictly: "嚴格地",
+      strive: "努力、奮鬥", student: "學生", students: "學生", studying: "研讀、學習",
+      succeeded: "成功", success: "成功", successful: "成功的", summit: "山頂；高峰會",
+      super: "超級的", taiwan: "台灣", "taiwan's": "台灣的", take: "拿、採取",
+      teachers: "老師", team: "團隊", technological: "科技的", technology: "科技",
+      temples: "寺廟", thick: "厚的、濃的", things: "事物", think: "認為、想",
+      thousands: "數千", time: "時間", "today's": "現今的、今天的", tourist: "觀光的",
+      tourists: "觀光客", traffic: "交通", transportation: "運輸、交通", travel: "旅行",
+      truly: "真正地", typhoon: "颱風", typhoons: "颱風", undoubtedly: "無疑地",
+      uphold: "維護、支持", urban: "都市的", used: "使用；習慣於", users: "使用者",
+      using: "使用", variety: "多樣；種類", vegetables: "蔬菜", visiting: "拜訪、參觀",
+      volunteers: "志工", war: "戰爭", workplace: "職場", world: "世界",
+      worldwide: "全世界的", wrote: "寫（過去式）", year: "年", years: "年", young: "年輕的"
+    };
+
+    // 由本題的固定片語與單字表，建立「英文 → 中文」查詢表（長片語優先比對）。
+    function getGlossary(data) {
+      if (data.__glossary) return data.__glossary;
+      const map = new Map();
+      const add = (entry) => {
+        if (!entry || !entry.text) return;
+        const key = normalizeGlossKey(entry.text);
+        if (!key || map.has(key)) return;
+        map.set(key, { en: entry.text, zh: entry.meaning || "", note: entry.note || "" });
+      };
+      (data.phraseNotes || []).forEach(add);
+      (data.vocabulary || []).forEach(add);
+      const entries = [...map.entries()]
+        .map(([key, value]) => ({ words: key.split(" "), value }))
+        .sort((a, b) => b.words.length - a.words.length);
+      data.__glossary = entries;
+      return entries;
+    }
+
+    function glossSpan(display, en, zh, note) {
+      return `<span class="glossable" data-gloss-en="${escapeHtml(en)}" data-gloss-zh="${escapeHtml(zh)}" data-gloss-note="${escapeHtml(note || "")}">${escapeHtml(display)}</span>`;
+    }
+
+    // 掃描英文字串：先比對本題的固定片語（長片語優先、整塊呈現），其餘單字再用全域單字表逐字補上。
+    function glossifyText(text, glossary) {
+      const raw = String(text);
+      const chunks = raw.split(" ");
+      const clean = chunks.map((chunk) => chunk.toLowerCase().replace(/[^a-z0-9'-]/g, ""));
+      const out = [];
+      let i = 0;
+      while (i < chunks.length) {
+        let match = null;
+        if (glossary && glossary.length) {
+          for (const entry of glossary) {
+            const len = entry.words.length;
+            if (i + len > chunks.length) continue;
+            let ok = true;
+            for (let j = 0; j < len; j++) {
+              if (clean[i + j] !== entry.words[j]) { ok = false; break; }
+            }
+            if (ok) { match = { entry, len }; break; }
+          }
+        }
+        if (match) {
+          const segment = chunks.slice(i, i + match.len).join(" ");
+          const value = match.entry.value;
+          out.push(glossSpan(segment, value.en, value.zh, value.note));
+          i += match.len;
+          continue;
+        }
+        const word = clean[i];
+        const zh = word && !GLOSS_STOPWORDS.has(word) ? WORD_GLOSS[word] : null;
+        if (zh) {
+          out.push(glossSpan(chunks[i], word, zh, ""));
+        } else {
+          out.push(escapeHtml(chunks[i]));
+        }
+        i += 1;
+      }
+      return out.join(" ");
+    }
+
+    const glossTip = (() => {
+      let tip = null;
+      function ensure() {
+        if (!tip) {
+          tip = document.createElement("div");
+          tip.className = "gloss-tip";
+          tip.hidden = true;
+          document.body.appendChild(tip);
+        }
+        return tip;
+      }
+      function show(target) {
+        const el = ensure();
+        const note = target.dataset.glossNote || "";
+        el.innerHTML = `
+          <span class="gloss-en">${escapeHtml(target.dataset.glossEn || "")}</span>
+          <span class="gloss-zh">${escapeHtml(target.dataset.glossZh || "")}</span>
+          ${note ? `<span class="gloss-note">${escapeHtml(note)}</span>` : ""}
+        `;
+        el.hidden = false;
+        const rect = target.getBoundingClientRect();
+        const tipRect = el.getBoundingClientRect();
+        const maxLeft = window.scrollX + document.documentElement.clientWidth - tipRect.width - 8;
+        let left = window.scrollX + rect.left + rect.width / 2 - tipRect.width / 2;
+        left = Math.max(window.scrollX + 8, Math.min(left, maxLeft));
+        let top = window.scrollY + rect.top - tipRect.height - 8;
+        if (top < window.scrollY + 4) top = window.scrollY + rect.bottom + 8;
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
+      }
+      function hide() {
+        if (tip) tip.hidden = true;
+      }
+      return { show, hide };
+    })();
+
+    window.addEventListener("scroll", () => glossTip.hide(), { passive: true });
+    window.addEventListener("resize", () => glossTip.hide());
+
+    // 桌機 hover 顯示翻譯；手機長按顯示（短按仍維持 token 原本的「放進句子」動作）。
+    function bindGloss(container) {
+      if (!container) return;
+      container.querySelectorAll(".glossable").forEach((span) => {
+        span.addEventListener("mouseenter", () => glossTip.show(span));
+        span.addEventListener("mouseleave", () => glossTip.hide());
+        let timer = null;
+        let longPress = false;
+        span.addEventListener("touchstart", () => {
+          longPress = false;
+          timer = window.setTimeout(() => {
+            longPress = true;
+            glossTip.show(span);
+          }, 350);
+        }, { passive: true });
+        span.addEventListener("touchmove", () => window.clearTimeout(timer), { passive: true });
+        span.addEventListener("touchend", (event) => {
+          window.clearTimeout(timer);
+          if (longPress) {
+            event.preventDefault();
+            event.stopPropagation();
+            window.setTimeout(() => glossTip.hide(), 1600);
+          }
+        });
+      });
+    }
+
     function generateAiAnswer(rawQuestion, data) {
       const query = rawQuestion.trim().toLowerCase();
       const phrases = data.phraseNotes.map((item) => `${item.text}：${item.meaning}`).join("；");
@@ -4535,9 +5135,9 @@
 
     function renderRewardPanel(data) {
       if (!revealed) {
-        els.hintText.innerHTML = `
-          <p>答題完成後，這裡會解鎖本題關鍵、固定片語、可替換單字與 AI 小老師問答。</p>
-        `;
+        els.hintText.innerHTML = hintMessage
+          ? `<p>${escapeHtml(hintMessage)}</p>`
+          : `<p>答題完成後，這裡會解鎖本題關鍵、固定片語、可替換單字與 AI 小老師問答。</p>`;
         return;
       }
 
@@ -4635,28 +5235,10 @@
       return b - a;
     }
 
-    els.hintButton.addEventListener("click", () => {
-      const data = question();
-      shakeCurrentStage();
-      if (revealed) {
-        renderRewardPanel(data);
-      } else if (stage === 1) {
-        els.hintText.textContent = "主詞、動詞、受詞是句子主幹；時間、地點、執行者、狀態放到細節列。";
-      } else if (stage === 2) {
-        els.hintText.textContent = `看中文線索：${data.details.map((detail) => detail.text).join("、")}。先判斷時態，再判斷英文句首是執行者還是承受者。`;
-      } else {
-        els.hintText.textContent = "英文組句先決定句首，再放時態對應的動詞結構，最後放受詞或 by-phrase 與時間地點。";
-      }
-
-      if (!revealed) {
-        els.feedback.className = "feedback";
-        els.feedback.textContent = "提示會協助你完成作答；請依照正在震動的階段繼續完成本題。";
-      }
-    });
-
     els.authButton.addEventListener("click", toggleGoogleSignIn);
     els.resetButton.addEventListener("click", resetQuestion);
     els.revealButton.addEventListener("click", revealAll);
+    els.modeButton.addEventListener("click", togglePracticeMode);
 
     let firebaseProgressSyncedUid = null;
 
