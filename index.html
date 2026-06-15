@@ -1,0 +1,5286 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>歷屆試題句構練習 Demo</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d8dee9;
+      --line-strong: #b8c2d3;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --red: #dc2626;
+      --red-soft: #fee2e2;
+      --green: #16a34a;
+      --green-soft: #dcfce7;
+      --amber: #d97706;
+      --amber-soft: #fef3c7;
+      --cyan: #0891b2;
+      --cyan-soft: #cffafe;
+      --violet: #7c3aed;
+      --violet-soft: #ede9fe;
+      --shadow: 0 10px 26px rgba(15, 23, 42, .07);
+      --small-shadow: 0 1px 2px rgba(15, 23, 42, .08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+      line-height: 1.5;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      height: 100vh;
+      min-height: 100vh;
+      padding: 18px;
+      background: #111827;
+      color: #f8fafc;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto auto;
+      gap: 18px;
+      position: sticky;
+      top: 0;
+      overflow: hidden;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 0;
+    }
+
+    .brand p,
+    .sidebar-note {
+      margin: 6px 0 0;
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    .sidebar-note {
+      align-self: end;
+    }
+
+    .score-card {
+      border: 1px solid rgba(255, 255, 255, .14);
+      background: rgba(255, 255, 255, .06);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    .score-value {
+      font-weight: 700;
+      color: #93c5fd;
+    }
+
+    .progress-track {
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 12px;
+      background: rgba(255, 255, 255, .14);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      background: #38bdf8;
+      transition: width .2s ease;
+    }
+
+    .section-label {
+      margin: 0 0 10px;
+      color: #94a3b8;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .workspace {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .workspace-head {
+      background: rgba(255, 255, 255, .92);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(8px);
+    }
+
+    .topbar {
+      min-height: 70px;
+      padding: 14px 22px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .top-mode {
+      display: flex;
+      justify-content: center;
+    }
+
+    @keyframes attention-shake {
+      0%, 100% {
+        transform: translateX(0);
+      }
+
+      20% {
+        transform: translateX(-8px);
+      }
+
+      40% {
+        transform: translateX(7px);
+      }
+
+      60% {
+        transform: translateX(-5px);
+      }
+
+      80% {
+        transform: translateX(4px);
+      }
+    }
+
+    .lesson-title h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    .lesson-title p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .auth-status {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .auth-status.connected {
+      color: #027a48;
+      font-weight: 700;
+    }
+
+    .btn {
+      min-height: 36px;
+      border-radius: 7px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #344054;
+      box-shadow: var(--small-shadow);
+    }
+
+    .btn:hover {
+      border-color: #9aa8bd;
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: .54;
+      box-shadow: none;
+    }
+
+    .btn.primary {
+      color: #fff;
+      border-color: var(--blue);
+      background: var(--blue);
+    }
+
+    .btn.warning {
+      color: #92400e;
+      border-color: #fbbf24;
+      background: #fef3c7;
+    }
+
+    .btn.warning:hover {
+      border-color: #f59e0b;
+      background: #fde68a;
+    }
+
+    .btn.ghost {
+      background: #f8fafc;
+      box-shadow: none;
+    }
+
+    .auth-button.signed-in {
+      width: 38px;
+      min-width: 38px;
+      height: 38px;
+      min-height: 38px;
+      padding: 0;
+      border-radius: 999px;
+      overflow: hidden;
+      border-color: #86efac;
+      background: #ecfdf3;
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, .12);
+    }
+
+    .auth-avatar-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .auth-avatar-fallback {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: #027a48;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .main {
+      padding: 22px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .main-stack,
+    .aside-stack {
+      min-width: 0;
+      display: grid;
+      gap: 18px;
+    }
+
+    .aside-stack {
+      position: sticky;
+      top: 188px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .practice-panel {
+      padding: 20px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .prompt {
+      border: 1px solid #fdba74;
+      background: #fff7ed;
+      color: #9a3412;
+      border-radius: 8px;
+      padding: 14px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .prompt strong {
+      font-size: 17px;
+    }
+
+    .prompt span {
+      font-size: 14px;
+    }
+
+    .chinese-question {
+      border: 1px solid #cfd7e6;
+      border-radius: 8px;
+      background: #fff;
+      padding: 18px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .workspace-head .chinese-question {
+      margin: 0 22px 14px;
+      padding: 12px 14px 12px 16px;
+      border-color: #fdba74;
+      border-left: 5px solid #f97316;
+      background: #fff7ed;
+      box-shadow: none;
+    }
+
+    .workspace-head .chinese-question h3 {
+      color: #7c2d12;
+      font-size: 20px;
+    }
+
+    .workspace-head .question-label {
+      color: #c2410c;
+      font-weight: 700;
+    }
+
+    .question-label,
+    .line-label {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .chinese-question h3 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      min-height: 22px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 8px;
+      border-radius: 999px;
+      background: #eef2f7;
+      color: #475467;
+      font-size: 12px;
+    }
+
+    .stage-panel {
+      border: 1px solid #e4e9f2;
+      border-radius: 8px;
+      background: #fbfcfe;
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .stage-panel.shake,
+    .prompt.shake {
+      animation: attention-shake .36s ease-in-out;
+    }
+
+    .stage-bridge[hidden],
+    .prompt[hidden],
+    .stage-panel[hidden],
+    .analysis-box[hidden] {
+      display: none;
+    }
+
+    .stage-heading {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .stage-heading h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .stage-heading p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .stage-badge {
+      flex: 0 0 auto;
+      min-height: 26px;
+      display: inline-flex;
+      align-items: center;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .highlighter-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .marker-button {
+      min-height: 38px;
+      border: 1px solid var(--line);
+      border-bottom-width: 3px;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 7px 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 700;
+    }
+
+    .marker-button::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--marker-color, #e5e7eb);
+      border: 1px solid rgba(16, 24, 40, .12);
+    }
+
+    .marker-button.active {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    .marker-button.erase-tool {
+      margin-left: auto;
+      border-style: dashed;
+      color: #475467;
+      background: #f8fafc;
+    }
+
+    .marker-button.erase-tool.active {
+      border-color: #64748b;
+      box-shadow: 0 0 0 3px rgba(100, 116, 139, .12);
+    }
+
+    .highlight-surface {
+      border: 1px solid #e4e9f2;
+      border-radius: 8px;
+      background: #fff;
+      padding: 14px;
+      line-height: 2.2;
+      font-size: 22px;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .highlight-char {
+      min-width: 1.25em;
+      min-height: 1.55em;
+      border: 0;
+      border-radius: 5px;
+      background: transparent;
+      color: var(--ink);
+      padding: 0 2px;
+      font: inherit;
+      vertical-align: baseline;
+      cursor: crosshair;
+    }
+
+    .highlight-char:hover {
+      background: #eef2f7;
+    }
+
+    .highlight-char.subject {
+      background: rgba(37, 99, 235, .2);
+      box-shadow: inset 0 -3px 0 rgba(37, 99, 235, .6);
+    }
+
+    .highlight-char.verb {
+      background: rgba(220, 38, 38, .18);
+      box-shadow: inset 0 -3px 0 rgba(220, 38, 38, .55);
+    }
+
+    .highlight-char.object {
+      background: rgba(22, 163, 74, .18);
+      box-shadow: inset 0 -3px 0 rgba(22, 163, 74, .55);
+    }
+
+    .highlight-char.connector {
+      background: rgba(124, 58, 237, .16);
+      box-shadow: inset 0 -3px 0 rgba(124, 58, 237, .5);
+    }
+
+    .highlight-char.bound {
+      background: rgba(245, 158, 11, .2);
+      box-shadow: inset 0 -3px 0 rgba(245, 158, 11, .58);
+    }
+
+    .highlight-char.detail {
+      background: rgba(14, 165, 233, .18);
+      box-shadow: inset 0 -3px 0 rgba(14, 165, 233, .52);
+    }
+
+    .highlight-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .structure-board {
+      display: grid;
+      gap: 10px;
+    }
+
+    .structure-lane {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .detail-lane {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .lane-empty {
+      min-height: 54px;
+      border: 1px dashed #d8dee9;
+      border-radius: 8px;
+      background: #f8fafc;
+      color: #667085;
+      padding: 14px;
+      font-size: 13px;
+      display: grid;
+      align-content: center;
+    }
+
+    .clause-lane {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+    }
+
+    .clause-card {
+      min-height: 92px;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+      background: #fff7ed;
+      padding: 12px;
+      display: grid;
+      gap: 7px;
+      align-content: start;
+    }
+
+    .clause-card strong {
+      color: #9a3412;
+      font-size: 14px;
+    }
+
+    .clause-card span {
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .clause-meta {
+      color: #667085;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .slot {
+      min-height: 96px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 8px;
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 8px;
+      text-align: left;
+      transition: border-color .12s, background .12s, box-shadow .12s;
+    }
+
+    .slot:hover,
+    .slot.drag-over {
+      border-color: var(--blue);
+      background: #eff6ff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .1);
+    }
+
+    .slot.shake {
+      border-color: var(--red);
+      background: #fff1f2;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, .14);
+      animation: slot-shake .34s ease-in-out;
+    }
+
+    @keyframes slot-shake {
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      20%,
+      60% {
+        transform: translateX(-7px);
+      }
+
+      40%,
+      80% {
+        transform: translateX(7px);
+      }
+    }
+
+    .slot-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .slot-content {
+      min-height: 36px;
+      display: grid;
+      align-content: center;
+      color: #98a2b3;
+      font-size: 14px;
+    }
+
+    .slot.filled {
+      border-style: solid;
+    }
+
+    .slot.filled .slot-content {
+      color: var(--ink);
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .token-bank,
+    .sentence-bank,
+    .built-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .token {
+      min-height: 42px;
+      border: 1px solid #cfd7e6;
+      border-bottom-width: 3px;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: var(--small-shadow);
+      transition: transform .12s, border-color .12s, background .12s;
+    }
+
+    .token:hover {
+      transform: translateY(-1px);
+      border-color: #93c5fd;
+    }
+
+    .token.selected {
+      border-color: var(--blue);
+      background: var(--blue-soft);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+    }
+
+    .token.used {
+      opacity: .42;
+      pointer-events: none;
+    }
+
+    .token.subject,
+    .slot.subject.filled {
+      background: var(--blue-soft);
+      border-color: var(--blue);
+    }
+
+    .token.verb,
+    .slot.verb.filled {
+      background: var(--red-soft);
+      border-color: var(--red);
+    }
+
+    .token.object,
+    .slot.object.filled {
+      background: var(--green-soft);
+      border-color: var(--green);
+    }
+
+    .token.detail,
+    .slot.detail.filled {
+      background: var(--amber-soft);
+      border-color: var(--amber);
+    }
+
+    /* 句首導入 / 全句框架：用橘色，和補充細節的琥珀色區隔 */
+    .token.lead,
+    .slot.lead.filled,
+    .lead-lane .slot.filled {
+      background: #ffedd5;
+      border-color: #f97316;
+    }
+
+    /* 子句連接（連接詞）：用紫色，放在子句之間 */
+    .token.connector,
+    .slot.connector.filled,
+    .connector-lane .slot.filled {
+      background: var(--violet-soft);
+      border-color: var(--violet);
+    }
+
+    .tense-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .tense-card,
+    .choice-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      gap: 3px;
+      text-align: left;
+      box-shadow: var(--small-shadow);
+    }
+
+    .tense-card strong,
+    .choice-card strong {
+      font-size: 15px;
+    }
+
+    .tense-card span,
+    .choice-card span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .tense-card:hover,
+    .choice-card:hover {
+      border-color: #93c5fd;
+    }
+
+    .tense-card.selected,
+    .choice-card.selected {
+      border-color: var(--blue);
+      background: #eff6ff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    .tense-card.wrong,
+    .choice-card.wrong {
+      border-color: var(--red);
+      background: #fff1f2;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, .12);
+    }
+
+    .decision-guide {
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      padding: 12px 14px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .decision-guide.error {
+      border-color: #fecaca;
+      background: #fff7f7;
+      color: #991b1b;
+    }
+
+    .decision-guide strong {
+      font-size: 15px;
+    }
+
+    .decision-guide span {
+      color: inherit;
+      font-size: 14px;
+    }
+
+    .choice-row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .builder-box {
+      border: 1px solid #e4e9f2;
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .built-line {
+      min-height: 56px;
+      padding: 8px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+
+    .built-placeholder {
+      color: #98a2b3;
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      font-size: 14px;
+    }
+
+    .answer-box {
+      border: 1px solid #abefc6;
+      border-radius: 8px;
+      background: #ecfdf3;
+      color: #027a48;
+      padding: 14px;
+      display: grid;
+      gap: 7px;
+    }
+
+    .answer-box strong {
+      font-size: 18px;
+      color: #075e3d;
+    }
+
+    .analysis-box {
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      background: #f8fbff;
+      color: #344054;
+      padding: 14px;
+      display: grid;
+      gap: 5px;
+    }
+
+    .analysis-box.error {
+      border-color: #fecaca;
+      background: #fff7f7;
+      color: #991b1b;
+    }
+
+    .analysis-box.correct {
+      border-color: #abefc6;
+      background: #f0fdf4;
+      color: #027a48;
+    }
+
+    .analysis-box strong {
+      font-size: 15px;
+    }
+
+    .unlock-panel {
+      border: 1px solid #bae6fd;
+      background: #f0f9ff;
+    }
+
+    .learning-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .learning-card {
+      border: 1px solid #d8dee9;
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .learning-card h4 {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .learning-card ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #475467;
+      font-size: 14px;
+    }
+
+    .feedback {
+      min-height: 48px;
+      border-radius: 8px;
+      padding: 12px 14px;
+      border: 1px solid #dbeafe;
+      background: #f8fbff;
+      color: #344054;
+      display: flex;
+      align-items: center;
+    }
+
+    .feedback.correct {
+      border-color: #abefc6;
+      background: #ecfdf3;
+      color: #027a48;
+    }
+
+    .feedback.error {
+      border-color: #fecaca;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .question-drawer {
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    .drawer-header {
+      width: 100%;
+      min-height: 52px;
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .drawer-header strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .drawer-header span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .drawer-body {
+      max-height: calc(100vh - 170px);
+      min-height: 0;
+      overflow: auto;
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .sidebar .question-drawer {
+      min-height: 0;
+    }
+
+    .sidebar .drawer-body {
+      max-height: none;
+    }
+
+    .year-group {
+      display: grid;
+      gap: 8px;
+    }
+
+    .year-title {
+      margin: 0;
+      color: #344054;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .question-card {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 12px;
+      display: grid;
+      gap: 6px;
+      text-align: left;
+      box-shadow: var(--small-shadow);
+    }
+
+    .question-card.active {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    .question-card.completed {
+      border-color: #abefc6;
+      background: #f7fef9;
+    }
+
+    .question-card strong {
+      font-size: 14px;
+    }
+
+    .question-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .side-card {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .side-card h3 {
+      margin: 0;
+      font-size: 17px;
+    }
+
+    .hint-box {
+      border: 1px solid #e5eaf2;
+      border-radius: 8px;
+      background: #fbfcfe;
+      padding: 12px;
+      color: #344054;
+    }
+
+    .hint-box p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .reward-content {
+      display: grid;
+      gap: 10px;
+      color: #344054;
+      font-size: 14px;
+    }
+
+    .reward-content p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .reward-content h4 {
+      margin: 0;
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    .reward-content ul {
+      margin: 0;
+      padding-left: 18px;
+      color: #475467;
+    }
+
+    .reward-content li + li {
+      margin-top: 5px;
+    }
+
+    .ai-box {
+      border-top: 1px solid #e5eaf2;
+      padding-top: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .ai-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+
+    .ai-input {
+      min-height: 36px;
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      padding: 0 10px;
+      font: inherit;
+    }
+
+    .ai-answer {
+      border: 1px solid #dbeafe;
+      border-radius: 8px;
+      background: #f8fbff;
+      color: #344054;
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .locked {
+      opacity: .52;
+      pointer-events: none;
+    }
+
+    @media (max-width: 1180px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        height: auto;
+        min-height: auto;
+        position: static;
+        grid-template-rows: auto auto auto auto;
+        overflow: visible;
+      }
+
+      .sidebar .drawer-body {
+        max-height: 380px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .topbar,
+      .main,
+      .workspace-head .chinese-question {
+        padding: 14px;
+      }
+
+      .workspace-head .chinese-question {
+        margin: 0 14px 14px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .aside-stack {
+        position: static;
+      }
+
+      .top-actions {
+        justify-content: flex-start;
+      }
+
+      .structure-lane,
+      .detail-lane,
+      .learning-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tense-grid,
+      .choice-row {
+        grid-template-columns: 1fr;
+      }
+
+      .chinese-question h3 {
+        font-size: 20px;
+      }
+    }
+
+    /* 單字／片語翻譯小幫手（僅第三、四階段）：桌機 hover、手機長按 */
+    .glossable {
+      cursor: help;
+      text-decoration: underline dotted rgba(37, 99, 235, .55);
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1.5px;
+    }
+
+    .answer-box .glossable {
+      text-decoration-color: rgba(2, 122, 72, .5);
+    }
+
+    .gloss-tip {
+      position: absolute;
+      z-index: 60;
+      max-width: 260px;
+      padding: 9px 11px;
+      border-radius: 8px;
+      border: 1px solid #c7d2fe;
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 8px 22px rgba(15, 23, 42, .16);
+      display: grid;
+      gap: 3px;
+      pointer-events: none;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .gloss-tip[hidden] {
+      display: none;
+    }
+
+    .gloss-tip .gloss-en {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--blue);
+    }
+
+    .gloss-tip .gloss-zh {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .gloss-tip .gloss-note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <section class="brand">
+        <h1>歷屆試題句構練習</h1>
+        <p>先用中文拆骨架，再決定英文時態與主被動。</p>
+      </section>
+
+      <section class="panel question-drawer" id="questionDrawer">
+        <div class="drawer-header">
+          <span>
+            <strong>歷屆題目</strong>
+            <span id="drawerSummary">點選年份切換練習句子</span>
+          </span>
+        </div>
+        <div class="drawer-body" id="questionList"></div>
+      </section>
+
+      <section class="score-card">
+        <div class="score-row">
+          <span>本題進度</span>
+          <span class="score-value" id="progressText">0 / 4</span>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </section>
+
+      <p class="sidebar-note">這份 demo 一開始只呈現中文題目；英文答案會在完成流程或按下揭露後才出現。</p>
+    </aside>
+
+    <section class="workspace">
+      <div class="workspace-head">
+        <header class="topbar">
+          <div class="lesson-title">
+            <h2 id="titleText">題目</h2>
+            <p id="subtitleText">請先閱讀中文題目。</p>
+          </div>
+          <div class="top-mode">
+            <button class="btn" id="modeButton">進階模式：關</button>
+          </div>
+          <div class="top-actions">
+            <button class="btn" id="resetButton">重做本題</button>
+            <button class="btn primary" id="revealButton">顯示英文答案</button>
+            <button class="btn auth-button" id="authButton" type="button">Google 登入</button>
+            <span class="auth-status" id="authStatus">登入後同步進度</span>
+          </div>
+        </header>
+
+        <section class="chinese-question">
+          <p class="question-label">中文題目</p>
+          <h3 id="chineseQuestionText"></h3>
+          <div class="tag-row" id="tagRow"></div>
+        </section>
+      </div>
+
+      <main class="main">
+        <div class="main-stack">
+          <article class="panel practice-panel">
+            <section class="prompt" id="promptPanel">
+              <strong id="promptTitle">第一階段：中文拆句</strong>
+              <span id="promptBody">先把中文題目的主詞、動詞、受詞拖到正確位置。</span>
+            </section>
+
+            <section class="stage-panel" id="stageHighlight"></section>
+            <section class="prompt stage-bridge" id="stageBridge" hidden>
+              <strong>第二階段：中文拆句</strong>
+              <span>先放句首導入，再拆主幹；如果有兩個句子，就分成 A 句主幹與 B 句主幹。</span>
+            </section>
+            <section class="stage-panel" id="stageOne"></section>
+            <section class="stage-panel" id="stageTwo"></section>
+            <section class="stage-panel" id="stagePhrase" hidden></section>
+            <section class="stage-panel" id="stageThree"></section>
+
+            <div class="feedback" id="feedback">一開始不顯示英文答案。請先把中文拆成主詞、動詞、受詞。</div>
+            <div class="analysis-box" id="analysisBox" hidden></div>
+            <section class="stage-panel unlock-panel" id="learningPanel" hidden></section>
+          </article>
+        </div>
+
+        <aside class="aside-stack">
+          <section class="panel side-card">
+            <h3>獎勵</h3>
+            <div class="hint-box">
+              <div class="reward-content" id="hintText">答題完成後解鎖本題關鍵、固定片語、可替換單字與 AI 小老師問答。</div>
+            </div>
+          </section>
+        </aside>
+      </main>
+    </section>
+  </div>
+
+  <script type="module">
+    const firebaseConfig = {
+      apiKey: "AIzaSyBc6KQ6hFGZMmzzvv8bx-CHPUKrHU-xSm0",
+      authDomain: "high-traslate.firebaseapp.com",
+      projectId: "high-traslate",
+      storageBucket: "high-traslate.firebasestorage.app",
+      messagingSenderId: "643857471181",
+      appId: "1:643857471181:web:4f2c5ecf7d71b9d49f3b84",
+      measurementId: "G-J953V988V7"
+    };
+
+    const hasFirebaseConfig = firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId;
+    const backend = {
+      enabled: false,
+      error: null,
+      firebaseReady: false,
+      signedIn: false,
+      uid: null,
+      email: null,
+      displayName: null,
+      photoURL: null,
+      signIn: async () => {},
+      signOut: async () => {},
+      loadStore: async () => null,
+      saveStore: async () => {}
+    };
+
+    window.practiceProgressBackend = backend;
+    document.documentElement.dataset.firebaseProgress = hasFirebaseConfig ? "loading" : "local";
+
+    function setFirebaseProgressStatus(status, error = "") {
+      document.documentElement.dataset.firebaseProgress = status;
+      if (error) {
+        document.documentElement.dataset.firebaseProgressError = error;
+      } else {
+        delete document.documentElement.dataset.firebaseProgressError;
+      }
+    }
+
+    function firebaseAuthErrorMessage(error) {
+      const message = error?.message || String(error || "");
+      const code = error?.code || message;
+      if (code.includes("auth/operation-not-allowed")) {
+        return "Google 登入尚未在 Firebase Authentication 啟用。請到 Sign-in method 開啟 Google。";
+      }
+      if (code.includes("auth/popup-blocked")) {
+        return "瀏覽器擋住登入視窗，請允許這個網站的彈出式視窗。";
+      }
+      if (code.includes("auth/popup-closed-by-user")) {
+        return "登入視窗已關閉，尚未完成登入。";
+      }
+      if (code.includes("auth/unauthorized-domain")) {
+        return "這個網址尚未加入 Firebase Authorized domains。";
+      }
+      return message || "Google 登入失敗，請稍後再試。";
+    }
+
+    async function initializeFirebaseProgress() {
+      if (!hasFirebaseConfig) {
+        setFirebaseProgressStatus("local");
+        document.dispatchEvent(new CustomEvent("practice-progress-backend-ready", { detail: { backend } }));
+        return;
+      }
+
+      try {
+        const [{ initializeApp }, authSdk, firestore] = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js")
+        ]);
+        const { getAuth, getRedirectResult, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } = authSdk;
+        const { doc, getDoc, getFirestore, serverTimestamp, setDoc } = firestore;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const getProgressDoc = (uid) => doc(db, "users", uid, "practiceProgress", "examStructurePractice");
+        const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: "select_account" });
+
+        backend.firebaseReady = true;
+        backend.signIn = async () => signInWithPopup(auth, provider);
+        backend.signOut = async () => signOut(auth);
+        backend.loadStore = async () => {
+          if (!auth.currentUser) return null;
+          const user = auth.currentUser;
+          const snapshot = await getDoc(getProgressDoc(user.uid));
+          if (!snapshot.exists()) return null;
+          const data = snapshot.data();
+          return {
+            lastQuestionId: data.lastQuestionId || null,
+            questions: data.questions && typeof data.questions === "object" ? data.questions : {}
+          };
+        };
+        backend.saveStore = async (store) => {
+          if (!auth.currentUser) return;
+          const user = auth.currentUser;
+          await setDoc(getProgressDoc(user.uid), {
+            lastQuestionId: store.lastQuestionId || null,
+            questions: store.questions && typeof store.questions === "object" ? store.questions : {},
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        };
+        getRedirectResult(auth).catch((error) => {
+          backend.error = error;
+          setFirebaseProgressStatus("error", firebaseAuthErrorMessage(error));
+          console.warn("Google redirect sign-in failed.", error);
+        });
+        onAuthStateChanged(auth, (user) => {
+          if (user?.isAnonymous) {
+            signOut(auth);
+            return;
+          }
+
+          backend.enabled = Boolean(user);
+          backend.signedIn = Boolean(user);
+          backend.uid = user?.uid || null;
+          backend.email = user?.email || null;
+          backend.displayName = user?.displayName || null;
+          backend.photoURL = user?.photoURL || null;
+          setFirebaseProgressStatus(user ? "connected" : "signed-out");
+          document.dispatchEvent(new CustomEvent("practice-progress-auth-changed", { detail: { backend } }));
+          document.dispatchEvent(new CustomEvent("practice-progress-backend-ready", { detail: { backend } }));
+        });
+      } catch (error) {
+        backend.error = error?.message || String(error);
+        setFirebaseProgressStatus("error", backend.error);
+        console.warn("Firebase progress sync is unavailable. Falling back to localStorage.", error);
+        document.dispatchEvent(new CustomEvent("practice-progress-backend-ready", { detail: { backend } }));
+      }
+    }
+
+    initializeFirebaseProgress();
+  </script>
+  <script>
+    const tenseOptions = [
+      { id: "present-simple", label: "現在簡單式", pattern: "do / does" },
+      { id: "present-continuous", label: "現在進行式", pattern: "am/is/are + V-ing" },
+      { id: "present-perfect", label: "現在完成式", pattern: "have/has + p.p." },
+      { id: "past-simple", label: "過去簡單式", pattern: "V-ed / irregular past" },
+      { id: "past-continuous", label: "過去進行式", pattern: "was/were + V-ing" },
+      { id: "past-perfect", label: "過去完成式", pattern: "had + p.p." },
+      { id: "future-simple", label: "未來簡單式", pattern: "will + V" },
+      { id: "future-continuous", label: "未來進行式", pattern: "will be + V-ing" },
+      { id: "future-perfect", label: "未來完成式", pattern: "will have + p.p." },
+      { id: "modal-simple", label: "情態助動詞", pattern: "should/must/can + V" }
+    ];
+
+    const voiceOptions = [
+      { id: "active", label: "主動語態", pattern: "主詞執行動作" },
+      { id: "passive", label: "被動語態", pattern: "受詞承受動作" }
+    ];
+
+    function makeExamQuestion(data) {
+      const detailTokens = data.details.map((detail, index) => ({
+        id: detail.id || `d${index + 1}`,
+        slot: detail.slot || `detail-${index + 1}`,
+        label: detail.label,
+        text: detail.text,
+        role: detail.role || "detail",
+        group: detail.group,
+        beforeClause: detail.beforeClause
+      }));
+      // 非子句題型：core 只有兩個元素（主詞、動詞）時視為沒有受詞（SV 句），不建受詞格。
+      // 給第 4 個元素時，預設為雙受詞（SVOO）：core[2] 間接受詞、core[3] 直接受詞；
+      // 若設 objectComplement: true 則為 SVOC：core[2] 受詞、core[3] 受詞補語（see/watch sb doing 這類）。
+      const hasObject = !data.clauses && Boolean(data.core && data.core[2]);
+      const hasFourth = hasObject && Boolean(data.core[3]);
+      const isObjectComplement = hasFourth && data.objectComplement === true;
+      const hasIndirect = hasFourth && !isObjectComplement;
+      const coreGroups = data.clauses
+        ? data.clauses.map((clause, clauseIndex) => {
+            const clauseId = clause.id || `clause-${clauseIndex + 1}`;
+            return {
+              id: clauseId,
+              label: clause.label || `${String.fromCharCode(65 + clauseIndex)} 句主幹`,
+              slots: ["subject", "verb", "object"].slice(0, clause.core.length).map((slot) => `${clauseId}-${slot}`)
+            };
+          })
+        : [{ id: "main", label: "主幹", slots: hasIndirect ? ["subject", "verb", "object-indirect", "object"] : isObjectComplement ? ["subject", "verb", "object", "object-complement"] : hasObject ? ["subject", "verb", "object"] : ["subject", "verb"] }];
+      const core = data.clauses
+        ? data.clauses.flatMap((clause, clauseIndex) => {
+            const clauseId = clause.id || `clause-${clauseIndex + 1}`;
+            const objectLabel = clause.coreLabel || data.coreLabel || "受詞";
+            const labels = ["主詞", "動詞", objectLabel];
+            const roles = ["subject", "verb", "object"];
+            return clause.core.map((text, index) => ({
+              id: `${clauseId}-${roles[index]}`,
+              slot: `${clauseId}-${roles[index]}`,
+              label: labels[index],
+              text,
+              role: roles[index]
+            }));
+          })
+        : [
+            { id: "s", slot: "subject", label: "主詞", text: data.core[0], role: "subject" },
+            { id: "v", slot: "verb", label: "動詞", text: data.core[1], role: "verb" },
+            ...(hasIndirect
+              ? [
+                  { id: "io", slot: "object-indirect", label: "間接受詞", text: data.core[2], role: "object" },
+                  { id: "o", slot: "object", label: "直接受詞", text: data.core[3], role: "object" }
+                ]
+              : isObjectComplement
+                ? [
+                    { id: "o", slot: "object", label: "受詞", text: data.core[2], role: "object" },
+                    { id: "oc", slot: "object-complement", label: "受詞補語", text: data.core[3], role: "object" }
+                  ]
+                : hasObject
+                  ? [{ id: "o", slot: "object", label: data.coreLabel || "受詞", text: data.core[2], role: "object" }]
+                  : [])
+          ];
+      const allTokenIds = data.clauses
+        ? [...detailTokens.map((detail) => detail.id), ...core.map((token) => token.id)]
+        : [...(hasIndirect ? ["o", "io"] : isObjectComplement ? ["o", "oc"] : hasObject ? ["o"] : []), ...detailTokens.map((detail) => detail.id), "s", "v"];
+      const answerPieces = data.pieces.map((text, index) => ({ id: `p${index + 1}`, text }));
+      const pieceOrder = data.pieceOrder || answerPieces.map((piece) => piece.id).slice().reverse();
+      return {
+        id: data.id,
+        year: data.year,
+        title: `學測翻譯第 ${data.no} 句`,
+        chinese: data.chinese,
+        tags: ["學測", data.pattern || "SVO", data.tenseLabel, ...(data.extraTags || [])],
+        tense: data.tense,
+        voice: data.voice,
+        tenseReason: data.tenseReason,
+        voiceReason: data.voiceReason,
+        orderReason: data.orderReason,
+        answer: data.answer,
+        core,
+        coreGroups,
+        details: detailTokens,
+        bankOrder: data.bankOrder || allTokenIds,
+        answerPieces,
+        pieceOrder,
+        subclauses: data.subclauses || [],
+        summary: data.summary,
+        phraseNotes: data.phrases.map((item) => ({ text: item[0], meaning: item[1], note: item[2] })),
+        vocabulary: data.vocab.map((item) => ({ text: item[0], meaning: item[1], note: item[2] }))
+      };
+    }
+
+    const remainingExamQuestions = [
+      makeExamQuestion({
+        id: "exam-115-01",
+        year: 115,
+        no: 1,
+        chinese: "現在越來越多高中英文老師已經增加在課堂上使用英文的百分比。",
+        answer: "Nowadays, more and more senior high school English teachers have increased the percentage of using English in class.",
+        pattern: "SVO",
+        tense: "present-perfect",
+        tenseLabel: "現在完成式",
+        voice: "active",
+        core: ["越來越多高中英文老師", "已經增加", "使用英文的百分比"],
+        details: [
+          { label: "時間", text: "現在" },
+          { label: "地點", text: "在課堂上" }
+        ],
+        pieces: [
+          "Nowadays,",
+          "more and more senior high school English teachers",
+          "have increased",
+          "the percentage of using English",
+          "in class."
+        ],
+        pieceOrder: ["p4", "p2", "p5", "p1", "p3"],
+        tenseReason: "中文的「已經增加」表示到現在已形成的改變，英文用 have increased，所以選現在完成式。",
+        voiceReason: "英文主詞是 English teachers，表示老師主動增加英文使用比例，所以使用主動語態。",
+        orderReason: "英文先放 Nowadays，再放完整主詞 more and more...teachers，接著放 have increased，最後放受詞和地點 in class。",
+        summary: "more and more 要黏在 teachers 前面形成完整主詞；have increased 表示到現在累積出的改變。",
+        phrases: [
+          ["more and more", "越來越多", "可修飾複數名詞。"],
+          ["the percentage of using English", "使用英文的百分比", "percentage of 後可接名詞或 V-ing。"],
+          ["in class", "在課堂上", "常見地點片語。"]
+        ],
+        vocab: [
+          ["Nowadays", "現在、如今", "常放在句首標示現代趨勢。"],
+          ["senior high school English teachers", "高中英文老師", "整塊當主詞核心，不另外拆成可移動細節。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-115-02",
+        year: 115,
+        no: 2,
+        chinese: "他們將學生依英語能力分成不同組別，進行多樣的聽、說活動。",
+        answer: "They divide students into different groups based on their English ability, conducting a variety of listening and speaking activities.",
+        pattern: "SVO",
+        tense: "present-simple",
+        tenseLabel: "現在簡單式",
+        voice: "active",
+        core: ["他們", "分成", "學生"],
+        details: [
+          { label: "結果", text: "不同組別" },
+          { label: "依據", text: "依英語能力" },
+          { label: "活動", text: "進行多樣的聽、說活動" }
+        ],
+        pieces: [
+          "They",
+          "divide",
+          "students",
+          "into different groups",
+          "based on their English ability,",
+          "conducting a variety of listening and speaking activities."
+        ],
+        pieceOrder: ["p5", "p3", "p1", "p6", "p2", "p4"],
+        tenseReason: "這句描述老師進行分組與活動的做法，英文用 divide，所以選現在簡單式。",
+        voiceReason: "英文主詞是 They，表示老師主動分組並進行活動，所以使用主動語態。",
+        orderReason: "英文先放 They divide students，再放 into different groups，接著補依據 based on...，最後用 conducting... 補活動。",
+        summary: "students 是受詞，into different groups 是分組結果；based on 補分組依據；conducting 補後續活動。",
+        phrases: [
+          ["divide students into groups", "將學生分成組別", "divide...into... 是固定結構。"],
+          ["based on", "依照、根據", "後面接分組依據。"],
+          ["a variety of", "多樣的", "後面接複數名詞。"]
+        ],
+        vocab: [
+          ["ability", "能力", "English ability 指英語能力。"],
+          ["conducting", "進行、舉辦", "常用於活動、研究、調查。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-114-01",
+        year: 114,
+        no: 1,
+        chinese: "人類的想像和創意是科技進步最大的驅動力。",
+        answer: "Human imagination and creativity are the greatest driving forces behind technological advancement.",
+        pattern: "SVC",
+        tense: "present-simple",
+        tenseLabel: "現在簡單式",
+        voice: "active",
+        coreLabel: "補語",
+        core: ["人類的想像和創意", "是", "最大的驅動力"],
+        details: [
+          { label: "補充細節", text: "科技進步" }
+        ],
+        pieces: [
+          "Human imagination and creativity",
+          "are",
+          "the greatest driving forces",
+          "behind technological advancement."
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        tenseReason: "這句是在說明一般事實與定義，英文用 are，所以選現在簡單式。",
+        voiceReason: "英文句首放 Human imagination and creativity，描述它們是驅動力，不是被動結構。",
+        orderReason: "英文先放主詞 Human imagination and creativity，再放 are，接著放 the greatest driving forces，最後用 behind technological advancement 補充驅動的對象。",
+        summary: "這句是 SVC 結構：想像與創意 / 是 / 最大驅動力；behind technological advancement 作為補充細節接在補語後。",
+        phrases: [
+          ["driving forces", "驅動力", "driving force 指推動某事發展的力量，常用複數。"],
+          ["technological advancement", "科技進步", "也可說 technological progress。"]
+        ],
+        vocab: [
+          ["imagination", "想像", "抽象名詞。"],
+          ["creativity", "創意", "抽象名詞，常和 imagination 並列。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-114-02",
+        year: 114,
+        no: 2,
+        chinese: "過去在科幻電影中出現的神奇物件，現在正逐一成真。",
+        answer: "The magical items that once appeared in sci-fi movies are now becoming a reality one by one.",
+        pattern: "SVC",
+        tense: "present-continuous",
+        tenseLabel: "現在進行式",
+        voice: "active",
+        coreLabel: "補語",
+        core: ["神奇物件", "正逐一成為", "現實"],
+        details: [
+          { label: "時間", text: "過去" },
+          { label: "地點", text: "在科幻電影中" }
+        ],
+        subclauses: [
+          {
+            type: "形容詞子句",
+            role: "修飾主詞",
+            marker: "that",
+            text: "that once appeared in sci-fi movies",
+            target: "magical items",
+            core: "items / appeared",
+            note: "整個 that 子句貼在 magical items 後面，先把主詞說完整。"
+          }
+        ],
+        pieces: [
+          "The magical items that once appeared in sci-fi movies",
+          "are now becoming",
+          "a reality",
+          "one by one."
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        tenseReason: "中文的「現在正」表示正在發生中的變化，英文用 are now becoming，所以選現在進行式。",
+        voiceReason: "英文主詞是 The magical items，描述這些物件正在成為現實，不是被動語態。",
+        orderReason: "英文先放被 that 子句修飾的主詞，再放 are now becoming，接著放 a reality，最後補 one by one。",
+        summary: "that once appeared in sci-fi movies 修飾 magical items；主句是 items are becoming a reality。",
+        phrases: [
+          ["sci-fi movies", "科幻電影", "sci-fi 是 science fiction 的常見縮寫。"],
+          ["becoming a reality", "成真", "也可說 turning into reality。"],
+          ["one by one", "逐一", "表示一個接一個。"]
+        ],
+        vocab: [
+          ["magical items", "神奇物件", "也可用 magical objects。"],
+          ["once", "曾經、過去", "表示過去曾發生。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-113-01",
+        year: 113,
+        no: 1,
+        chinese: "每逢選舉季節，總會看到政治人物造訪各地著名廟宇。",
+        answer: "During every election season, people always see politicians visiting renowned temples throughout the country.",
+        pattern: "SVO",
+        tense: "present-simple",
+        tenseLabel: "現在簡單式",
+        voice: "active",
+        core: ["人們", "看到", "政治人物"],
+        details: [
+          { label: "時間", text: "每逢選舉季節" },
+          { label: "地點", text: "各地" },
+          { label: "行為", text: "造訪著名廟宇" }
+        ],
+        pieces: [
+          "During every election season,",
+          "people always see",
+          "politicians",
+          "visiting renowned temples",
+          "throughout the country."
+        ],
+        pieceOrder: ["p4", "p1", "p5", "p2", "p3"],
+        tenseReason: "這句描述選舉季節常見的現象，英文用 people always see，所以選現在簡單式。",
+        voiceReason: "英文主詞是 people，主動看到這個現象，所以是主動語態。",
+        orderReason: "英文先放 During every election season 交代時間，再放主句 people always see，接著放受詞 politicians 與受詞補語 visiting renowned temples，最後補 throughout the country。",
+        summary: "see + 受詞 + V-ing 表示「看到某人正在做某事」：politicians 是受詞，visiting renowned temples 是受詞補語。",
+        phrases: [
+          ["during every election season", "每逢選舉季節", "during 放在時間範圍前。"],
+          ["see somebody doing something", "看到某人正在做某事", "see / watch / hear + 受詞 + V-ing，受詞後面接受詞補語。"],
+          ["throughout the country", "全國各地", "throughout 表示遍及整個範圍。"]
+        ],
+        vocab: [
+          ["politicians", "政治人物", "也可寫 political figures。"],
+          ["renowned temples", "著名廟宇", "renowned、famous、well-known 都可表示著名。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-113-02",
+        year: 113,
+        no: 2,
+        chinese: "除了祈求好的選舉結果，他們也希望展現對在地文化與習俗的尊重。",
+        answer: "In addition to praying for favorable election results, they also hope to demonstrate respect for local culture and customs.",
+        pattern: "SVO",
+        tense: "present-simple",
+        tenseLabel: "現在簡單式",
+        voice: "active",
+        core: ["他們", "希望", "展現尊重"],
+        details: [
+          { label: "附加", text: "除了祈求好的選舉結果" },
+          { label: "對象", text: "在地文化與習俗" }
+        ],
+        pieces: [
+          "In addition to praying for favorable election results,",
+          "they also hope",
+          "to demonstrate respect",
+          "for local culture and customs."
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        tenseReason: "這句描述政治人物在選舉季節的目的與期待，英文用 they also hope，所以選現在簡單式。",
+        voiceReason: "英文主詞是 they，表示他們主動希望展現尊重，所以使用主動語態。",
+        orderReason: "英文先放 In addition to... 交代除了祈求結果之外，再放 they also hope to demonstrate respect，最後補尊重的對象。",
+        summary: "In addition to + V-ing 表示「除了……之外」；demonstrate respect for 是展現尊重的自然搭配。",
+        phrases: [
+          ["in addition to", "除了……之外", "後面接名詞或 V-ing。"],
+          ["demonstrate respect for", "展現對……的尊重", "也可用 show respect for。"]
+        ],
+        vocab: [
+          ["favorable election results", "好的選舉結果", "favorable 表示有利的、正面的。"],
+          ["local culture and customs", "在地文化與習俗", "customs 指習俗。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-112-02",
+        year: 112,
+        no: 2,
+        chinese: "避免衝突、確保世界和平應該是所有人類追求的目標。",
+        answer: "Avoiding conflict and ensuring world peace should be the goal of all humanity.",
+        pattern: "SVC",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "active",
+        coreLabel: "補語",
+        core: ["避免衝突並確保世界和平", "應該是", "所有人類的目標"],
+        details: [],
+        pieces: ["Avoiding conflict and ensuring world peace", "should be", "the goal", "of all humanity."],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        tenseReason: "中文有「應該」，英文答案用 should be，所以要選情態助動詞。",
+        voiceReason: "英文句首是動名詞片語，描述它應該成為目標，不是被動結構。",
+        orderReason: "英文先放動名詞主詞 Avoiding...and ensuring...，再放 should be，最後補 the goal of all humanity。",
+        summary: "動名詞片語可以當主詞；should be 表示應該成為某個目標。",
+        phrases: [
+          ["ensuring world peace", "確保世界和平", "ensure 表示確保、使確定。"],
+          ["the goal of all humanity", "所有人類的目標", "of all humanity 補充 goal 的範圍。"]
+        ],
+        vocab: [
+          ["conflict", "衝突", "正式寫作常見字。"],
+          ["humanity", "人類", "集合名詞，指全體人類。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-111-02",
+        year: 111,
+        no: 2,
+        chinese: "在享受寵物所帶來的歡樂時，我們不該忽略要善盡照顧牠們的責任。",
+        answer: "While enjoying the joy that pets bring, we should not neglect the responsibility to take care of them.",
+        pattern: "SVO",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "active",
+        core: ["我們", "不該忽略", "照顧牠們的責任"],
+        details: [
+          { label: "時間", text: "在享受寵物帶來的歡樂時", role: "lead" }
+        ],
+        pieces: ["While enjoying the joy that pets bring,", "we should not neglect", "the responsibility", "to take care of them."],
+        pieceOrder: ["p2", "p4", "p1", "p3"],
+        tenseReason: "中文有「不該」，英文答案用 should not，所以要選情態助動詞。",
+        voiceReason: "英文句首主句是 we，表示我們主動不要忽略責任。",
+        orderReason: "英文先放 while 子句交代情境，再放 we should not neglect，接著放責任與照顧內容。",
+        summary: "while enjoying... 交代同時發生的情境；主句用 should not neglect 表達不該忽略。",
+        phrases: [
+          ["while enjoying", "在享受……時", "while 可帶出同時發生的情境。"],
+          ["take care of", "照顧", "常見動詞片語。"]
+        ],
+        vocab: [
+          ["neglect", "忽略", "表示沒有盡到應有注意或責任。"],
+          ["responsibility", "責任", "正式寫作常用字。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-110-02",
+        year: 110,
+        no: 2,
+        chinese: "因此，交通法規必須嚴格執行，以確保所有用路人的安全。",
+        answer: "Therefore, traffic regulations must be strictly enforced to ensure the safety of all road users.",
+        pattern: "被動語態",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "passive",
+        core: ["主管機關", "嚴格地執行", "交通法規"],
+        details: [
+          { label: "轉折", text: "因此" },
+          { label: "目的", text: "確保所有用路人的安全" }
+        ],
+        pieces: ["Therefore,", "traffic regulations", "must be strictly enforced", "to ensure the safety of all road users."],
+        pieceOrder: ["p4", "p2", "p1", "p3"],
+        tenseReason: "中文有「必須」，英文答案用 must be enforced，所以要選情態助動詞。",
+        voiceReason: "英文把 traffic regulations 放句首，法規是被執行的對象，所以是被動語態。",
+        orderReason: "英文先放 Therefore，再放被動句 traffic regulations must be strictly enforced，最後用 to ensure 說明目的。",
+        summary: "must be + p.p. 是情態助動詞被動結構。",
+        phrases: [
+          ["must be strictly enforced", "必須嚴格執行", "must + be + p.p. 是被動結構。"],
+          ["road users", "用路人", "道路使用者的自然說法。"]
+        ],
+        vocab: [
+          ["regulations", "法規", "常用複數。"],
+          ["enforced", "執行、強制實施", "常用於法律、規則。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-109-02",
+        year: 109,
+        no: 2,
+        chinese: "其實，在面對同儕壓力的時候，我們應該學習堅持自己的原則。",
+        answer: "In fact, when facing peer pressure, we should learn to uphold our principles.",
+        pattern: "SVO",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "active",
+        core: ["我們", "應該學習", "堅持原則"],
+        details: [
+          { label: "語氣", text: "其實" },
+          { label: "情境", text: "面對同儕壓力時" }
+        ],
+        pieces: ["In fact,", "when facing peer pressure,", "we should learn", "to uphold our principles."],
+        pieceOrder: ["p4", "p1", "p3", "p2"],
+        tenseReason: "中文有「應該」，英文答案用 should learn，所以要選情態助動詞。",
+        voiceReason: "英文主句是 we should learn，表示我們主動學習。",
+        orderReason: "英文先放 In fact 和 when 情境，再放主句 we should learn to uphold our principles。",
+        summary: "when facing... 是情境；主句用 should learn 表示建議。",
+        phrases: [
+          ["peer pressure", "同儕壓力", "peer 指同儕、同輩。"],
+          ["uphold our principles", "堅持自己的原則", "uphold 比 keep 更正式。"]
+        ],
+        vocab: [
+          ["principles", "原則", "通常用複數表示一套原則。"],
+          ["pressure", "壓力", "peer pressure 是固定搭配。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-108-02",
+        year: 108,
+        no: 2,
+        chinese: "對於強調職場效率的人而言，高鐵當然是商務旅行的首選。",
+        answer: "For those who emphasize workplace efficiency, the High-Speed Rail is undoubtedly the preferred choice for business travel.",
+        pattern: "SVC",
+        tense: "present-simple",
+        tenseLabel: "現在簡單式",
+        voice: "active",
+        coreLabel: "補語",
+        core: ["高鐵", "當然是", "首選"],
+        details: [
+          { label: "對象", text: "強調職場效率的人" },
+          { label: "用途", text: "商務旅行" }
+        ],
+        subclauses: [
+          {
+            type: "形容詞子句",
+            role: "修飾名詞",
+            marker: "who",
+            text: "who emphasize workplace efficiency",
+            target: "those",
+            core: "who / emphasize / efficiency",
+            note: "who 子句修飾 those，限定是哪一種人（強調職場效率的人）。",
+            position: "before-core"
+          }
+        ],
+        pieces: ["For those who emphasize workplace efficiency,", "the High-Speed Rail", "is undoubtedly", "the preferred choice for business travel."],
+        pieceOrder: ["p4", "p2", "p1", "p3"],
+        tenseReason: "這句描述一般判斷，英文用 is，所以是現在簡單式。",
+        voiceReason: "英文句首放 the High-Speed Rail，描述它是首選，不是被動。",
+        orderReason: "英文先放 For those... 限定對象，再放高鐵是首選的主句。",
+        summary: "For those who... 常用來說明某一類人的觀點或需求。",
+        phrases: [
+          ["workplace efficiency", "職場效率", "workplace 修飾 efficiency。"],
+          ["the preferred choice", "首選", "preferred 表示較受偏好的。"]
+        ],
+        vocab: [
+          ["undoubtedly", "無疑地、當然", "正式語氣副詞。"],
+          ["business travel", "商務旅行", "常見名詞片語。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-107-01",
+        year: 107,
+        no: 1,
+        chinese: "近年來，有越來越多超級颱風，通常造成嚴重災害。",
+        answer: "In recent years, there have been increasingly more super typhoons, usually causing severe disasters.",
+        pattern: "存在句",
+        tense: "present-perfect",
+        tenseLabel: "現在完成式",
+        voice: "active",
+        core: ["越來越多的超級颱風", "通常出現", "嚴重災害"],
+        details: [
+          { label: "時間", text: "近年來" }
+        ],
+        pieces: ["In recent years,", "there have been increasingly more super typhoons,", "usually causing", "severe disasters."],
+        pieceOrder: ["p2", "p4", "p1", "p3"],
+        tenseReason: "中文的「近年來」表示到現在累積的趨勢，英文用 there have been。",
+        voiceReason: "後半用 causing 表示颱風造成災害，是主動語意。",
+        orderReason: "英文先放時間，再用 there have been 表示存在與增加，最後用 causing 補結果。",
+        summary: "there have been 表示近年累積出現；causing severe disasters 補結果。",
+        phrases: [
+          ["in recent years", "近年來", "常和現在完成式搭配。"],
+          ["severe disasters", "嚴重災害", "severe 表示嚴重的。"]
+        ],
+        vocab: [
+          ["increasingly", "越來越", "表示程度逐漸增加。"],
+          ["typhoons", "颱風", "可數名詞複數。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-107-02",
+        year: 107,
+        no: 2,
+        chinese: "颱風來襲時，我們應準備足夠的食物，並待在室內，若有必要，應迅速移動至安全的地方。",
+        answer: "When a typhoon approaches, we should prepare enough food and stay indoors; if necessary, we should quickly move to a safe place.",
+        pattern: "SVO",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "active",
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["我們", "應準備並待在", "食物和室內"]
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["我們", "應迅速移動至", "安全的地方"],
+            coreLabel: "方向"
+          }
+        ],
+        details: [
+          { label: "時間", text: "颱風來襲時" },
+          { label: "條件", text: "若有必要", role: "connector", group: "connector", beforeClause: "clause-b" }
+        ],
+        pieces: ["When a typhoon approaches,", "we should prepare enough food and stay indoors;", "if necessary,", "we should quickly move to a safe place."],
+        pieceOrder: ["p4", "p2", "p1", "p3"],
+        tenseReason: "中文有「應」，英文答案用 should，所以要選情態助動詞。",
+        voiceReason: "英文主詞是 we，表示我們主動準備、待在室內、移動。",
+        orderReason: "英文先放 When 時間子句，再放 should 的主句；分號後用 if necessary 補第二個建議。",
+        summary: "這句由時間條件、主要建議和必要時的補充建議組成。",
+        phrases: [
+          ["stay indoors", "待在室內", "indoors 是副詞。"],
+          ["if necessary", "若有必要", "常放在分句前補充條件。"]
+        ],
+        vocab: [
+          ["approaches", "接近、來襲", "颱風接近可用 approach。"],
+          ["quickly", "迅速地", "修飾 move。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-105-01",
+        year: 105,
+        no: 1,
+        chinese: "相較於他們父母的世代，現在年輕人享受較多的自由與繁榮。",
+        answer: "Compared to their parents' generation, today's young people enjoy more freedom and prosperity.",
+        pattern: "SVO",
+        tense: "present-simple",
+        tenseLabel: "現在簡單式",
+        voice: "active",
+        core: ["現在年輕人", "享受", "較多的自由與繁榮"],
+        details: [
+          { label: "比較", text: "相較於父母世代", group: "lead" }
+        ],
+        pieces: ["Compared to their parents' generation,", "today's young people", "enjoy more freedom", "and prosperity."],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        tenseReason: "這句描述現在的一般狀態，英文用 enjoy，所以是現在簡單式。",
+        voiceReason: "英文句首放 today's young people，表示年輕人主動享有自由與繁榮。",
+        orderReason: "英文先放 Compared to... 作比較，再放主詞、動詞和受詞。",
+        summary: "Compared to... 放句首建立比較基準；主句說明現在年輕人的狀態。",
+        phrases: [
+          ["Compared to", "相較於", "常放句首建立比較對象。"],
+          ["freedom and prosperity", "自由與繁榮", "兩個抽象名詞並列。"]
+        ],
+        vocab: [
+          ["generation", "世代", "parents' generation 指父母那一代。"],
+          ["prosperity", "繁榮", "正式抽象名詞。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-105-02",
+        year: 105,
+        no: 2,
+        chinese: "但是在這個快速改變的世界中，他們必須學習有效地因應新的挑戰。",
+        answer: "However, in this rapidly changing world, they must learn how to effectively cope with new challenges.",
+        pattern: "SVO",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "active",
+        core: ["他們", "必須學習", "有效地因應新的挑戰"],
+        details: [
+          { label: "轉折", text: "但是" },
+          { label: "環境", text: "快速改變的世界中" }
+        ],
+        subclauses: [
+          {
+            type: "疑問詞＋不定詞",
+            role: "當受詞",
+            marker: "how to",
+            text: "how to effectively cope with new challenges",
+            target: "learn",
+            core: "how to / cope with / challenges",
+            note: "learn 後面接「how + to V」當受詞，是名詞性質；它由名詞子句 how they should cope... 簡化而來，但沒有自己的主詞與限定動詞，所以不算完整名詞子句。"
+          }
+        ],
+        pieces: ["However,", "in this rapidly changing world,", "they must learn", "how to effectively cope with new challenges."],
+        pieceOrder: ["p4", "p1", "p3", "p2"],
+        tenseReason: "中文有「必須」，英文答案用 must learn，所以要選情態助動詞。",
+        voiceReason: "英文主詞是 they，表示他們主動學習因應挑戰。",
+        orderReason: "英文先放轉折與環境，再放 they must learn，最後接 how to... 的內容。",
+        summary: "must learn 後面接 how to...，表示要學會如何做某事。",
+        phrases: [
+          ["rapidly changing world", "快速改變的世界", "rapidly 修飾 changing。"],
+          ["cope with new challenges", "因應新的挑戰", "cope with 是固定片語。"]
+        ],
+        vocab: [
+          ["effectively", "有效地", "修飾 cope with。"],
+          ["challenges", "挑戰", "可數名詞複數。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-104-01",
+        year: 104,
+        no: 1,
+        chinese: "一個成功的企業不應該把獲利當作最主要的目標。",
+        answer: "A successful business should not prioritize profits as the main goal.",
+        pattern: "SVO",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "active",
+        core: ["成功的企業", "不應該把……當作", "獲利"],
+        details: [
+          { label: "目標", text: "最主要的目標" }
+        ],
+        pieces: ["A successful business", "should not prioritize", "profits", "as the main goal."],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        tenseReason: "中文有「不應該」，英文答案用 should not，所以要選情態助動詞。",
+        voiceReason: "英文句首放 A successful business，表示企業主動不該優先考量獲利。",
+        orderReason: "英文先放主詞，再放 should not prioritize，接著放 profits 和 as the main goal。",
+        summary: "prioritize...as... 可表達把某事當成優先目標。",
+        phrases: [
+          ["prioritize profits", "優先考量獲利", "prioritize 表示把某事列為優先。"],
+          ["as the main goal", "作為主要目標", "as 表示身分或用途。"]
+        ],
+        vocab: [
+          ["business", "企業", "這裡不是生意，而是企業。"],
+          ["profits", "獲利", "常用複數表示利潤。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-104-02",
+        year: 104,
+        no: 2,
+        chinese: "它應該負起社會責任，以增進大眾的福祉。",
+        answer: "It should take on social responsibility to enhance the well-being of the public.",
+        pattern: "SVO",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "active",
+        core: ["它", "應該負起", "社會責任"],
+        details: [
+          { label: "目的", text: "增進大眾福祉" }
+        ],
+        pieces: ["It", "should take on", "social responsibility", "to enhance the well-being of the public."],
+        pieceOrder: ["p4", "p2", "p1", "p3"],
+        tenseReason: "中文有「應該」，英文答案用 should take on，所以要選情態助動詞。",
+        voiceReason: "英文句首放 It，表示企業主動負起責任。",
+        orderReason: "英文先放 It should take on social responsibility，再用 to enhance 補目的。",
+        summary: "take on responsibility 是固定搭配；to enhance... 說明目的。",
+        phrases: [
+          ["take on social responsibility", "負起社會責任", "take on 表示承擔。"],
+          ["well-being of the public", "大眾的福祉", "well-being 指幸福、安康。"]
+        ],
+        vocab: [
+          ["enhance", "增進", "正式動詞。"],
+          ["public", "大眾", "the public 指一般民眾。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-103-01",
+        year: 103,
+        no: 1,
+        chinese: "有些年輕人辭掉都市裡的高薪工作，返回家鄉種植有機蔬菜。",
+        answer: "Some young people quit high-paying jobs in the city to return to their hometowns and cultivate organic vegetables.",
+        pattern: "SVO",
+        tense: "present-simple",
+        tenseLabel: "現在簡單式",
+        voice: "active",
+        core: ["有些年輕人", "辭掉", "高薪工作"],
+        details: [
+          { label: "地點", text: "都市裡" },
+          { label: "目的", text: "返回家鄉種植有機蔬菜" }
+        ],
+        pieces: ["Some young people", "quit high-paying jobs", "in the city", "to return to their hometowns and cultivate organic vegetables."],
+        pieceOrder: ["p4", "p1", "p3", "p2"],
+        tenseReason: "英文答案用 quit 作一般描述，表示某些年輕人的行為模式，所以選現在簡單式。",
+        voiceReason: "英文句首放 Some young people，表示年輕人主動辭掉工作。",
+        orderReason: "英文先放主詞和動詞受詞，再放地點 in the city，最後用 to return... 補目的。",
+        summary: "to return...and cultivate... 說明辭職後的目的與行動。",
+        phrases: [
+          ["high-paying jobs", "高薪工作", "high-paying 是複合形容詞。"],
+          ["cultivate organic vegetables", "種植有機蔬菜", "cultivate 比 grow 更正式。"]
+        ],
+        vocab: [
+          ["hometowns", "家鄉", "複數對應多位年輕人的家鄉。"],
+          ["organic", "有機的", "常修飾食物或農業。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-103-02",
+        year: 103,
+        no: 2,
+        chinese: "藉由決心與努力，很多人成功了，不但獲利更多，還過著更健康的生活。",
+        answer: "Through determination and effort, many have succeeded, not only making more profits but also living a healthier life.",
+        pattern: "SVO",
+        tense: "present-perfect",
+        tenseLabel: "現在完成式",
+        voice: "active",
+        core: ["很多人", "成功了"],
+        details: [
+          { label: "方式", text: "藉由決心與努力", group: "lead" },
+          { label: "結果", text: "不但獲利更多" },
+          { label: "結果", text: "還過著更健康的生活" }
+        ],
+        pieces: ["Through determination and effort,", "many have succeeded,", "not only making more profits", "but also living a healthier life."],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        tenseReason: "英文答案用 many have succeeded，表示成果已經出現，所以選現在完成式。",
+        voiceReason: "英文主詞 many 表示很多人主動成功並過生活。",
+        orderReason: "英文先放 Through... 說明方式，再放 many have succeeded，最後用 not only...but also... 補結果。",
+        summary: "not only...but also... 並列兩個成果：獲利更多、生活更健康。",
+        phrases: [
+          ["Through determination and effort", "藉由決心與努力", "through 表示透過某種方式。"],
+          ["not only...but also...", "不但……還……", "常用來並列兩個重點。"]
+        ],
+        vocab: [
+          ["determination", "決心", "正式抽象名詞。"],
+          ["profits", "獲利", "常用複數表示收益。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-101-02",
+        year: 101,
+        no: 2,
+        chinese: "拍攝這些電影的地點也成為熱門的觀光景點。",
+        answer: "The locations where these movies are filmed have also become popular tourist attractions.",
+        pattern: "SVC",
+        tense: "present-perfect",
+        tenseLabel: "現在完成式",
+        voice: "active",
+        coreLabel: "補語",
+        core: ["這些電影的拍攝地點", "也成為", "熱門的觀光景點"],
+        details: [],
+        subclauses: [
+          {
+            type: "形容詞子句",
+            role: "修飾主詞",
+            marker: "where",
+            text: "where these movies are filmed",
+            target: "locations",
+            core: "movies / are filmed",
+            note: "where 帶出拍攝地點的補充說明，整段用來形容 locations。"
+          }
+        ],
+        pieces: ["The locations where these movies are filmed", "have also become", "popular tourist attractions."],
+        pieceOrder: ["p3", "p1", "p2"],
+        tenseReason: "英文用 have also become，表示到現在已形成的結果，所以選現在完成式。",
+        voiceReason: "英文句首放 locations，描述地點成為景點，不是被動主句。",
+        orderReason: "英文先放被 where 子句修飾的主詞，再放 have also become，最後放補語。",
+        summary: "where these movies are filmed 修飾 locations；主句是 locations have become attractions。",
+        phrases: [
+          ["where these movies are filmed", "拍攝這些電影的地方", "where 子句修飾 locations。"],
+          ["tourist attractions", "觀光景點", "常見名詞片語。"]
+        ],
+        vocab: [
+          ["locations", "地點", "可指拍攝地。"],
+          ["filmed", "拍攝", "被動子句中使用 are filmed。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-98-01",
+        year: 98,
+        no: 1,
+        chinese: "大部分學生不習慣自己解決問題，他們總是期待老師提供標準答案。",
+        answer: "Most students are not accustomed to solving problems on their own; they always expect teachers to provide standard answers.",
+        pattern: "SVO",
+        tense: "present-simple",
+        tenseLabel: "現在簡單式",
+        voice: "active",
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["大部分學生", "不習慣", "解決問題"]
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["他們", "總是期待", "老師提供標準答案"]
+          }
+        ],
+        details: [
+          { label: "方式", text: "靠自己", group: "supplemental" }
+        ],
+        pieces: ["Most students", "are not accustomed to solving problems", "on their own;", "they always expect teachers to provide standard answers."],
+        pieceOrder: ["p4", "p1", "p3", "p2"],
+        tenseReason: "這句描述學生的一般習慣，英文用 are not accustomed 和 expect，所以選現在簡單式。",
+        voiceReason: "英文主詞是 Most students 和 they，表示學生主動期待答案。",
+        orderReason: "英文先放不習慣解題的主句，再用分號接期待老師提供答案。",
+        summary: "be accustomed to 後面接 V-ing；分號後接第二個主句。",
+        phrases: [
+          ["are not accustomed to", "不習慣", "to 是介系詞，後接 V-ing。"],
+          ["on their own", "靠自己", "表示獨立完成。"]
+        ],
+        vocab: [
+          ["standard answers", "標準答案", "standard 表示標準的。"],
+          ["expect", "期待", "expect someone to do something 是常見結構。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-98-02",
+        year: 98,
+        no: 2,
+        chinese: "除了用功讀書獲取知識外，學生也應該培養獨立思考的能力。",
+        answer: "In addition to studying hard to acquire knowledge, students should also cultivate the ability to think independently.",
+        pattern: "SVO",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "active",
+        core: ["學生", "應該培養", "獨立思考的能力"],
+        details: [
+          { label: "附加", text: "除了用功讀書獲取知識外" }
+        ],
+        pieces: ["In addition to studying hard to acquire knowledge,", "students should also cultivate", "the ability", "to think independently."],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        tenseReason: "中文有「應該」，英文答案用 should cultivate，所以要選情態助動詞。",
+        voiceReason: "英文句首主句是 students，表示學生主動培養能力。",
+        orderReason: "英文先放 In addition to...，再放 students should cultivate the ability，最後接 to think independently。",
+        summary: "in addition to 表示除了；the ability to V 表示做某事的能力。",
+        phrases: [
+          ["in addition to", "除了……之外", "後面接名詞或 V-ing。"],
+          ["think independently", "獨立思考", "independently 是副詞。"]
+        ],
+        vocab: [
+          ["cultivate", "培養", "常用於能力、習慣、品格。"],
+          ["acquire", "獲取", "比 get 更正式。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-97-01",
+        year: 97,
+        no: 1,
+        chinese: "聽音樂是一個你可以終生享受的嗜好。",
+        answer: "Listening to music is a hobby you can enjoy for a lifetime.",
+        pattern: "SVC",
+        tense: "present-simple",
+        tenseLabel: "現在簡單式",
+        voice: "active",
+        coreLabel: "補語",
+        core: ["聽音樂", "是", "你可以終生享受的嗜好"],
+        details: [],
+        subclauses: [],
+        pieces: ["Listening to music", "is a hobby", "you can enjoy", "for a lifetime."],
+        pieceOrder: ["p2", "p4", "p1", "p3"],
+        tenseReason: "這句在定義一種嗜好，英文用 is，所以是現在簡單式。",
+        voiceReason: "英文句首是動名詞 Listening to music，描述它是嗜好，不是被動。",
+        orderReason: "英文先放動名詞主詞，再放 is a hobby，最後用 you can enjoy 和 for a lifetime 修飾 hobby。",
+        summary: "Listening to music 是動名詞主詞；you can enjoy 修飾 hobby。",
+        phrases: [
+          ["for a lifetime", "終生", "表示持續一生。"],
+          ["a hobby you can enjoy", "你可以享受的嗜好", "you can enjoy 是省略關係代名詞的修飾語。"]
+        ],
+        vocab: [
+          ["hobby", "嗜好", "可數名詞。"],
+          ["lifetime", "一生", "life + time 組成的名詞。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-97-02",
+        year: 97,
+        no: 2,
+        chinese: "但能彈奏樂器可以為你帶來更多的喜悅。",
+        answer: "However, being able to play a musical instrument can bring you even more joy.",
+        pattern: "SVO",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "active",
+        core: ["能彈奏樂器", "可以帶給", "你", "更多喜悅"],
+        details: [
+          { label: "轉折", text: "但" }
+        ],
+        pieces: ["However,", "being able to play a musical instrument", "can bring you", "even more joy."],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        tenseReason: "英文答案用 can bring，所以要選情態助動詞。",
+        voiceReason: "英文句首是 being able to play...，表示這件事主動帶來喜悅。",
+        orderReason: "英文先放 However，再放動名詞主詞，接著放 can bring you 和受詞。",
+        summary: "being able to... 可當主詞；can bring 表示能夠帶來。",
+        phrases: [
+          ["being able to", "能夠", "動名詞片語可作主詞。"],
+          ["even more joy", "更多的喜悅", "even 加強 more。"]
+        ],
+        vocab: [
+          ["instrument", "樂器", "musical instrument 是完整說法。"],
+          ["joy", "喜悅", "抽象名詞。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-96-01",
+        year: 96,
+        no: 1,
+        chinese: "如果我們只為自己而活，就不會真正地感到快樂。",
+        answer: "If we live only for ourselves, we will not truly feel happy.",
+        pattern: "條件句",
+        tense: "future-simple",
+        tenseLabel: "未來簡單式",
+        voice: "active",
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["我們", "活著"]
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["我們", "將不會真正地感到", "快樂"],
+            coreLabel: "補語"
+          }
+        ],
+        details: [
+          { label: "連接", text: "如果", role: "connector", group: "connector", beforeClause: "clause-a" },
+          { label: "方式", text: "只為自己", group: "supplemental" }
+        ],
+        pieces: ["If we live only for ourselves,", "we will not truly feel", "happy."],
+        pieceOrder: ["p2", "p1", "p3"],
+        tenseReason: "條件句中 if 子句用現在簡單式，主句用 will not feel，所以選未來簡單式。",
+        voiceReason: "英文主詞是 we，表示我們主動感受，不是被動。",
+        orderReason: "英文先放 If 條件子句，再放 we will not truly feel happy。",
+        summary: "If 條件句常用現在式表條件，主句用 will 表結果。",
+        phrases: [
+          ["only for ourselves", "只為自己", "for 表示為了某人。"],
+          ["truly feel happy", "真正感到快樂", "truly 修飾 feel。"]
+        ],
+        vocab: [
+          ["ourselves", "我們自己", "反身代名詞。"],
+          ["happy", "快樂", "形容詞作補語。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-96-02",
+        year: 96,
+        no: 2,
+        chinese: "當我們開始為他人著想，快樂之門自然會開啟。",
+        answer: "When we start to consider others, the door to happiness will naturally open.",
+        pattern: "SVO",
+        tense: "future-simple",
+        tenseLabel: "未來簡單式",
+        voice: "active",
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["我們", "開始"]
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["快樂之門", "會自然地開啟"]
+          }
+        ],
+        details: [
+          { label: "連接", text: "當", role: "connector", group: "connector", beforeClause: "clause-a" },
+          { label: "對象", text: "為他人著想", group: "supplemental" }
+        ],
+        pieces: ["When we start to consider others,", "the door to happiness", "will naturally open."],
+        pieceOrder: ["p3", "p1", "p2"],
+        tenseReason: "中文有「會開啟」，英文答案用 will naturally open，所以選未來簡單式。",
+        voiceReason: "英文主詞 the door to happiness 自然開啟，沒有被動結構。",
+        orderReason: "英文先放 When 時間子句，再放主詞 the door to happiness 和 will open。",
+        summary: "When 子句交代條件或時間，主句用 will 表結果。",
+        phrases: [
+          ["consider others", "為他人著想", "consider 可表示考量。"],
+          ["the door to happiness", "快樂之門", "to 表示通往。"]
+        ],
+        vocab: [
+          ["naturally", "自然地", "修飾 open。"],
+          ["open", "開啟", "這裡是不及物動詞。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-95-01",
+        year: 95,
+        no: 1,
+        chinese: "一般人都知道閱讀對孩子有益。",
+        answer: "Most people know that reading is beneficial for children.",
+        pattern: "SVO",
+        tense: "present-simple",
+        tenseLabel: "現在簡單式",
+        voice: "active",
+        core: ["一般人", "知道", "閱讀有益"],
+        details: [
+          { label: "對象", text: "對孩子" }
+        ],
+        subclauses: [
+          {
+            type: "名詞子句",
+            role: "當受詞",
+            marker: "that",
+            text: "that reading is beneficial for children",
+            target: "know",
+            core: "reading / is / beneficial",
+            note: "that 後面是一個完整句子，整段當 know 的受詞內容。"
+          }
+        ],
+        pieces: ["Most people", "know", "that reading is beneficial", "for children."],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        tenseReason: "這句是一般事實，英文用 know，所以是現在簡單式。",
+        voiceReason: "英文句首放 Most people，表示人們主動知道某件事。",
+        orderReason: "英文先放 Most people know，再用 that 子句說明知道的內容。",
+        summary: "that reading is beneficial for children 是 know 的受詞內容。",
+        phrases: [
+          ["beneficial for", "對……有益", "beneficial 常接 for。"],
+          ["Most people know that", "一般人都知道", "that 後接完整子句。"]
+        ],
+        vocab: [
+          ["reading", "閱讀", "動名詞可作主詞。"],
+          ["beneficial", "有益的", "正式形容詞。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-95-02",
+        year: 95,
+        no: 2,
+        chinese: "老師應該多鼓勵學生到圖書館借書。",
+        answer: "Teachers should encourage students to borrow books from the library more.",
+        pattern: "SVO",
+        tense: "modal-simple",
+        tenseLabel: "情態助動詞",
+        voice: "active",
+        core: ["老師", "應該鼓勵", "學生"],
+        details: [
+          { label: "行為", text: "到圖書館借書" },
+          { label: "程度", text: "多" }
+        ],
+        pieces: ["Teachers", "should encourage students", "to borrow books", "from the library more."],
+        pieceOrder: ["p2", "p4", "p1", "p3"],
+        tenseReason: "中文有「應該」，英文答案用 should encourage，所以要選情態助動詞。",
+        voiceReason: "英文主詞 Teachers 表示老師主動鼓勵學生。",
+        orderReason: "英文先放 Teachers should encourage students，再接 to borrow books，最後放地點與程度。",
+        summary: "encourage someone to do something 是本句核心結構。",
+        phrases: [
+          ["encourage students to", "鼓勵學生去做", "encourage 後接受詞和 to V。"],
+          ["from the library", "從圖書館", "from 表示借書來源。"]
+        ],
+        vocab: [
+          ["borrow", "借入", "和 lend 借出不同。"],
+          ["library", "圖書館", "前面常加 the 指特定場所。"]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-94-01",
+        year: 94,
+        no: 1,
+        chinese: "人類對外太空所知非常有限，但長久以來我們對它卻很感興趣。",
+        answer: "Humanity's knowledge of outer space is very limited, but we have been fascinated by it for a long time.",
+        pattern: "SVC",
+        tense: "present-perfect",
+        tenseLabel: "現在完成式",
+        voice: "passive",
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["人類對外太空的知識", "是", "非常有限"],
+            coreLabel: "補語"
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["我們", "很感興趣"]
+          }
+        ],
+        details: [
+          { label: "轉折", text: "但", role: "connector", group: "connector", beforeClause: "clause-b" },
+          { label: "時間", text: "長久以來", group: "supplemental" }
+        ],
+        pieces: ["Humanity's knowledge of outer space is very limited,", "but we have been fascinated by it", "for a long time."],
+        pieceOrder: ["p2", "p1", "p3"],
+        tenseReason: "後半句的「長久以來」對應 have been fascinated，所以選現在完成式。",
+        voiceReason: "英文用 have been fascinated by it，是 be + p.p. 的被動形式。",
+        orderReason: "英文先說所知有限，再用 but 轉折到長久以來深受吸引。",
+        summary: "這句有兩個分句；練習重點放在 have been fascinated by 的完成式被動。",
+        phrases: [
+          ["outer space", "外太空", "固定名詞片語。"],
+          ["for a long time", "長久以來", "表示一段持續時間。"]
+        ],
+        vocab: [
+          ["Humanity", "人類", "集合名詞。"],
+          ["fascinated", "著迷的", "常用 be fascinated by。" ]
+        ]
+      }),
+      makeExamQuestion({
+        id: "exam-93-01",
+        year: 93,
+        no: 1,
+        chinese: "雖然 Lily 生來又瞎又聾，但她從來不氣餒。",
+        answer: "Although Lily was born blind and deaf, she has never been discouraged.",
+        pattern: "被動語態",
+        tense: "present-perfect",
+        tenseLabel: "現在完成式",
+        voice: "passive",
+        clauses: [
+          {
+            id: "clause-a",
+            label: "A 句主幹",
+            core: ["Lily", "生來", "又瞎又聾"],
+            coreLabel: "補語"
+          },
+          {
+            id: "clause-b",
+            label: "B 句主幹",
+            core: ["她", "從不氣餒"]
+          }
+        ],
+        details: [
+          { label: "讓步", text: "雖然", role: "connector", group: "connector", beforeClause: "clause-a" }
+        ],
+        pieces: ["Although Lily was born blind and deaf,", "she has never been", "discouraged."],
+        pieceOrder: ["p3", "p1", "p2"],
+        tenseReason: "中文的「從來不」對應 has never been，表示到現在都沒有，所以選現在完成式。",
+        voiceReason: "英文使用 has never been discouraged，是 be + p.p. 的被動形式。",
+        orderReason: "英文先放 Although 讓步子句，再放主句 she has never been discouraged。",
+        summary: "Although 帶出讓步；has never been discouraged 表示到現在從未氣餒。",
+        phrases: [
+          ["born blind and deaf", "生來又瞎又聾", "born 後接形容詞描述出生狀態。"],
+          ["has never been discouraged", "從來不氣餒", "never 放在完成式助動詞後。"]
+        ],
+        vocab: [
+          ["blind", "失明的", "形容詞。"],
+          ["discouraged", "氣餒的", "常用於被動或形容詞用法。"]
+        ]
+      })
+    ];
+
+    const questions = [
+      ...remainingExamQuestions,
+      {
+        id: "exam-112-01",
+        year: 112,
+        title: "學測翻譯第 1 句",
+        chinese: "歷史一再證明，戰爭會造成極為可怕的災難。",
+        tags: ["學測", "SVO", "現在簡單式", "that 子句"],
+        tense: "present-simple",
+        voice: "active",
+        tenseReason: "這句是在陳述一般事實，英文用 History repeatedly proves，所以是現在簡單式。",
+        voiceReason: "英文句首放 History，表示歷史主動證明某件事，所以使用主動語態。",
+        orderReason: "英文先放主詞 History，再放 repeatedly proves，接著用 that 子句說明被證明的內容。",
+        answer: "History repeatedly proves that war causes extremely dreadful disasters.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "歷史", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "一再地證明", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "戰爭會造成極為可怕的災難", role: "object" }
+        ],
+        details: [],
+        subclauses: [
+          {
+            type: "名詞子句",
+            role: "當受詞",
+            marker: "that",
+            text: "that war causes extremely dreadful disasters",
+            target: "proves",
+            core: "war / causes / disasters",
+            note: "that 子句說明歷史證明的內容，整段接在 proves 後。"
+          }
+        ],
+        bankOrder: ["o", "s", "v"],
+        answerPieces: [
+          { id: "p1", text: "History" },
+          { id: "p2", text: "repeatedly proves" },
+          { id: "p3", text: "that war causes" },
+          { id: "p4", text: "extremely dreadful disasters." }
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        summary: "這句的核心是 History proves that...，that 子句承接被證明的內容。",
+        phraseNotes: [
+          { text: "repeatedly proves", meaning: "一再證明", note: "repeatedly 放在動詞前，表示反覆發生。" },
+          { text: "extremely dreadful disasters", meaning: "極為可怕的災難", note: "extremely 強化 dreadful 的程度。" }
+        ],
+        vocabulary: [
+          { text: "dreadful", meaning: "可怕的", note: "比 bad 更正式且語氣更強。" },
+          { text: "disasters", meaning: "災難", note: "可數名詞，這裡用複數表示多種或多次災難。" }
+        ]
+      },
+      {
+        id: "exam-108-01",
+        year: 108,
+        title: "學測翻譯第 1 句",
+        chinese: "自 2007 年營運以來，高鐵已成為臺灣最便利、最快速的交通工具之一。",
+        tags: ["學測", "SVC", "現在完成式", "時間片語"],
+        tense: "present-perfect",
+        voice: "active",
+        tenseReason: "中文的「自 2007 年營運以來」表示從過去延續到現在，所以用現在完成式 has become。",
+        voiceReason: "英文句首放 High-Speed Rail，描述它已成為某種狀態，所以使用主動語態。",
+        orderReason: "英文先放 since its operation in 2007 作時間線索，再放主詞與 has become，最後放補語。",
+        answer: "Since its operation in 2007, the High-Speed Rail has become one of the most convenient and fastest transportation options in Taiwan.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "高鐵", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "已成為", role: "verb" },
+          { id: "o", slot: "object", label: "補語", text: "最快速、最便利的交通工具之一", role: "object" }
+        ],
+        details: [
+          { id: "d-time", slot: "detail-time", label: "時間", text: "自 2007 年營運以來", role: "detail" },
+          { id: "d-place", slot: "detail-place", label: "地點", text: "在臺灣", role: "detail" }
+        ],
+        bankOrder: ["d-time", "o", "s", "d-place", "v"],
+        answerPieces: [
+          { id: "p1", text: "Since its operation in 2007," },
+          { id: "p2", text: "the High-Speed Rail" },
+          { id: "p3", text: "has become" },
+          { id: "p4", text: "one of the most convenient and fastest transportation options" },
+          { id: "p5", text: "in Taiwan." }
+        ],
+        pieceOrder: ["p4", "p2", "p1", "p5", "p3"],
+        summary: "since 帶出從過去到現在的時間範圍，因此主句使用 has become。",
+        phraseNotes: [
+          { text: "since its operation in 2007", meaning: "自 2007 年營運以來", note: "since + 起點，常提示現在完成式。" },
+          { text: "one of the most...", meaning: "最……之一", note: "one of 後接複數名詞。" }
+        ],
+        vocabulary: [
+          { text: "operation", meaning: "營運", note: "可指交通系統、公司或機器的運作。" },
+          { text: "transportation options", meaning: "交通工具選項", note: "options 比 tools 更自然。" }
+        ]
+      },
+      {
+        id: "exam-101-01",
+        year: 101,
+        title: "學測翻譯第 1 句",
+        chinese: "近年來，許多臺灣製作的影片已經受到國際的重視。",
+        tags: ["學測", "SVO", "現在完成式", "時間片語"],
+        tense: "present-perfect",
+        voice: "active",
+        tenseReason: "中文的「近年來」與「已經」表示到現在累積出的結果，所以用現在完成式 have gained。",
+        voiceReason: "英文句首放 many films，表示這些影片取得 recognition，所以使用主動語態。",
+        orderReason: "英文先放時間 In recent years，再放主詞 many films produced in Taiwan，接著放 have gained 和受詞。",
+        answer: "In recent years, many films produced in Taiwan have gained international recognition.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "許多臺灣製作的影片", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "已經受到", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "國際的重視", role: "object" }
+        ],
+        details: [
+          { id: "d-time", slot: "detail-time", label: "時間", text: "近年來", role: "detail" }
+        ],
+        bankOrder: ["s", "d-time", "o", "v"],
+        answerPieces: [
+          { id: "p1", text: "In recent years," },
+          { id: "p2", text: "many films produced in Taiwan" },
+          { id: "p3", text: "have gained" },
+          { id: "p4", text: "international recognition." }
+        ],
+        pieceOrder: ["p2", "p4", "p1", "p3"],
+        summary: "中文的『受到重視』可以用英文主動寫成 have gained recognition。",
+        phraseNotes: [
+          { text: "in recent years", meaning: "近年來", note: "常和現在完成式搭配。" },
+          { text: "gained international recognition", meaning: "受到國際重視", note: "gain recognition 是常見搭配。" }
+        ],
+        vocabulary: [
+          { text: "recognition", meaning: "認可、重視", note: "正式文章常用字。" },
+          { text: "produced", meaning: "製作的", note: "過去分詞放在名詞後修飾 films。" }
+        ]
+      },
+      {
+        id: "exam-100-02",
+        year: 100,
+        title: "學測翻譯第 2 句",
+        chinese: "每年它們都吸引了成千上萬來自不同國家的觀光客。",
+        tags: ["學測", "SVO", "現在簡單式", "數量片語"],
+        tense: "present-simple",
+        voice: "active",
+        tenseReason: "這句描述每年都會發生的常態，所以英文用現在簡單式 attract。",
+        voiceReason: "英文句首放 they，表示夜市主動吸引觀光客，所以使用主動語態。",
+        orderReason: "英文先放時間 Every year，再放主詞 they、動詞 attract、受詞 thousands of tourists，最後補來源。",
+        answer: "Every year, they attract thousands of tourists from different countries.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "它們", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "吸引", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "成千上萬觀光客", role: "object" }
+        ],
+        details: [
+          { id: "d-time", slot: "detail-time", label: "時間", text: "每年", role: "detail" },
+          { id: "d-source", slot: "detail-source", label: "來源", text: "來自不同國家", role: "detail" }
+        ],
+        bankOrder: ["s", "d-time", "o", "v", "d-source"],
+        answerPieces: [
+          { id: "p1", text: "Every year," },
+          { id: "p2", text: "they" },
+          { id: "p3", text: "attract" },
+          { id: "p4", text: "thousands of tourists" },
+          { id: "p5", text: "from different countries." }
+        ],
+        pieceOrder: ["p4", "p2", "p5", "p1", "p3"],
+        summary: "Every year 表示規律發生的事，主句使用現在簡單式。",
+        phraseNotes: [
+          { text: "thousands of", meaning: "成千上萬的", note: "後面接複數名詞。" },
+          { text: "from different countries", meaning: "來自不同國家", note: "from 補充來源。" }
+        ],
+        vocabulary: [
+          { text: "attract", meaning: "吸引", note: "主詞可以是地點、活動或特色。" },
+          { text: "tourists", meaning: "觀光客", note: "tourist 是可數名詞。" }
+        ]
+      },
+      {
+        id: "exam-99-01",
+        year: 99,
+        title: "學測翻譯第 1 句",
+        chinese: "在過去，腳踏車主要是作為一種交通工具。",
+        tags: ["學測", "被動語態", "過去簡單式", "用途"],
+        tense: "past-simple",
+        voice: "passive",
+        tenseReason: "中文的「在過去」表示過去狀態，英文答案用 were used。",
+        voiceReason: "英文句首放 bicycles，腳踏車是被使用的工具，所以要用被動語態。",
+        orderReason: "英文先放時間 In the past，再放 Bicycles were primarily used，最後用 as a means of transportation 說明用途。",
+        answer: "In the past, bicycles were primarily used as a means of transportation.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "腳踏車", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "被使用", role: "verb" }
+        ],
+        coreGroups: [{ id: "main", label: "主幹", slots: ["subject", "verb"] }],
+        details: [
+          { id: "d-time", slot: "detail-time", label: "時間", text: "在過去", role: "detail" },
+          { id: "d-purpose", slot: "detail-purpose", label: "用途", text: "作為主要交通工具", role: "detail" }
+        ],
+        bankOrder: ["d-time", "s", "d-purpose", "v"],
+        answerPieces: [
+          { id: "p1", text: "In the past," },
+          { id: "p2", text: "bicycles" },
+          { id: "p3", text: "were primarily used" },
+          { id: "p4", text: "as a means of transportation." }
+        ],
+        pieceOrder: ["p4", "p2", "p1", "p3"],
+        summary: "中文可先拆成『人們使用腳踏車』，英文改用 bicycles 當句首，所以要轉成被動。",
+        phraseNotes: [
+          { text: "in the past", meaning: "在過去", note: "清楚標示過去時間。" },
+          { text: "as a means of transportation", meaning: "作為一種交通工具", note: "as 表示用途或身分。" }
+        ],
+        vocabulary: [
+          { text: "primarily", meaning: "主要地", note: "比 mainly 更正式。" },
+          { text: "transportation", meaning: "交通、運輸", note: "不可數名詞，常用於正式語境。" }
+        ]
+      },
+      {
+        id: "exam-93-02",
+        year: 93,
+        title: "學測翻譯第 2 句",
+        chinese: "她的故事證明了，我們只要努力必能成功。",
+        tags: ["學測", "SVO", "現在簡單式", "條件片語"],
+        tense: "present-simple",
+        voice: "active",
+        tenseReason: "這句是在陳述普遍道理，英文用 Her story proves，所以是現在簡單式。",
+        voiceReason: "英文句首放 Her story，表示故事主動證明某個道理，所以使用主動語態。",
+        orderReason: "英文先放 Her story proves，再用 that 子句接出被證明的內容，條件放在 as long as 後。",
+        answer: "Her story proves that as long as we strive, success is achievable.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "她的故事", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "證明", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "只要努力必能成功", role: "object" }
+        ],
+        details: [],
+        subclauses: [
+          {
+            type: "名詞子句",
+            role: "當受詞",
+            marker: "that",
+            text: "that as long as we strive, success is achievable",
+            target: "proves",
+            core: "success / is / achievable",
+            note: "that 子句是被證明的整件事；as long as we strive 是子句內的條件。"
+          }
+        ],
+        bankOrder: ["o", "s", "v"],
+        answerPieces: [
+          { id: "p1", text: "Her story" },
+          { id: "p2", text: "proves" },
+          { id: "p3", text: "that as long as we strive," },
+          { id: "p4", text: "success is achievable." }
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        summary: "as long as 表示條件，後面接努力這件事；主句說成功是可達成的。",
+        phraseNotes: [
+          { text: "as long as", meaning: "只要", note: "表示條件，是翻譯題常見片語。" },
+          { text: "success is achievable", meaning: "成功是可達成的", note: "achievable 比 can succeed 更正式。" }
+        ],
+        vocabulary: [
+          { text: "strive", meaning: "努力", note: "比 try 更正式，常用於書面語。" },
+          { text: "achievable", meaning: "可達成的", note: "由 achieve 加 -able 形成形容詞。" }
+        ]
+      },
+      {
+        id: "exam-111-01",
+        year: 111,
+        title: "學測翻譯第 1 句",
+        chinese: "飼養寵物並非一項短暫的人生體驗，而是一個對動物的終生承諾。",
+        tags: ["學測", "SVC", "現在簡單式", "對比結構"],
+        tense: "present-simple",
+        voice: "active",
+        tenseReason: "這句是在定義與說明飼養寵物的本質，英文用 is not...but...，所以是現在簡單式。",
+        voiceReason: "英文句首放 Keeping a pet，描述它是什麼，不是被執行的動作，所以使用主動語態。",
+        orderReason: "英文先放主詞 Keeping a pet，再放 is not，接著放短暫體驗，最後用 but 接真正的定位。",
+        answer: "Keeping a pet is not a short-term life experience but a lifelong commitment to animals.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "飼養寵物", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "不是", role: "verb" },
+          { id: "o", slot: "object", label: "補語", text: "短暫的人生體驗", role: "object" }
+        ],
+        details: [
+          { id: "d-but", slot: "detail-but", label: "轉折", text: "而是", role: "detail" },
+          { id: "d-commitment", slot: "detail-commitment", label: "定位", text: "一個終生承諾", role: "detail" },
+          { id: "d-target", slot: "detail-target", label: "對象", text: "對動物", role: "detail" }
+        ],
+        bankOrder: ["d-but", "s", "o", "v", "d-commitment", "d-target"],
+        answerPieces: [
+          { id: "p1", text: "Keeping a pet" },
+          { id: "p2", text: "is not a short-term life experience" },
+          { id: "p3", text: "but a lifelong commitment" },
+          { id: "p4", text: "to animals." }
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        summary: "not...but... 是這句的核心，前面否定短暫體驗，後面強調終生承諾。",
+        phraseNotes: [
+          { text: "not...but...", meaning: "不是……而是……", note: "用來做強烈對比。" },
+          { text: "a lifelong commitment", meaning: "終生承諾", note: "lifelong 表示持續一生的。" }
+        ],
+        vocabulary: [
+          { text: "commitment", meaning: "承諾、責任", note: "比 promise 更正式，帶有長期責任感。" },
+          { text: "short-term", meaning: "短期的", note: "和 lifelong 形成對比。" }
+        ]
+      },
+      {
+        id: "exam-110-01",
+        year: 110,
+        title: "學測翻譯第 1 句",
+        chinese: "根據新聞報導，每年全球有超過百萬人在道路事故中喪失性命。",
+        tags: ["學測", "SVO", "現在簡單式", "數量片語"],
+        tense: "present-simple",
+        voice: "active",
+        tenseReason: "這句描述每年都發生的常態，英文用 lose their lives，所以是現在簡單式。",
+        voiceReason: "英文句首放 over a million people，表示人們失去生命，所以使用主動語態。",
+        orderReason: "英文先放 According to news reports，再放主詞與動詞，最後補上地點與時間。",
+        answer: "According to news reports, over a million people worldwide lose their lives in road accidents every year.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "超過百萬人", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "喪失", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "性命", role: "object" }
+        ],
+        details: [
+          { id: "d-source", slot: "detail-source", label: "來源", text: "根據新聞報導", role: "detail", group: "lead" },
+          { id: "d-place", slot: "detail-place", label: "地點", text: "全球、道路事故中", role: "detail", group: "supplemental" },
+          { id: "d-time", slot: "detail-time", label: "時間", text: "每年", role: "detail", group: "supplemental" }
+        ],
+        bankOrder: ["d-source", "o", "s", "d-place", "v", "d-time"],
+        answerPieces: [
+          { id: "p1", text: "According to news reports," },
+          { id: "p2", text: "over a million people worldwide" },
+          { id: "p3", text: "lose their lives" },
+          { id: "p4", text: "in road accidents" },
+          { id: "p5", text: "every year." }
+        ],
+        pieceOrder: ["p4", "p1", "p5", "p2", "p3"],
+        summary: "這句英文先交代資訊來源，再寫主幹；地點 in road accidents 放在時間 every year 前。",
+        phraseNotes: [
+          { text: "according to news reports", meaning: "根據新聞報導", note: "常放在句首交代資訊來源。" },
+          { text: "lose their lives", meaning: "喪失性命", note: "比 die 更正式、委婉。" }
+        ],
+        vocabulary: [
+          { text: "worldwide", meaning: "全球", note: "可作副詞或形容詞，這裡修飾 people 的範圍。" },
+          { text: "road accidents", meaning: "道路事故", note: "accident 是可數名詞。" }
+        ]
+      },
+      {
+        id: "exam-109-01",
+        year: 109,
+        title: "學測翻譯第 1 句",
+        chinese: "我們有時會違背自己的意願去做某些事情，就只為了要取悅朋友。",
+        tags: ["學測", "SVO", "現在簡單式", "目的片語"],
+        tense: "present-simple",
+        voice: "active",
+        tenseReason: "這句描述有時會出現的行為模式，英文用 Sometimes, we go...，所以是現在簡單式。",
+        voiceReason: "英文句首放 we，表示我們主動做出行為，所以使用主動語態。",
+        orderReason: "英文先放頻率 Sometimes，再放 we go against our own will to do certain things，最後用 just to 補目的。",
+        answer: "Sometimes, we go against our own will to do certain things just to please friends.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "我們", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "違背", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "自己的意願", role: "object" }
+        ],
+        details: [
+          { id: "d-frequency", slot: "detail-frequency", label: "頻率", text: "有時", role: "detail", group: "lead" },
+          { id: "d-action", slot: "detail-action", label: "行為", text: "去做某些事情", role: "detail" },
+          { id: "d-purpose", slot: "detail-purpose", label: "目的", text: "取悅朋友", role: "detail" }
+        ],
+        bankOrder: ["d-purpose", "s", "o", "d-frequency", "v", "d-action"],
+        answerPieces: [
+          { id: "p1", text: "Sometimes," },
+          { id: "p2", text: "we go against our own will" },
+          { id: "p3", text: "to do certain things" },
+          { id: "p4", text: "just to please friends." }
+        ],
+        pieceOrder: ["p2", "p4", "p1", "p3"],
+        summary: "go against our own will 是主幹，後面兩個 to 分別補行為與目的。",
+        phraseNotes: [
+          { text: "go against our own will", meaning: "違背自己的意願", note: "go against 表示違背、反對。" },
+          { text: "just to please friends", meaning: "只為了取悅朋友", note: "just to 表示目的，而且帶有『只是為了』的語氣。" }
+        ],
+        vocabulary: [
+          { text: "certain", meaning: "某些", note: "certain things 指不特定的一些事情。" },
+          { text: "please", meaning: "取悅", note: "這裡是動詞，不是 please 當禮貌用語。" }
+        ]
+      },
+      {
+        id: "exam-106-01",
+        year: 106,
+        title: "學測翻譯第 1 句",
+        chinese: "玉山在冬天常常覆蓋著厚厚的積雪，使整個山頂閃耀如玉。",
+        tags: ["學測", "被動語態", "現在簡單式", "地點時間"],
+        tense: "present-simple",
+        voice: "passive",
+        tenseReason: "這句描述玉山冬天常見狀態，英文用 is often covered，所以是現在簡單式。",
+        voiceReason: "英文句首放 Jade Mountain，山是被雪覆蓋的對象，所以要用被動語態。",
+        orderReason: "英文先放 Jade Mountain is often covered with thick snow，再放時間 in winter，最後用 making 補結果。",
+        answer: "Jade Mountain is often covered with thick snow in winter, making the entire summit shimmer like jade.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "玉山", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "常常覆蓋著", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "厚厚的積雪", role: "object" }
+        ],
+        details: [
+          { id: "d-time", slot: "detail-time", label: "時間", text: "在冬天", role: "detail" },
+          { id: "d-result", slot: "detail-result", label: "結果", text: "使整個山頂閃耀如玉", role: "detail" }
+        ],
+        bankOrder: ["o", "s", "d-result", "v", "d-time"],
+        answerPieces: [
+          { id: "p1", text: "Jade Mountain" },
+          { id: "p2", text: "is often covered with thick snow" },
+          { id: "p3", text: "in winter," },
+          { id: "p4", text: "making the entire summit shimmer like jade." }
+        ],
+        pieceOrder: ["p4", "p2", "p1", "p3"],
+        summary: "covered with 是被動結構；in winter 是時間，放在被覆蓋的狀態之後。",
+        phraseNotes: [
+          { text: "covered with", meaning: "被……覆蓋", note: "常用於描述表面覆蓋物。" },
+          { text: "shimmer like jade", meaning: "閃耀如玉", note: "like jade 用來做比喻。" }
+        ],
+        vocabulary: [
+          { text: "summit", meaning: "山頂", note: "比 mountain top 更正式。" },
+          { text: "shimmer", meaning: "閃耀", note: "表示柔和、閃爍的光。" }
+        ]
+      },
+      {
+        id: "exam-106-02",
+        year: 106,
+        title: "學測翻譯第 2 句",
+        chinese: "征服玉山一直是國內外登山者最困難的挑戰之一。",
+        tags: ["學測", "SVC", "現在完成式", "one of"],
+        tense: "present-perfect",
+        voice: "active",
+        tenseReason: "中文的「一直是」表示到現在仍持續的狀態，英文用 has always been。",
+        voiceReason: "英文句首放 Conquering Jade Mountain，描述它一直是什麼，所以使用主動語態。",
+        orderReason: "英文先放動名詞主詞 Conquering Jade Mountain，再放 has always been，最後放 one of the most challenging goals。",
+        answer: "Conquering Jade Mountain has always been one of the most challenging goals for climbers both domestically and internationally.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "征服玉山", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "一直是", role: "verb" },
+          { id: "o", slot: "object", label: "補語", text: "最困難的挑戰之一", role: "object" }
+        ],
+        details: [
+          { id: "d-target", slot: "detail-target", label: "對象", text: "登山者", role: "detail" },
+          { id: "d-scope", slot: "detail-scope", label: "範圍", text: "國內外", role: "detail" }
+        ],
+        bankOrder: ["d-target", "s", "o", "d-scope", "v"],
+        answerPieces: [
+          { id: "p1", text: "Conquering Jade Mountain" },
+          { id: "p2", text: "has always been" },
+          { id: "p3", text: "one of the most challenging goals" },
+          { id: "p4", text: "for climbers" },
+          { id: "p5", text: "both domestically and internationally." }
+        ],
+        pieceOrder: ["p3", "p1", "p5", "p2", "p4"],
+        summary: "動名詞片語可以當主詞；has always been 表示長期持續到現在的狀態。",
+        phraseNotes: [
+          { text: "one of the most challenging goals", meaning: "最困難的挑戰之一", note: "one of 後面接複數名詞 goals。" },
+          { text: "both domestically and internationally", meaning: "國內外", note: "both...and... 平衡兩個副詞。" }
+        ],
+        vocabulary: [
+          { text: "conquering", meaning: "征服", note: "動名詞可放句首當主詞。" },
+          { text: "challenging", meaning: "具挑戰性的", note: "比 difficult 更有『值得挑戰』的語感。" }
+        ]
+      },
+      {
+        id: "exam-102-01",
+        year: 102,
+        title: "學測翻譯第 1 句",
+        chinese: "都會地區的高房價對社會產生了嚴重的影響。",
+        tags: ["學測", "SVO", "現在完成式", "介系詞片語"],
+        tense: "present-perfect",
+        voice: "active",
+        tenseReason: "中文的「產生了」強調結果已形成，英文用 have had a serious impact。",
+        voiceReason: "英文句首放 high housing prices，表示高房價產生影響，所以使用主動語態。",
+        orderReason: "英文先放主詞 The high housing prices in urban areas，再放 have had，接著放受詞 a serious impact，最後補 on society。",
+        answer: "The high housing prices in urban areas have had a serious impact on society.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "高房價", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "產生了", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "嚴重的影響", role: "object" }
+        ],
+        details: [
+          { id: "d-place", slot: "detail-place", label: "地點", text: "都會地區", role: "detail" },
+          { id: "d-target", slot: "detail-target", label: "對象", text: "對社會", role: "detail" }
+        ],
+        bankOrder: ["d-place", "o", "s", "d-target", "v"],
+        answerPieces: [
+          { id: "p1", text: "The high housing prices" },
+          { id: "p2", text: "in urban areas" },
+          { id: "p3", text: "have had" },
+          { id: "p4", text: "a serious impact" },
+          { id: "p5", text: "on society." }
+        ],
+        pieceOrder: ["p2", "p4", "p1", "p5", "p3"],
+        summary: "have had an impact on 是固定搭配，on 後面接受到影響的對象。",
+        phraseNotes: [
+          { text: "have had a serious impact on", meaning: "已造成嚴重影響", note: "impact on 是常見搭配。" },
+          { text: "in urban areas", meaning: "在都會地區", note: "地點片語修飾 housing prices。" }
+        ],
+        vocabulary: [
+          { text: "housing prices", meaning: "房價", note: "housing 指住房相關。" },
+          { text: "urban", meaning: "都市的", note: "相對於 rural 鄉村的。" }
+        ]
+      },
+      {
+        id: "exam-102-02",
+        year: 102,
+        title: "學測翻譯第 2 句",
+        chinese: "政府正推出新的政策，以滿足人們的住房需求。",
+        tags: ["學測", "SVO", "現在進行式", "目的片語"],
+        tense: "present-continuous",
+        voice: "active",
+        tenseReason: "中文的「正推出」表示正在進行中的政策行動，英文用 is introducing。",
+        voiceReason: "英文句首放 The government，表示政府主動推出政策，所以使用主動語態。",
+        orderReason: "英文先放主詞 The government，再放 is introducing，接著放 new policies，最後用 to meet 補目的。",
+        answer: "The government is introducing new policies to meet people's housing needs.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "政府", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "正推出", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "新的政策", role: "object" }
+        ],
+        details: [
+          { id: "d-purpose", slot: "detail-purpose", label: "目的", text: "滿足住房需求", role: "detail" },
+          { id: "d-target", slot: "detail-target", label: "對象", text: "人們", role: "detail" }
+        ],
+        bankOrder: ["o", "d-purpose", "s", "v", "d-target"],
+        answerPieces: [
+          { id: "p1", text: "The government" },
+          { id: "p2", text: "is introducing" },
+          { id: "p3", text: "new policies" },
+          { id: "p4", text: "to meet people's housing needs." }
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        summary: "is introducing 表示正在推動；to meet... 說明推出政策的目的。",
+        phraseNotes: [
+          { text: "introduce new policies", meaning: "推出新政策", note: "introduce 可用於政策、制度、產品。" },
+          { text: "meet people's housing needs", meaning: "滿足人們住房需求", note: "meet needs 是常見搭配。" }
+        ],
+        vocabulary: [
+          { text: "policies", meaning: "政策", note: "policy 的複數。" },
+          { text: "housing needs", meaning: "住房需求", note: "housing 作名詞修飾 needs。" }
+        ]
+      },
+      {
+        id: "exam-100-01",
+        year: 100,
+        title: "學測翻譯第 1 句",
+        chinese: "臺灣的夜市早已被認為足以代表我們的在地文化。",
+        tags: ["學測", "被動語態", "現在完成式", "文化"],
+        tense: "present-perfect",
+        voice: "passive",
+        tenseReason: "中文的「早已被認為」表示到現在已形成的看法，英文用 have long been considered。",
+        voiceReason: "英文句首放 night markets，夜市是被認為具有代表性的對象，所以要用被動語態。",
+        orderReason: "英文先放 Taiwan's night markets，再放 have long been considered，最後放 representative of our local culture。",
+        answer: "Taiwan's night markets have long been considered representative of our local culture.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "臺灣的夜市", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "早已被認為", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "代表在地文化", role: "object" }
+        ],
+        details: [],
+        bankOrder: ["o", "s", "v"],
+        answerPieces: [
+          { id: "p1", text: "Taiwan's night markets" },
+          { id: "p2", text: "have long been considered" },
+          { id: "p3", text: "representative of" },
+          { id: "p4", text: "our local culture." }
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        summary: "中文語意可拆成人們認為夜市有代表性；英文把夜市放句首，所以轉成完成式被動。",
+        phraseNotes: [
+          { text: "have long been considered", meaning: "早已被認為", note: "long 表示這個看法已持續很久。" },
+          { text: "representative of", meaning: "足以代表", note: "of 後接被代表的對象。" }
+        ],
+        vocabulary: [
+          { text: "night markets", meaning: "夜市", note: "market 是可數名詞，這裡用複數。" },
+          { text: "local culture", meaning: "在地文化", note: "local 表示本地的、在地的。" }
+        ]
+      },
+      {
+        id: "exam-99-02",
+        year: 99,
+        title: "學測翻譯第 2 句",
+        chinese: "然而，騎腳踏車現在已經成為一種熱門的休閒活動。",
+        tags: ["學測", "SVC", "現在完成式", "轉折"],
+        tense: "present-perfect",
+        voice: "active",
+        tenseReason: "中文的「現在已經成為」表示到現在形成的新狀態，英文用 has now become。",
+        voiceReason: "英文句首放 cycling，描述它成為某種活動，所以使用主動語態。",
+        orderReason: "英文先放 However 表示轉折，再放 cycling has now become，最後放 a popular recreational activity。",
+        answer: "However, cycling has now become a popular recreational activity.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "騎腳踏車", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "現在已經成為", role: "verb" },
+          { id: "o", slot: "object", label: "補語", text: "熱門的休閒活動", role: "object" }
+        ],
+        details: [
+          { id: "d-transition", slot: "detail-transition", label: "轉折", text: "然而", role: "detail" }
+        ],
+        bankOrder: ["d-transition", "o", "s", "v"],
+        answerPieces: [
+          { id: "p1", text: "However," },
+          { id: "p2", text: "cycling" },
+          { id: "p3", text: "has now become" },
+          { id: "p4", text: "a popular recreational activity." }
+        ],
+        pieceOrder: ["p4", "p1", "p3", "p2"],
+        summary: "cycling 是動名詞主詞；has now become 表示現在已形成的狀態。",
+        phraseNotes: [
+          { text: "has now become", meaning: "現在已經成為", note: "now 放在完成式助動詞和主要動詞之間。" },
+          { text: "a popular recreational activity", meaning: "熱門休閒活動", note: "recreational 表示休閒用途。" }
+        ],
+        vocabulary: [
+          { text: "cycling", meaning: "騎腳踏車", note: "動名詞可當主詞。" },
+          { text: "recreational", meaning: "休閒的", note: "正式寫作常用字。" }
+        ]
+      },
+      {
+        id: "exam-94-02",
+        year: 94,
+        title: "學測翻譯第 2 句",
+        chinese: "太空科技的快速發展，使我們得以探索它的奧秘。",
+        tags: ["學測", "SVO", "現在簡單式", "科技"],
+        tense: "present-simple",
+        voice: "active",
+        tenseReason: "這句描述科技發展帶來的作用，英文用 allows，所以是現在簡單式。",
+        voiceReason: "英文句首放 The rapid development of space technology，表示它使我們能探索，所以使用主動語態。",
+        orderReason: "英文先放主詞 The rapid development of space technology，再放 allows us to，最後放 explore its mysteries。",
+        answer: "The rapid development of space technology allows us to explore its mysteries.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "太空科技的快速發展", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "使", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "我們", role: "object" }
+        ],
+        details: [
+          { id: "d-explore", slot: "detail-explore", label: "行為", text: "探索它的奧秘", role: "detail" }
+        ],
+        bankOrder: ["o", "s", "v", "d-explore"],
+        answerPieces: [
+          { id: "p1", text: "The rapid development" },
+          { id: "p2", text: "of space technology" },
+          { id: "p3", text: "allows us" },
+          { id: "p4", text: "to explore its mysteries." }
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        summary: "allow + 受詞 + to V 是本句核心，用來表示『使某人得以做某事』。",
+        phraseNotes: [
+          { text: "allows us to", meaning: "使我們得以", note: "allow 後接受詞，再接 to V。" },
+          { text: "explore its mysteries", meaning: "探索它的奧秘", note: "explore 常用於未知領域。" }
+        ],
+        vocabulary: [
+          { text: "rapid development", meaning: "快速發展", note: "rapid 比 fast 更正式。" },
+          { text: "mysteries", meaning: "奧秘", note: "mystery 的複數，表示多個未知之處。" }
+        ]
+      },
+      {
+        id: "2026-demo-01",
+        year: 2026,
+        title: "SVO + 時間地點",
+        chinese: "那位學生下課後在圖書館寫筆記。",
+        tags: ["SVO", "地點片語", "時間片語"],
+        tense: "past-simple",
+        voice: "active",
+        tenseReason: "中文有「寫筆記」這個已發生的動作，英文答案使用 wrote，表示過去簡單式。",
+        voiceReason: "英文句首放動作執行者 The student，所以本句使用主動語態。",
+        orderReason: "英文主動句先放主詞 The student，再放過去式動詞 wrote，接著放受詞 notes，最後補上地點與時間。",
+        answer: "The student wrote notes in the library after class.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "那位學生", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "寫", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "筆記", role: "object" }
+        ],
+        details: [
+          { id: "d-place", slot: "detail-place", label: "地點", text: "在圖書館", role: "detail" },
+          { id: "d-time", slot: "detail-time", label: "時間", text: "下課後", role: "detail" }
+        ],
+        bankOrder: ["o", "d-place", "s", "d-time", "v"],
+        answerPieces: [
+          { id: "p1", text: "The student" },
+          { id: "p2", text: "wrote" },
+          { id: "p3", text: "notes" },
+          { id: "p4", text: "in the library" },
+          { id: "p5", text: "after class." }
+        ],
+        pieceOrder: ["p4", "p2", "p5", "p1", "p3"],
+        summary: "中文先抓主幹：學生 / 寫 / 筆記。英文用過去簡單式，時間與地點放在句尾。",
+        phraseNotes: [
+          { text: "in the library", meaning: "在圖書館", note: "in + 地點，表示動作發生的位置；英文通常先地點再時間。" },
+          { text: "after class", meaning: "下課後", note: "常見時間片語，英文通常放在地點之後。" }
+        ],
+        vocabulary: [
+          { text: "notes", meaning: "筆記", note: "可數名詞，這裡用複數表示多則筆記。" },
+          { text: "wrote", meaning: "寫", note: "write 的過去式，提示本句使用過去簡單式。" }
+        ]
+      },
+      {
+        id: "2025-demo-01",
+        year: 2025,
+        title: "語意主動，英文被動",
+        chinese: "團隊在中午前完成了那份報告。",
+        tags: ["SVO", "被動語態", "時間片語"],
+        tense: "past-simple",
+        voice: "passive",
+        tenseReason: "中文的「完成了」表示過去已完成的動作；被動句中使用 was completed。",
+        voiceReason: "英文答案把 The report 放在句首，報告是被完成的對象，所以要用被動語態。",
+        orderReason: "被動句先放承受動作的 The report，再放 was completed，接著用 by the team 補充執行者，最後放 before noon。",
+        answer: "The report was completed by the team before noon.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "團隊", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "完成", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "那份報告", role: "object" }
+        ],
+        details: [
+          { id: "d-time", slot: "detail-time", label: "時間", text: "在中午前", role: "detail" },
+          { id: "d-agent", slot: "detail-agent", label: "執行者", text: "由團隊", role: "detail" }
+        ],
+        bankOrder: ["v", "d-time", "o", "s", "d-agent"],
+        answerPieces: [
+          { id: "p1", text: "The report" },
+          { id: "p2", text: "was completed" },
+          { id: "p3", text: "by the team" },
+          { id: "p4", text: "before noon." }
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        summary: "中文語意是團隊完成報告，但英文可把報告放前面，改成 past simple passive。",
+        phraseNotes: [
+          { text: "by the team", meaning: "由團隊", note: "被動語態中用 by 說明動作執行者。" },
+          { text: "before noon", meaning: "中午前", note: "before + 時間點，放在句尾補充期限。" }
+        ],
+        vocabulary: [
+          { text: "completed", meaning: "完成", note: "complete 的過去分詞，可用於被動語態。" },
+          { text: "report", meaning: "報告", note: "被動句中放到句首，成為英文主詞。" }
+        ]
+      },
+      {
+        id: "2024-demo-01",
+        year: 2024,
+        title: "未來計畫",
+        chinese: "公司下個月會推出這個應用程式。",
+        tags: ["SVO", "未來式", "時間片語"],
+        tense: "future-simple",
+        voice: "active",
+        tenseReason: "中文的「會」和「下個月」都指向未來，因此用 will + 原形動詞。",
+        voiceReason: "英文句首放 The company，表示公司主動推出產品，所以使用主動語態。",
+        orderReason: "未來主動句先放 The company，再放 will launch，接著放 the app，最後補上 next month。",
+        answer: "The company will launch the app next month.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "公司", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "推出", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "這個應用程式", role: "object" }
+        ],
+        details: [
+          { id: "d-time", slot: "detail-time", label: "時間", text: "下個月", role: "detail" }
+        ],
+        bankOrder: ["o", "d-time", "v", "s"],
+        answerPieces: [
+          { id: "p1", text: "The company" },
+          { id: "p2", text: "will launch" },
+          { id: "p3", text: "the app" },
+          { id: "p4", text: "next month." }
+        ],
+        pieceOrder: ["p2", "p4", "p1", "p3"],
+        summary: "中文的「會」提示未來式；英文用 will + 原形動詞。",
+        phraseNotes: [
+          { text: "next month", meaning: "下個月", note: "明確未來時間，常和 will 搭配。" }
+        ],
+        vocabulary: [
+          { text: "launch", meaning: "推出", note: "產品或服務上市、發布時常用 launch。" },
+          { text: "app", meaning: "應用程式", note: "application 的常見縮寫。" }
+        ]
+      },
+      {
+        id: "2023-demo-01",
+        year: 2023,
+        title: "現在完成式",
+        chinese: "志工們從早上開始清理那座公園。",
+        tags: ["SVO", "現在完成式", "時間延續"],
+        tense: "present-perfect",
+        voice: "active",
+        tenseReason: "中文的「從早上開始」表示動作從過去延續到現在，適合現在完成式 have cleaned。",
+        voiceReason: "英文句首放 The volunteers，表示志工主動清理公園，所以使用主動語態。",
+        orderReason: "現在完成式主動句先放 The volunteers，再放 have cleaned，接著放 the park，最後放 since morning。",
+        answer: "The volunteers have cleaned the park since morning.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "志工們", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "清理", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "那座公園", role: "object" }
+        ],
+        details: [
+          { id: "d-time", slot: "detail-time", label: "時間延續", text: "從早上開始", role: "detail" }
+        ],
+        bankOrder: ["s", "d-time", "o", "v"],
+        answerPieces: [
+          { id: "p1", text: "The volunteers" },
+          { id: "p2", text: "have cleaned" },
+          { id: "p3", text: "the park" },
+          { id: "p4", text: "since morning." }
+        ],
+        pieceOrder: ["p4", "p2", "p1", "p3"],
+        summary: "since morning 表示從過去延續到現在，適合用現在完成式。",
+        phraseNotes: [
+          { text: "since morning", meaning: "從早上開始", note: "since 指起點，常提示現在完成式。" }
+        ],
+        vocabulary: [
+          { text: "volunteers", meaning: "志工們", note: "volunteer 可作名詞或動詞，這裡是名詞。" },
+          { text: "cleaned", meaning: "清理", note: "clean 的過去分詞，和 have 組成現在完成式。" }
+        ]
+      },
+      {
+        id: "2022-demo-01",
+        year: 2022,
+        title: "現在進行被動",
+        chinese: "委員會現在正在討論這個問題。",
+        tags: ["SVO", "進行式", "被動語態"],
+        tense: "present-continuous",
+        voice: "passive",
+        tenseReason: "中文的「現在正在」表示進行中；英文若用被動，要寫成 is being discussed。",
+        voiceReason: "英文答案把 The problem 放在句首，問題是被討論的對象，所以要用被動語態。",
+        orderReason: "現在進行被動句先放 The problem，再放 is being discussed，接著用 by the committee 補充執行者，最後放 now。",
+        answer: "The problem is being discussed by the committee now.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "委員會", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "討論", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "這個問題", role: "object" }
+        ],
+        details: [
+          { id: "d-time", slot: "detail-time", label: "時間", text: "現在", role: "detail" },
+          { id: "d-aspect", slot: "detail-aspect", label: "狀態", text: "正在", role: "detail" },
+          { id: "d-agent", slot: "detail-agent", label: "執行者", text: "由委員會", role: "detail" }
+        ],
+        bankOrder: ["v", "d-time", "s", "d-agent", "o", "d-aspect"],
+        answerPieces: [
+          { id: "p1", text: "The problem" },
+          { id: "p2", text: "is being discussed" },
+          { id: "p3", text: "by the committee" },
+          { id: "p4", text: "now." }
+        ],
+        pieceOrder: ["p2", "p4", "p1", "p3"],
+        summary: "中文語意先拆成委員會 / 討論 / 問題；英文若以 problem 開頭，就要用現在進行被動。",
+        phraseNotes: [
+          { text: "is being discussed", meaning: "正在被討論", note: "現在進行被動：be + being + p.p." },
+          { text: "by the committee", meaning: "由委員會", note: "被動語態中補充動作執行者。" }
+        ],
+        vocabulary: [
+          { text: "committee", meaning: "委員會", note: "集體名詞，常見於正式文章。" },
+          { text: "discussed", meaning: "討論", note: "discuss 的過去分詞，前面不加 about。" }
+        ]
+      },
+      {
+        id: "2021-demo-01",
+        year: 2021,
+        title: "過去完成式",
+        chinese: "團隊在會議前已經檢查了資料。",
+        tags: ["SVO", "過去完成式", "時間先後"],
+        tense: "past-perfect",
+        voice: "active",
+        tenseReason: "中文的「在會議前已經」表示比某個過去時間更早完成，所以用過去完成式 had reviewed。",
+        voiceReason: "英文句首放 The team，表示團隊主動審閱資料，所以使用主動語態。",
+        orderReason: "過去完成式主動句先放 The team，再放 had reviewed，接著放 the data，最後放 before the meeting。",
+        answer: "The team had reviewed the data before the meeting.",
+        core: [
+          { id: "s", slot: "subject", label: "主詞", text: "團隊", role: "subject" },
+          { id: "v", slot: "verb", label: "動詞", text: "檢查", role: "verb" },
+          { id: "o", slot: "object", label: "受詞", text: "資料", role: "object" }
+        ],
+        details: [
+          { id: "d-time", slot: "detail-time", label: "時間", text: "在會議前", role: "detail" },
+          { id: "d-sequence", slot: "detail-sequence", label: "時間先後", text: "已經", role: "detail" }
+        ],
+        bankOrder: ["o", "d-sequence", "s", "d-time", "v"],
+        answerPieces: [
+          { id: "p1", text: "The team" },
+          { id: "p2", text: "had reviewed" },
+          { id: "p3", text: "the data" },
+          { id: "p4", text: "before the meeting." }
+        ],
+        pieceOrder: ["p3", "p1", "p4", "p2"],
+        summary: "檢查資料發生在過去的會議之前，所以用 had + p.p. 表示更早的過去。",
+        phraseNotes: [
+          { text: "before the meeting", meaning: "在會議前", note: "before 標出較晚的過去時間點。" },
+          { text: "had reviewed", meaning: "已經檢查了", note: "had + p.p. 表示過去某時間點之前已完成。" }
+        ],
+        vocabulary: [
+          { text: "reviewed", meaning: "檢查、審閱", note: "比 check 更正式，常用於資料、文件。" },
+          { text: "data", meaning: "資料", note: "正式寫作中常見名詞，可視語境作單複數。" }
+        ]
+      }
+    ];
+
+    questions.splice(0, questions.length, ...questions.filter((item) => !/^202[1-6]-demo-01$/.test(item.id)));
+
+    const slotLabels = {
+      subject: "主詞",
+      verb: "動詞",
+      object: "受詞"
+    };
+
+    const markerOptions = [
+      { id: "subject", label: "主詞", color: "#93c5fd" },
+      { id: "verb", label: "動詞 / 狀態", color: "#fca5a5" },
+      { id: "object", label: "受詞 / 補語", color: "#86efac" },
+      { id: "connector", label: "連接詞", color: "#c4b5fd" },
+      { id: "bound", label: "黏著修飾（adj / adv）", color: "#fcd34d" },
+      { id: "detail", label: "補充細節（adv phrase / prep + N）", color: "#7dd3fc" },
+      { id: "erase", label: "橡皮擦", color: "#e5e7eb" }
+    ];
+
+    const progressStorageKey = "exam-structure-practice-progress-v1";
+    const practiceModeKey = "exam-structure-practice-mode";
+    let practiceMode = "simple";
+    try {
+      if (localStorage.getItem(practiceModeKey) === "advanced") practiceMode = "advanced";
+    } catch {
+      // localStorage 可能在隱私模式下不可用，維持簡單模式即可。
+    }
+    let lastCloudProgressSave = Promise.resolve();
+    const initialProgressStore = readSavedProgress();
+    const initialQuestionId = initialProgressStore.lastQuestionId || "exam-115-01";
+    let questionIndex = questions.findIndex((item) => item.id === initialQuestionId);
+    if (questionIndex < 0) questionIndex = questions.findIndex((item) => item.id === "exam-115-01");
+    let stage = 1;
+    let highlightDone = false;
+    let selectedMarker = "subject";
+    let highlightMarks = {};
+    let isHighlightPainting = false;
+    let placements = {};
+    let selectedTokenId = null;
+    let selectedTense = null;
+    let selectedVoice = null;
+    let builtPieces = [];
+    let phraseWordBuilds = {};
+    let revealed = false;
+    let shakeSlot = null;
+
+    // 開發用：true = 每題都能直接按「顯示英文答案」（方便校對翻譯）。
+    // 校對完請改回 false，恢復「未完成作答就不能看完整解答」的設定。
+    const DEV_ALWAYS_REVEAL = true;
+    let analysisMessage = null;
+    let attentionShakeTimer = null;
+    let hasAttempted = false;
+    let hintMessage = "";
+
+    const els = {
+      progressText: document.getElementById("progressText"),
+      progressFill: document.getElementById("progressFill"),
+      titleText: document.getElementById("titleText"),
+      subtitleText: document.getElementById("subtitleText"),
+      authStatus: document.getElementById("authStatus"),
+      authButton: document.getElementById("authButton"),
+      modeButton: document.getElementById("modeButton"),
+      resetButton: document.getElementById("resetButton"),
+      revealButton: document.getElementById("revealButton"),
+      promptPanel: document.getElementById("promptPanel"),
+      promptTitle: document.getElementById("promptTitle"),
+      promptBody: document.getElementById("promptBody"),
+      stageBridge: document.getElementById("stageBridge"),
+      chineseQuestionText: document.getElementById("chineseQuestionText"),
+      tagRow: document.getElementById("tagRow"),
+      stageHighlight: document.getElementById("stageHighlight"),
+      stageOne: document.getElementById("stageOne"),
+      stageTwo: document.getElementById("stageTwo"),
+      stagePhrase: document.getElementById("stagePhrase"),
+      stageThree: document.getElementById("stageThree"),
+      feedback: document.getElementById("feedback"),
+      analysisBox: document.getElementById("analysisBox"),
+      learningPanel: document.getElementById("learningPanel"),
+      questionDrawer: document.getElementById("questionDrawer"),
+      drawerSummary: document.getElementById("drawerSummary"),
+      questionList: document.getElementById("questionList"),
+      hintText: document.getElementById("hintText")
+    };
+
+    function question() {
+      return questions[questionIndex];
+    }
+
+    function readSavedProgress() {
+      try {
+        const raw = localStorage.getItem(progressStorageKey);
+        if (!raw) return { lastQuestionId: null, questions: {} };
+        const parsed = JSON.parse(raw);
+        return {
+          lastQuestionId: parsed.lastQuestionId || null,
+          questions: parsed.questions && typeof parsed.questions === "object" ? parsed.questions : {}
+        };
+      } catch {
+        return { lastQuestionId: null, questions: {} };
+      }
+    }
+
+    function writeSavedProgress(store) {
+      try {
+        localStorage.setItem(progressStorageKey, JSON.stringify(store));
+      } catch {
+        // localStorage may be unavailable in some locked-down browsers.
+      }
+      scheduleCloudProgressSave(store);
+    }
+
+    function normalizeProgressStore(store) {
+      return {
+        lastQuestionId: store?.lastQuestionId || null,
+        questions: store?.questions && typeof store.questions === "object" ? store.questions : {}
+      };
+    }
+
+    function mergeProgressStores(localStore, remoteStore) {
+      const local = normalizeProgressStore(localStore);
+      const remote = normalizeProgressStore(remoteStore);
+      const mergedQuestions = { ...local.questions };
+
+      Object.entries(remote.questions).forEach(([questionId, remoteProgress]) => {
+        const localProgress = mergedQuestions[questionId];
+        const localUpdatedAt = Number(localProgress?.updatedAt) || 0;
+        const remoteUpdatedAt = Number(remoteProgress?.updatedAt) || 0;
+        if (!localProgress || remoteUpdatedAt >= localUpdatedAt) {
+          mergedQuestions[questionId] = remoteProgress;
+        }
+      });
+
+      return {
+        lastQuestionId: remote.lastQuestionId || local.lastQuestionId,
+        questions: mergedQuestions
+      };
+    }
+
+    function scheduleCloudProgressSave(store) {
+      const backend = window.practiceProgressBackend;
+      if (!backend?.enabled || typeof backend.saveStore !== "function") return;
+
+      document.documentElement.dataset.firebaseProgressSave = "saving";
+      delete document.documentElement.dataset.firebaseProgressSaveError;
+      const snapshot = normalizeProgressStore(JSON.parse(JSON.stringify(store)));
+      lastCloudProgressSave = lastCloudProgressSave
+        .catch(() => {})
+        .then(() => backend.saveStore(snapshot))
+        .then(() => {
+          document.documentElement.dataset.firebaseProgressSave = "saved";
+        })
+        .catch((error) => {
+          document.documentElement.dataset.firebaseProgressSave = "error";
+          document.documentElement.dataset.firebaseProgressSaveError = error?.message || String(error);
+          console.warn("Firebase progress save failed. Local progress is still saved.", error);
+        });
+    }
+
+    function applyRemoteProgressStore(remoteStore) {
+      const mergedStore = mergeProgressStores(readSavedProgress(), remoteStore);
+      try {
+        localStorage.setItem(progressStorageKey, JSON.stringify(mergedStore));
+      } catch {
+        // Keep rendering with in-memory data even if localStorage is unavailable.
+      }
+
+      if (mergedStore.lastQuestionId) {
+        const savedQuestionIndex = questions.findIndex((item) => item.id === mergedStore.lastQuestionId);
+        if (savedQuestionIndex >= 0) questionIndex = savedQuestionIndex;
+      }
+
+      restoreQuestionState();
+      render();
+      scheduleCloudProgressSave(mergedStore);
+    }
+
+    function authErrorMessage(error) {
+      const message = error?.message || String(error || "");
+      const code = error?.code || message;
+      if (code.includes("auth/operation-not-allowed")) {
+        return "Google 登入尚未在 Firebase Authentication 啟用。請到 Sign-in method 開啟 Google。";
+      }
+      if (code.includes("auth/popup-blocked")) {
+        return "瀏覽器擋住登入視窗，請允許這個網站的彈出式視窗。";
+      }
+      if (code.includes("auth/popup-closed-by-user")) {
+        return "登入視窗已關閉，尚未完成登入。";
+      }
+      if (code.includes("auth/unauthorized-domain")) {
+        return "這個網址尚未加入 Firebase Authorized domains。";
+      }
+      return message || "Google 登入失敗，請稍後再試。";
+    }
+
+    function renderAuthState(backend) {
+      if (!els.authStatus || !els.authButton) return;
+      if (!backend?.firebaseReady) {
+        els.authStatus.textContent = "Firebase 尚未連線";
+        els.authStatus.classList.remove("connected");
+        els.authButton.classList.remove("signed-in");
+        els.authButton.textContent = "Google 登入";
+        els.authButton.removeAttribute("aria-label");
+        els.authButton.removeAttribute("title");
+        els.authButton.disabled = true;
+        return;
+      }
+
+      if (backend.error && !backend.signedIn) {
+        els.authStatus.textContent = `登入失敗：${authErrorMessage(backend.error)}`;
+        els.authStatus.classList.remove("connected");
+        els.authButton.classList.remove("signed-in");
+        els.authButton.textContent = "Google 登入";
+        els.authButton.title = "重新使用 Google 登入同步進度";
+        els.authButton.setAttribute("aria-label", "重新使用 Google 登入同步進度");
+        els.authButton.disabled = false;
+        return;
+      }
+
+      if (backend.signedIn) {
+        const accountName = backend.displayName || backend.email || "Google 帳號";
+        const initial = Array.from(accountName)[0] || "G";
+        els.authStatus.textContent = "已同步";
+        els.authStatus.classList.add("connected");
+        els.authButton.classList.add("signed-in");
+        els.authButton.title = `已登入：${accountName}。點擊登出`;
+        els.authButton.setAttribute("aria-label", `已登入：${accountName}。點擊登出`);
+        els.authButton.innerHTML = backend.photoURL
+          ? `<img class="auth-avatar-img" src="${escapeHtml(backend.photoURL)}" alt="">`
+          : `<span class="auth-avatar-fallback">${escapeHtml(initial)}</span>`;
+        els.authButton.disabled = false;
+      } else {
+        els.authStatus.textContent = "登入後同步進度";
+        els.authStatus.classList.remove("connected");
+        els.authButton.classList.remove("signed-in");
+        els.authButton.textContent = "Google 登入";
+        els.authButton.title = "使用 Google 登入同步進度";
+        els.authButton.setAttribute("aria-label", "使用 Google 登入同步進度");
+        els.authButton.disabled = false;
+      }
+    }
+
+    async function toggleGoogleSignIn() {
+      const backend = window.practiceProgressBackend;
+      if (!backend?.firebaseReady) return;
+
+      try {
+        els.authButton.disabled = true;
+        backend.error = null;
+        delete document.documentElement.dataset.firebaseProgressError;
+        if (backend.signedIn) {
+          els.authStatus.textContent = "登出中...";
+          await backend.signOut();
+        } else {
+          els.authStatus.textContent = "前往 Google 登入...";
+          els.authButton.textContent = "登入中";
+          await backend.signIn();
+        }
+      } catch (error) {
+        backend.error = error;
+        document.documentElement.dataset.firebaseProgressError = authErrorMessage(error);
+        console.warn("Google sign-in action failed.", error);
+        renderAuthState(backend);
+      } finally {
+        els.authButton.disabled = false;
+      }
+    }
+
+
+    function resetWorkingState() {
+      stage = 1;
+      highlightDone = false;
+      selectedMarker = "subject";
+      highlightMarks = {};
+      placements = {};
+      selectedTokenId = null;
+      selectedTense = null;
+      selectedVoice = null;
+      builtPieces = [];
+      phraseWordBuilds = {};
+      revealed = false;
+      shakeSlot = null;
+      analysisMessage = null;
+      hasAttempted = false;
+      hintMessage = "";
+      els.feedback.className = "feedback";
+      els.feedback.textContent = "先用螢光筆標出你看到的中文結構；這一段不評分。";
+    }
+
+    function saveCurrentProgress() {
+      const data = question();
+      const store = readSavedProgress();
+      store.lastQuestionId = data.id;
+      store.questions[data.id] = {
+        stage,
+        highlightDone,
+        selectedMarker,
+        highlightMarks,
+        placements,
+        selectedTense,
+        selectedVoice,
+        builtPieces,
+        phraseWordBuilds,
+        revealed,
+        hasAttempted,
+        completed: isSentenceDone() || revealed,
+        updatedAt: Date.now()
+      };
+      writeSavedProgress(store);
+    }
+
+    function clearCurrentSavedProgress() {
+      const store = readSavedProgress();
+      delete store.questions[question().id];
+      store.lastQuestionId = question().id;
+      writeSavedProgress(store);
+    }
+
+    function restoreQuestionState() {
+      resetWorkingState();
+      const saved = readSavedProgress().questions[question().id];
+      if (!saved) return;
+
+      const tokenSlots = new Set(allStructureTokens().map((token) => token.slot));
+      const tokenIds = new Set(allStructureTokens().map((token) => token.id));
+      const pieceIds = new Set(question().answerPieces.map((piece) => piece.id));
+
+      highlightDone = Boolean(saved.highlightDone || saved.revealed || saved.completed || Object.keys(saved.placements || {}).length);
+      selectedMarker = markerOptions.some((marker) => marker.id === saved.selectedMarker) ? saved.selectedMarker : "subject";
+      highlightMarks = saved.highlightMarks && typeof saved.highlightMarks === "object" ? saved.highlightMarks : {};
+      placements = Object.fromEntries(
+        Object.entries(saved.placements || {}).filter(([slot, tokenId]) => tokenSlots.has(slot) && tokenIds.has(tokenId))
+      );
+      selectedTense = tenseById(saved.selectedTense) ? saved.selectedTense : null;
+      selectedVoice = voiceById(saved.selectedVoice) ? saved.selectedVoice : null;
+      builtPieces = Array.isArray(saved.builtPieces) ? saved.builtPieces.filter((id) => pieceIds.has(id)) : [];
+      phraseWordBuilds = {};
+      if (saved.phraseWordBuilds && typeof saved.phraseWordBuilds === "object") {
+        const validWordIds = new Set();
+        question().answerPieces.forEach((piece) => pieceWordTokens(piece).forEach((token) => validWordIds.add(token.id)));
+        Object.entries(saved.phraseWordBuilds).forEach(([pieceId, ids]) => {
+          if (!Array.isArray(ids)) return;
+          const filtered = ids.filter((id) => validWordIds.has(id));
+          if (filtered.length) phraseWordBuilds[pieceId] = filtered;
+        });
+      }
+      revealed = Boolean(saved.revealed || saved.completed);
+      hasAttempted = Boolean(
+        saved.hasAttempted
+        || saved.revealed
+        || saved.completed
+        || saved.selectedTense
+        || saved.selectedVoice
+        || Object.keys(saved.placements || {}).length
+      );
+      stage = Math.min(Math.max(Number(saved.stage) || 1, 1), 4);
+
+      if (!isHighlightDone()) stage = 1;
+      if (isHighlightDone()) stage = Math.max(stage, 2);
+      if (isStageOneDone()) stage = Math.max(stage, 3);
+      if (isDecisionDone()) stage = Math.max(stage, 4);
+      if (revealed) stage = 4;
+    }
+
+    function tenseById(id) {
+      return tenseOptions.find((tense) => tense.id === id);
+    }
+
+    function voiceById(id) {
+      return voiceOptions.find((voice) => voice.id === id);
+    }
+
+    function seededShuffle(items, seedText) {
+      let seed = 0;
+      for (let i = 0; i < seedText.length; i += 1) {
+        seed = (seed * 31 + seedText.charCodeAt(i)) >>> 0;
+      }
+      const result = items.slice();
+      for (let i = result.length - 1; i > 0; i -= 1) {
+        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+        const j = seed % (i + 1);
+        [result[i], result[j]] = [result[j], result[i]];
+      }
+      return result;
+    }
+
+    // 進階模式用：把一個英文片段按空白拆成單字（連字號詞、標點都黏在原本的字上）。
+    function tokenizePieceWords(text) {
+      return String(text).split(/\s+/).filter(Boolean);
+    }
+
+    function pieceWordTokens(piece) {
+      return tokenizePieceWords(piece.text).map((text, index) => ({ id: `${piece.id}::w${index}`, text }));
+    }
+
+    function wordTextById(piece, wordId) {
+      const token = pieceWordTokens(piece).find((item) => item.id === wordId);
+      return token ? token.text : "";
+    }
+
+    // 3 個字以上的片語才需要學生逐字重組；2 個字以下視為自動完成。
+    function isPieceBuilt(piece) {
+      const tokens = pieceWordTokens(piece);
+      if (tokens.length < 3) return true;
+      const placed = phraseWordBuilds[piece.id] || [];
+      if (placed.length !== tokens.length) return false;
+      const builtText = placed.map((id) => wordTextById(piece, id)).join(" ");
+      return builtText === tokens.map((token) => token.text).join(" ");
+    }
+
+    function buildablePieces(data) {
+      return data.answerPieces.filter((piece) => pieceWordTokens(piece).length >= 3);
+    }
+
+    function isPhraseStageDone(data) {
+      if (practiceMode !== "advanced") return true;
+      return data.answerPieces.every(isPieceBuilt);
+    }
+
+    function togglePracticeMode() {
+      practiceMode = practiceMode === "advanced" ? "simple" : "advanced";
+      try {
+        localStorage.setItem(practiceModeKey, practiceMode);
+      } catch {
+        // 無法寫入時仍能在本次操作中使用該模式。
+      }
+      render();
+    }
+
+    function addPhraseWord(wordId) {
+      const pieceId = wordId.split("::")[0];
+      const current = phraseWordBuilds[pieceId] || [];
+      if (current.includes(wordId)) return;
+      phraseWordBuilds[pieceId] = [...current, wordId];
+      hasAttempted = true;
+
+      const piece = question().answerPieces.find((item) => item.id === pieceId);
+      if (piece) {
+        const total = pieceWordTokens(piece).length;
+        if (isPieceBuilt(piece)) {
+          els.feedback.className = "feedback correct";
+          els.feedback.textContent = `片語「${piece.text}」組好了。`;
+        } else if (phraseWordBuilds[pieceId].length >= total) {
+          els.feedback.className = "feedback error";
+          els.feedback.textContent = "這個片語的單字順序還不對，點一下已放的字可以移除重排。";
+        }
+      }
+      render();
+    }
+
+    function removePhraseWord(wordId) {
+      const pieceId = wordId.split("::")[0];
+      phraseWordBuilds[pieceId] = (phraseWordBuilds[pieceId] || []).filter((id) => id !== wordId);
+      render();
+    }
+
+    function completedStages() {
+      let count = 0;
+      if (isHighlightDone()) count += 1;
+      if (isStageOneDone()) count += 1;
+      if (isDecisionDone()) count += 1;
+      if (isSentenceDone()) count += 1;
+      return count;
+    }
+
+    function isHighlightDone() {
+      return highlightDone;
+    }
+
+    function isStageOneDone() {
+      return allStructureTokens().every((token) => placements[token.slot] === token.id);
+    }
+
+    function isDecisionDone() {
+      return selectedTense === question().tense && selectedVoice === question().voice;
+    }
+
+    function isSentenceDone() {
+      const expected = question().answerPieces.map((piece) => piece.id).join("|");
+      return isDecisionDone() && builtPieces.join("|") === expected;
+    }
+
+    function canRevealAnswer() {
+      return DEV_ALWAYS_REVEAL || revealed || hasAttempted || isSentenceDone();
+    }
+
+    function currentStageElement() {
+      if (!els.stageBridge.hidden) return els.stageBridge;
+      if (!isHighlightDone()) return els.stageHighlight;
+      if (!isStageOneDone()) return els.stageOne;
+      if (!isDecisionDone()) return els.stageTwo;
+      if (practiceMode === "advanced" && !isPhraseStageDone(question())) return els.stagePhrase;
+      return els.stageThree;
+    }
+
+    function shakeCurrentStage() {
+      const target = currentStageElement();
+      if (!target) return;
+      window.clearTimeout(attentionShakeTimer);
+      target.classList.remove("shake");
+      void target.offsetWidth;
+      target.classList.add("shake");
+      attentionShakeTimer = window.setTimeout(() => {
+        target.classList.remove("shake");
+      }, 380);
+    }
+
+    function resetQuestion() {
+      clearCurrentSavedProgress();
+      stage = 1;
+      highlightDone = false;
+      selectedMarker = "subject";
+      highlightMarks = {};
+      placements = {};
+      selectedTokenId = null;
+      selectedTense = null;
+      selectedVoice = null;
+      builtPieces = [];
+      phraseWordBuilds = {};
+      revealed = false;
+      analysisMessage = null;
+      hasAttempted = false;
+      hintMessage = "先找中文句子的「誰做事、做什麼、作用到誰或什麼」，再用顏色標出來。";
+      els.feedback.className = "feedback";
+      els.feedback.textContent = "先用螢光筆標出你看到的中文結構；這一段不評分。";
+      render();
+    }
+
+    function selectQuestion(index) {
+      questionIndex = index;
+      restoreQuestionState();
+      render();
+    }
+
+    function tokenById(id) {
+      return allStructureTokens().find((token) => token.id === id);
+    }
+
+    function tokenForSlot(slot) {
+      return allStructureTokens().find((token) => token.slot === slot);
+    }
+
+    function allStructureTokens() {
+      return [...question().core, ...question().details];
+    }
+
+    function labelForSlot(slot) {
+      const token = tokenForSlot(slot);
+      return token ? token.label : slotLabels[slot];
+    }
+
+    function isBoundModifierToken(token) {
+      const boundLabels = new Set([
+        "描述",
+        "程度",
+        "特色",
+        "狀態",
+        "數量",
+        "方式",
+        "時間先後",
+        "時間延續"
+      ]);
+      return token?.role === "bound" || boundLabels.has(token?.label);
+    }
+
+    function compactChineseText(value) {
+      return String(value || "").replace(/[，。；、,.;\s]/g, "");
+    }
+
+    function tokenAppearsNearSentenceStart(data, token) {
+      const sentence = compactChineseText(data.chinese);
+      const tokenText = compactChineseText(token?.text);
+      if (!sentence || !tokenText) return false;
+      const probeLength = Math.min(Math.max(tokenText.length, 2), 4);
+      const index = sentence.indexOf(tokenText.slice(0, probeLength));
+      return index >= 0 && index <= 6;
+    }
+
+    function hasMultipleCoreGroups(data) {
+      return (data.coreGroups || []).length > 1;
+    }
+
+    function isSentenceLeadToken(data, token) {
+      const leadLabels = new Set(["轉折", "語氣", "附加", "比較", "讓步", "條件"]);
+      const contextualLeadLabels = new Set(["時間", "情境", "對象", "環境"]);
+      const clauseConnectorLabels = new Set(["轉折", "附加", "讓步", "條件"]);
+      if (token?.role === "lead") return true;
+      if (hasMultipleCoreGroups(data) && clauseConnectorLabels.has(token?.label)) return true;
+      if (leadLabels.has(token?.label)) return tokenAppearsNearSentenceStart(data, token);
+      return contextualLeadLabels.has(token?.label) && tokenAppearsNearSentenceStart(data, token);
+    }
+
+    function detailGroupSlots(data, group) {
+      return data.details
+        .filter((detail) => {
+          // 題目可用 detail.group（"lead" / "bound" / "supplemental"）明確指定欄位，覆寫依中文位置判斷的啟發式。
+          if (detail.group) return detail.group === group;
+          if (group === "lead") return isSentenceLeadToken(data, detail);
+          if (group === "bound") return !isSentenceLeadToken(data, detail) && isBoundModifierToken(detail);
+          return !isSentenceLeadToken(data, detail) && !isBoundModifierToken(detail);
+        })
+        .map((detail) => detail.slot);
+    }
+
+    function placeToken(tokenId, slot) {
+      const token = tokenById(tokenId);
+      if (!token) return;
+      hasAttempted = true;
+
+      if (token.slot !== slot) {
+        shakeSlot = slot;
+        els.feedback.className = "feedback error";
+        els.feedback.textContent = `這個中文片段不是「${labelForSlot(slot)}」。再想一下：它在句子中負責什麼功能？`;
+        analysisMessage = {
+          type: "error",
+          title: "中文拆解錯誤",
+          text: `${token.text} 的功能是「${token.label}」，不是「${labelForSlot(slot)}」。先判斷它是句子主幹，還是時間、地點、執行者等細節。`
+        };
+        selectedTokenId = null;
+        render();
+        window.setTimeout(() => {
+          if (shakeSlot === slot) shakeSlot = null;
+          els.stageOne.querySelector(`[data-slot="${slot}"]`)?.classList.remove("shake");
+        }, 360);
+        return;
+      }
+
+      placements[slot] = token.id;
+      selectedTokenId = null;
+      analysisMessage = null;
+      els.feedback.className = "feedback correct";
+      els.feedback.textContent = `${token.text} 放到「${token.label}」正確。`;
+
+      if (isStageOneDone()) {
+        stage = Math.max(stage, 3);
+        els.feedback.textContent = "中文主幹與細節完成。下一步請先確認時態與主被動。";
+      }
+      render();
+    }
+
+    function selectTense(id) {
+      selectedTense = id;
+      hasAttempted = true;
+      if (id !== question().tense) {
+        const correct = tenseById(question().tense);
+        els.feedback.className = "feedback error";
+        els.feedback.textContent = "時態還不對。請先看底下解析，再重新選擇。";
+        analysisMessage = {
+          type: "error",
+          title: "時態判斷錯誤",
+          text: `這題需要的是「${correct.label}」。理由：${question().tenseReason}`
+        };
+        render();
+        return;
+      }
+
+      analysisMessage = {
+        type: "correct",
+        title: "時態正確",
+        text: `${tenseById(id).label} 正確。接著確認這句英文要用主動還是被動。`
+      };
+      if (isDecisionDone()) stage = Math.max(stage, 4);
+      els.feedback.className = "feedback correct";
+      els.feedback.textContent = `時態正確：${tenseById(id).label}。`;
+      render();
+    }
+
+    function selectVoice(id) {
+      selectedVoice = id;
+      hasAttempted = true;
+      if (id !== question().voice) {
+        els.feedback.className = "feedback error";
+        els.feedback.textContent = "主被動還不對。請先看底下解析，再重新選擇。";
+        analysisMessage = {
+          type: "error",
+          title: "主被動判斷錯誤",
+          text: question().voiceReason
+        };
+      } else {
+        analysisMessage = {
+          type: "correct",
+          title: "主被動正確",
+          text: `${voiceById(id).label} 正確。${isDecisionDone() ? "現在可以開始組裝英文句子。" : "請再確認時態是否也正確。"}`
+        };
+        if (isDecisionDone()) stage = Math.max(stage, 4);
+        els.feedback.className = "feedback correct";
+        els.feedback.textContent = `語態正確：${voiceById(id).label}。`;
+      }
+      render();
+    }
+
+    function addPiece(id) {
+      if (builtPieces.includes(id)) return;
+      builtPieces.push(id);
+      render();
+    }
+
+    function removePiece(id) {
+      builtPieces = builtPieces.filter((pieceId) => pieceId !== id);
+      render();
+    }
+
+    function clearBuiltPieces() {
+      builtPieces = [];
+      els.feedback.className = "feedback";
+      els.feedback.textContent = "已清空英文組句，請重新排列。";
+      analysisMessage = null;
+      render();
+    }
+
+    function checkSentence() {
+      hasAttempted = true;
+      if (!isDecisionDone()) {
+        els.feedback.className = "feedback error";
+        els.feedback.textContent = "請先把時態與主被動都選正確，再檢查英文句子。";
+        analysisMessage = {
+          type: "error",
+          title: "尚未完成文法決策",
+          text: "第四階段只檢查英文片段順序。時態與主被動需要先在第三階段確認正確。"
+        };
+        render();
+        return;
+      }
+
+      if (isSentenceDone()) {
+        revealed = true;
+        els.feedback.className = "feedback correct";
+        els.feedback.textContent = `完成。${question().summary}`;
+        analysisMessage = {
+          type: "correct",
+          title: "句子組裝正確",
+          text: "固定片語與比較難的單字已解鎖，請在下方完成吸收。"
+        };
+      } else {
+        els.feedback.className = "feedback error";
+        els.feedback.textContent = "英文片段順序還需要調整。請先看底下解析。";
+        analysisMessage = {
+          type: "error",
+          title: "英文組句順序錯誤",
+          text: question().orderReason
+        };
+      }
+      render();
+    }
+
+    function revealAll() {
+      const data = question();
+      if (!canRevealAnswer()) {
+        shakeCurrentStage();
+        els.feedback.className = "feedback";
+        els.feedback.textContent = "先自己試做一次，卡住的話再按這裡看答案。";
+        return;
+      }
+
+      highlightDone = true;
+      data.core.forEach((token) => {
+        placements[token.slot] = token.id;
+      });
+      data.details.forEach((token) => {
+        placements[token.slot] = token.id;
+      });
+      selectedTense = data.tense;
+      selectedVoice = data.voice;
+      builtPieces = data.answerPieces.map((piece) => piece.id);
+      phraseWordBuilds = {};
+      data.answerPieces.forEach((piece) => {
+        phraseWordBuilds[piece.id] = pieceWordTokens(piece).map((token) => token.id);
+      });
+      stage = 4;
+      revealed = true;
+      analysisMessage = {
+        type: "correct",
+        title: "解答已揭露",
+        text: "固定片語與比較難的單字已解鎖。"
+      };
+      els.feedback.className = "feedback correct";
+      els.feedback.textContent = `英文答案已顯示。${data.summary}`;
+      render();
+    }
+
+    function render() {
+      const data = question();
+      const completed = completedStages();
+      const tense = tenseById(data.tense);
+      const voice = voiceById(data.voice);
+
+      els.progressText.textContent = `${completed} / 4`;
+      els.progressFill.style.width = `${Math.round((completed / 4) * 100)}%`;
+      els.titleText.textContent = `${data.year}｜${data.title}`;
+      els.subtitleText.textContent = "主畫面先呈現中文題目，完成流程後才顯示英文答案。";
+      els.chineseQuestionText.textContent = data.chinese;
+      els.tagRow.innerHTML = data.tags.map((tag) => `<span class="tag">${tag}</span>`).join("");
+      els.revealButton.disabled = !canRevealAnswer();
+      els.revealButton.title = canRevealAnswer() ? "顯示這題的英文答案" : "完成作答流程後才能顯示英文答案";
+      els.promptPanel.hidden = isHighlightDone() && !isStageOneDone() && !revealed;
+
+      if (revealed) {
+        els.promptTitle.textContent = "英文答案已顯示";
+        els.promptBody.textContent = `${tense.label}，${voice.label}。`;
+      } else if (stage === 1) {
+        els.promptTitle.textContent = "第一階段：中文螢光筆";
+        els.promptBody.textContent = "先自由標記你看到的主詞、動詞、受詞、連接詞與細節；這一段不評分。";
+      } else if (stage === 2) {
+        els.promptTitle.textContent = "第二階段：中文拆句";
+        els.promptBody.textContent = "先放句首導入，再拆主幹；如果有兩個句子，就分成 A 句主幹與 B 句主幹。";
+      } else if (stage === 3) {
+        els.promptTitle.textContent = "第三階段：時態與主被動";
+        els.promptBody.textContent = "先確認時態，再確認主動或被動；兩者都正確後才會解鎖英文組句。";
+      } else if (practiceMode === "advanced" && !isPhraseStageDone(data)) {
+        els.promptTitle.textContent = "第四階段：片語組字";
+        els.promptBody.textContent = "先把每個較長片語的單字排成正確順序，全部完成後才解鎖整句組句。";
+      } else {
+        els.promptTitle.textContent = practiceMode === "advanced" ? "第五階段：英文組句" : "第四階段：英文組句";
+        els.promptBody.textContent = "把英文片段排成完整句子。";
+      }
+
+      els.modeButton.textContent = practiceMode === "advanced" ? "進階模式：開" : "進階模式：關";
+
+      renderHighlightStage(data);
+      renderStageBridge();
+      renderStageOne(data);
+      renderStageTwo(data);
+      renderPhraseStage(data);
+      renderStageThree(data);
+      renderAnalysis();
+      renderLearningPanel(data);
+      saveCurrentProgress();
+      renderQuestionList();
+      renderRewardPanel(data);
+    }
+
+    function setPanelInteraction(panel, enabled) {
+      panel.toggleAttribute("inert", !enabled);
+      panel.setAttribute("aria-disabled", enabled ? "false" : "true");
+    }
+
+    function renderStageBridge() {
+      els.stageBridge.hidden = !(isHighlightDone() && !isStageOneDone() && !revealed);
+    }
+
+    function renderHighlightStage(data) {
+      const locked = isHighlightDone();
+      const chars = Array.from(data.chinese);
+      els.stageHighlight.innerHTML = `
+        <div class="stage-heading">
+          <div>
+            <h3>1. 中文螢光筆</h3>
+            <p>用顏色標出你自己的初步判斷；這裡沒有對錯，完成後再進入正式拆句。</p>
+          </div>
+          <span class="stage-badge">${isHighlightDone() ? "完成" : "自由標記"}</span>
+        </div>
+        <div class="highlighter-tools">
+          ${markerOptions.map((marker) => `
+            <button
+              class="marker-button ${marker.id === "erase" ? "erase-tool" : ""} ${selectedMarker === marker.id ? "active" : ""}"
+              style="--marker-color: ${marker.color}"
+              data-marker-id="${marker.id}"
+              ${locked ? "disabled" : ""}
+              type="button"
+            >${marker.label}</button>
+          `).join("")}
+        </div>
+        <div class="highlight-surface" id="highlightSurface" aria-label="中文螢光筆標記區">
+          ${chars.map((char, index) => {
+            const mark = highlightMarks[index] || "";
+            const isSpace = /\s/.test(char);
+            return `<button class="highlight-char ${mark}" data-char-index="${index}" ${locked || isSpace ? "disabled" : ""} type="button">${escapeHtml(char)}</button>`;
+          }).join("")}
+        </div>
+        <div class="highlight-actions">
+          <button class="btn ghost" id="clearHighlightButton" ${locked ? "disabled" : ""} type="button">清除標記</button>
+          <button class="btn primary" id="finishHighlightButton" ${locked ? "disabled" : ""} type="button">完成分析</button>
+        </div>
+      `;
+
+      if (locked) return;
+      els.stageHighlight.querySelectorAll("[data-marker-id]").forEach((button) => {
+        button.addEventListener("click", () => {
+          selectedMarker = button.dataset.markerId;
+          render();
+        });
+      });
+      const surface = document.getElementById("highlightSurface");
+      surface.addEventListener("pointermove", continueHighlightPaint);
+      surface.addEventListener("pointerleave", stopHighlightPaint);
+      els.stageHighlight.querySelectorAll("[data-char-index]").forEach((button) => {
+        button.addEventListener("pointerdown", startHighlightPaint);
+        button.addEventListener("pointerenter", continueHighlightPaint);
+      });
+      document.getElementById("clearHighlightButton").addEventListener("click", clearHighlights);
+      document.getElementById("finishHighlightButton").addEventListener("click", finishHighlight);
+    }
+
+    function startHighlightPaint(event) {
+      if (highlightDone) return;
+      event.preventDefault();
+      isHighlightPainting = true;
+      applyHighlightMark(event.currentTarget);
+      document.addEventListener("pointerup", stopHighlightPaint, { once: true });
+    }
+
+    function continueHighlightPaint(event) {
+      if (!isHighlightPainting || highlightDone) return;
+      event.preventDefault();
+      const target = event.target.closest?.("[data-char-index]")
+        || document.elementFromPoint(event.clientX, event.clientY)?.closest?.("[data-char-index]");
+      applyHighlightMark(target);
+    }
+
+    function stopHighlightPaint() {
+      if (!isHighlightPainting) return;
+      isHighlightPainting = false;
+      saveCurrentProgress();
+    }
+
+    function applyHighlightMark(charButton) {
+      if (!charButton || charButton.disabled) return;
+      const index = charButton.dataset.charIndex;
+      if (highlightDone) return;
+      if (selectedMarker === "erase") {
+        delete highlightMarks[index];
+      } else {
+        highlightMarks[index] = selectedMarker;
+      }
+      markerOptions.forEach((marker) => {
+        if (marker.id !== "erase") charButton.classList.remove(marker.id);
+      });
+      if (selectedMarker !== "erase") charButton.classList.add(selectedMarker);
+    }
+
+    function clearHighlights() {
+      highlightMarks = {};
+      analysisMessage = null;
+      els.feedback.className = "feedback";
+      els.feedback.textContent = "已清除螢光筆標記，可以重新分析這句中文。";
+      render();
+    }
+
+    function finishHighlight() {
+      highlightDone = true;
+      stage = Math.max(stage, 2);
+      analysisMessage = {
+        type: "correct",
+        title: "自由標記完成",
+        text: "這一步沒有標準答案。接下來用系統提供的片段，正式確認句首導入、主幹、子句包、黏著修飾（adj / adv）與補充細節（adv phrase / prep + N）。"
+      };
+      els.feedback.className = "feedback correct";
+      els.feedback.textContent = "中文螢光筆完成。下一步請正式拆出句首導入、主幹、子句包、黏著修飾（adj / adv）與補充細節（adv phrase / prep + N）。";
+      render();
+    }
+
+    function renderSubclauses(data, position = "after-core") {
+      // 子句包預設渲染在主幹之後；設 position: "before-core" 則放在句首導入與主幹之間（適合修飾句首名詞的形容詞子句）。
+      const subclauses = (data.subclauses || []).filter((clause) => (clause.position || "after-core") === position);
+      if (!subclauses.length) return "";
+      return `
+          <div>
+            <p class="line-label">子句包（noun / adj clause）</p>
+            <div class="clause-lane">
+              ${subclauses.map((clause) => `
+                <div class="clause-card">
+                  <strong>${clause.type}${clause.role ? `｜${clause.role}` : ""}</strong>
+                  <span>${clause.text}</span>
+                  <div class="clause-meta">
+                    ${[
+                      clause.marker ? `引導詞：${clause.marker}` : "",
+                      clause.target ? `修飾對象：${clause.target}` : "",
+                      clause.core ? `子句主幹：${clause.core}` : "",
+                      clause.note || ""
+                    ].filter(Boolean).join("<br>")}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+      `;
+    }
+
+    function renderStageOne(data) {
+      const locked = !isHighlightDone();
+      const structureLocked = isStageOneDone();
+      const bank = data.bankOrder.map((id) => tokenById(id));
+      const placedIds = Object.values(placements);
+      const leadSlots = detailGroupSlots(data, "lead");
+      const leadSlotSet = new Set(leadSlots);
+      const boundSlots = detailGroupSlots(data, "bound");
+      const supplementalSlots = detailGroupSlots(data, "supplemental");
+      const coreGroups = data.coreGroups || [{ id: "main", label: "主幹", slots: ["subject", "verb", "object"] }];
+      const leadLabel = hasMultipleCoreGroups(data) ? "句首導入 / 句間連接" : "句首導入 / 全句框架";
+
+      els.stageOne.classList.toggle("locked", locked);
+      setPanelInteraction(els.stageOne, !locked);
+      els.stageOne.innerHTML = `
+        <div class="stage-heading">
+          <div>
+            <h3>2. 中文結構拆分</h3>
+            <p>先放句首導入，再放主幹；若有名詞子句或形容詞子句，就另外看子句包。</p>
+          </div>
+          <span class="stage-badge">${isStageOneDone() ? "完成" : locked ? "未解鎖" : "拖拉中"}</span>
+        </div>
+        <div class="structure-board">
+          ${leadSlots.length ? `
+          <div>
+            <p class="line-label">${leadLabel}</p>
+            <div class="detail-lane lead-lane">
+              ${leadSlots.map((slot) => renderSlot(slot)).join("")}
+            </div>
+          </div>
+          ` : ""}
+          ${renderSubclauses(data, "before-core")}
+          ${coreGroups.map((group) => {
+            const connectors = data.details.filter((detail) => detail.group === "connector" && detail.beforeClause === group.id);
+            const connectorMarkup = connectors.length ? `
+          <div>
+            <p class="line-label">子句連接（連接詞）</p>
+            <div class="detail-lane connector-lane">
+              ${connectors.map((detail) => renderSlot(detail.slot)).join("")}
+            </div>
+          </div>` : "";
+            return `${connectorMarkup}
+          <div>
+            <p class="line-label">${group.label}</p>
+            <div class="structure-lane">
+              ${group.slots.map((slot) => renderSlot(slot)).join("")}
+            </div>
+          </div>`;
+          }).join("")}
+          ${renderSubclauses(data, "after-core")}
+          <div>
+            <p class="line-label">黏著修飾（adj / adv）</p>
+            <div class="detail-lane">
+              ${boundSlots.length ? boundSlots.map((slot) => renderSlot(slot)).join("") : `<div class="lane-empty">本題沒有需要獨立放的黏著修飾。</div>`}
+            </div>
+          </div>
+          <div>
+            <p class="line-label">補充細節（adv phrase / prep + N）</p>
+            <div class="detail-lane">
+              ${supplementalSlots.length ? supplementalSlots.map((slot) => renderSlot(slot)).join("") : `<div class="lane-empty">本題沒有額外的補充細節。</div>`}
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="line-label">可拖拉中文片段</p>
+          <div class="token-bank">
+            ${bank.map((token) => `
+              <button
+                class="token ${token.role} ${leadSlotSet.has(token.slot) ? "lead" : ""} ${selectedTokenId === token.id ? "selected" : ""} ${placedIds.includes(token.id) ? "used" : ""}"
+                draggable="${!locked && !structureLocked && !placedIds.includes(token.id)}"
+                data-token-id="${token.id}"
+                ${locked || structureLocked ? "disabled" : ""}
+                type="button"
+              >${token.text}</button>
+            `).join("")}
+          </div>
+        </div>
+      `;
+
+      els.stageOne.querySelectorAll("[data-token-id]").forEach((button) => {
+        if (locked || structureLocked) return;
+        button.addEventListener("dragstart", (event) => {
+          event.dataTransfer.setData("text/plain", button.dataset.tokenId);
+        });
+        button.addEventListener("click", () => {
+          selectedTokenId = selectedTokenId === button.dataset.tokenId ? null : button.dataset.tokenId;
+          render();
+        });
+      });
+
+      els.stageOne.querySelectorAll("[data-slot]").forEach((slotEl) => {
+        if (locked || structureLocked) return;
+        slotEl.addEventListener("dragover", (event) => {
+          event.preventDefault();
+          slotEl.classList.add("drag-over");
+        });
+        slotEl.addEventListener("dragleave", () => {
+          slotEl.classList.remove("drag-over");
+        });
+        slotEl.addEventListener("drop", (event) => {
+          event.preventDefault();
+          slotEl.classList.remove("drag-over");
+          placeToken(event.dataTransfer.getData("text/plain"), slotEl.dataset.slot);
+        });
+        slotEl.addEventListener("click", () => {
+          if (!selectedTokenId) return;
+          placeToken(selectedTokenId, slotEl.dataset.slot);
+        });
+      });
+    }
+
+    function renderSlot(slot) {
+      const tokenId = placements[slot];
+      const token = tokenId ? tokenById(tokenId) : null;
+      const expected = tokenForSlot(slot);
+      const role = expected.role || slot;
+      const shakeClass = shakeSlot === slot ? "shake" : "";
+      return `
+        <button class="slot ${role} ${token ? "filled" : ""} ${shakeClass}" data-slot="${slot}" ${!isHighlightDone() || isStageOneDone() ? "disabled" : ""} type="button">
+          <span class="slot-label">${expected.label}</span>
+          <span class="slot-content">${token ? token.text : `拖入「${expected.label}」`}</span>
+        </button>
+      `;
+    }
+
+    function renderStageTwo(data) {
+      const locked = !isStageOneDone();
+      const decisionLocked = isDecisionDone();
+      const selectedTenseOption = selectedTense ? tenseById(selectedTense) : null;
+      const correctTenseOption = tenseById(data.tense);
+      els.stageTwo.classList.toggle("locked", locked);
+      setPanelInteraction(els.stageTwo, !locked);
+      els.stageTwo.innerHTML = `
+        <div class="stage-heading">
+          <div>
+            <h3>3. 時態與主被動</h3>
+            <p>先做兩個文法決策。選錯會在下方跳出解析，不會解鎖組句。</p>
+          </div>
+          <span class="stage-badge">${isDecisionDone() ? "完成" : locked ? "未解鎖" : "檢查中"}</span>
+        </div>
+        <div>
+          <p class="line-label">選擇時態</p>
+          <div class="tense-grid">
+            ${tenseOptions.map((tense) => `
+              <button class="tense-card ${selectedTense === tense.id ? (tense.id === data.tense ? "selected" : "wrong") : ""}" data-tense-id="${tense.id}" ${decisionLocked ? "disabled" : ""} type="button">
+                <strong>${tense.label}</strong>
+                <span>${tense.pattern}</span>
+              </button>
+            `).join("")}
+          </div>
+        </div>
+        <div class="tense-grid">
+          <div>
+            <p class="line-label">選擇主被動</p>
+            <div class="choice-row">
+              ${voiceOptions.map((voice) => `
+                <button class="choice-card ${selectedVoice === voice.id ? (voice.id === data.voice ? "selected" : "wrong") : ""}" data-voice-id="${voice.id}" ${decisionLocked ? "disabled" : ""} type="button">
+                  <strong>${voice.label}</strong>
+                  <span>${voice.pattern}</span>
+                </button>
+              `).join("")}
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (selectedTenseOption && selectedTense !== data.tense) {
+        const guide = document.createElement("div");
+        guide.className = "decision-guide error";
+        guide.innerHTML = `
+          <strong>時態引導</strong>
+          <span>你剛選的是「${selectedTenseOption.label}」，但這題應該用「${correctTenseOption.label}」。${data.tenseReason}</span>
+        `;
+        els.stageTwo.querySelector(".stage-heading").insertAdjacentElement("afterend", guide);
+      }
+
+      if (locked || decisionLocked) return;
+      els.stageTwo.querySelectorAll("[data-tense-id]").forEach((button) => {
+        button.addEventListener("click", () => selectTense(button.dataset.tenseId));
+      });
+      els.stageTwo.querySelectorAll("[data-voice-id]").forEach((button) => {
+        button.addEventListener("click", () => selectVoice(button.dataset.voiceId));
+      });
+    }
+
+    function renderPhraseStage(data) {
+      const advanced = practiceMode === "advanced";
+      els.stagePhrase.hidden = !advanced;
+      if (!advanced) {
+        els.stagePhrase.innerHTML = "";
+        return;
+      }
+
+      const locked = !isDecisionDone();
+      els.stagePhrase.classList.toggle("locked", locked);
+      setPanelInteraction(els.stagePhrase, !locked);
+
+      const glossary = getGlossary(data);
+      const pieces = buildablePieces(data);
+      if (!pieces.length) {
+        els.stagePhrase.innerHTML = `
+          <div class="stage-heading">
+            <div>
+              <h3>4. 片語組字（進階）</h3>
+              <p>這題沒有需要逐字重組的長片語，可直接進入英文組句。</p>
+            </div>
+            <span class="stage-badge">略過</span>
+          </div>
+        `;
+        return;
+      }
+
+      const rows = pieces.map((piece) => {
+        if (isPieceBuilt(piece)) {
+          return `
+            <div class="answer-box">
+              <span>片語完成</span>
+              <strong>${glossifyText(piece.text, glossary)}</strong>
+            </div>
+          `;
+        }
+        const tokens = pieceWordTokens(piece);
+        const placed = phraseWordBuilds[piece.id] || [];
+        const usedIds = new Set(placed);
+        const scrambled = seededShuffle(tokens, `${data.id}:${piece.id}`);
+        return `
+          <div class="builder-box">
+            <p class="line-label">把這 ${tokens.length} 個字排成正確片語</p>
+            <div class="built-line">
+              ${placed.length === 0
+                ? `<span class="built-placeholder">點選下方單字，依序組成片語。</span>`
+                : placed.map((id) => `<button class="token" data-word-remove="${id}" type="button">${glossifyText(wordTextById(piece, id), glossary)}</button>`).join("")}
+            </div>
+            <div class="sentence-bank">
+              ${scrambled.map((token) => `<button class="token ${usedIds.has(token.id) ? "used" : ""}" data-word-add="${token.id}" type="button">${glossifyText(token.text, glossary)}</button>`).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      els.stagePhrase.innerHTML = `
+        <div class="stage-heading">
+          <div>
+            <h3>4. 片語組字（進階）</h3>
+            <p>先把每個較長片語的單字排成正確順序，全部完成後才解鎖英文組句。</p>
+          </div>
+          <span class="stage-badge">${isPhraseStageDone(data) ? "完成" : locked ? "未解鎖" : "作答中"}</span>
+        </div>
+        ${rows}
+      `;
+
+      if (locked) return;
+      els.stagePhrase.querySelectorAll("[data-word-add]").forEach((button) => {
+        button.addEventListener("click", () => addPhraseWord(button.dataset.wordAdd));
+      });
+      els.stagePhrase.querySelectorAll("[data-word-remove]").forEach((button) => {
+        button.addEventListener("click", () => removePhraseWord(button.dataset.wordRemove));
+      });
+      bindGloss(els.stagePhrase);
+    }
+
+    function renderStageThree(data) {
+      const locked = !isDecisionDone() || (practiceMode === "advanced" && !isPhraseStageDone(data));
+      const used = new Set(builtPieces);
+      const glossary = getGlossary(data);
+      const answerById = Object.fromEntries(data.answerPieces.map((piece) => [piece.id, piece]));
+
+      els.stageThree.classList.toggle("locked", locked);
+      setPanelInteraction(els.stageThree, !locked);
+      els.stageThree.innerHTML = `
+        <div class="stage-heading">
+          <div>
+            <h3>${practiceMode === "advanced" ? "5" : "4"}. 英文組句</h3>
+            <p>${practiceMode === "advanced" ? "每個片語都組好後，再把片語排成完整句子。" : "時態與主被動都正確後，才開始排列英文片段。"}</p>
+          </div>
+          <span class="stage-badge">${isSentenceDone() ? "完成" : locked ? "未解鎖" : "作答中"}</span>
+        </div>
+        <div class="builder-box">
+          <p class="line-label">英文組句區</p>
+          <div class="built-line">
+            ${builtPieces.length === 0 ? `<span class="built-placeholder">從下方點選英文片段，依序組成句子。</span>` : builtPieces.map((id) => `
+              <button class="token" data-built-id="${id}" type="button">${glossifyText(answerById[id].text, glossary)}</button>
+            `).join("")}
+          </div>
+          <div class="sentence-bank">
+            ${data.pieceOrder.map((id) => {
+              const piece = answerById[id];
+              return `<button class="token ${used.has(id) ? "used" : ""}" data-piece-id="${id}" type="button">${glossifyText(piece.text, glossary)}</button>`;
+            }).join("")}
+          </div>
+          <div class="top-actions">
+            <button class="btn ghost" id="clearSentenceButton" type="button">清空組句</button>
+            <button class="btn primary" id="checkSentenceButton" type="button">檢查句子</button>
+          </div>
+        </div>
+        ${revealed ? `
+          <div class="answer-box">
+            <span>英文答案</span>
+            <strong>${glossifyText(data.answer, glossary)}</strong>
+            <span>${data.summary}</span>
+          </div>
+        ` : ""}
+      `;
+
+      if (locked) return;
+      els.stageThree.querySelectorAll("[data-piece-id]").forEach((button) => {
+        button.addEventListener("click", () => addPiece(button.dataset.pieceId));
+      });
+      els.stageThree.querySelectorAll("[data-built-id]").forEach((button) => {
+        button.addEventListener("click", () => removePiece(button.dataset.builtId));
+      });
+      document.getElementById("clearSentenceButton").addEventListener("click", clearBuiltPieces);
+      document.getElementById("checkSentenceButton").addEventListener("click", checkSentence);
+      bindGloss(els.stageThree);
+    }
+
+    function renderAnalysis() {
+      if (!analysisMessage) {
+        els.analysisBox.hidden = true;
+        els.analysisBox.innerHTML = "";
+        els.analysisBox.className = "analysis-box";
+        return;
+      }
+
+      els.analysisBox.hidden = false;
+      els.analysisBox.className = `analysis-box ${analysisMessage.type}`;
+      els.analysisBox.innerHTML = `
+        <strong>${analysisMessage.title}</strong>
+        <span>${analysisMessage.text}</span>
+      `;
+    }
+
+    function renderLearningPanel(data) {
+      if (!revealed) {
+        els.learningPanel.hidden = true;
+        els.learningPanel.innerHTML = "";
+        return;
+      }
+
+      els.learningPanel.hidden = false;
+      els.learningPanel.innerHTML = `
+        <div class="stage-heading">
+          <div>
+            <h3>解鎖：固定片語與難字</h3>
+            <p>答對後再整理這句真正需要吸收的語言單位。</p>
+          </div>
+          <span class="stage-badge">已解鎖</span>
+        </div>
+        <div class="learning-grid">
+          <div class="learning-card">
+            <h4>固定片語</h4>
+            <ul>
+              ${data.phraseNotes.map((item) => `<li><strong>${item.text}</strong>：${item.meaning}。${item.note}</li>`).join("")}
+            </ul>
+          </div>
+          <div class="learning-card">
+            <h4>比較難的單字</h4>
+            <ul>
+              ${data.vocabulary.map((item) => `<li><strong>${item.text}</strong>：${item.meaning}。${item.note}</li>`).join("")}
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeGlossKey(text) {
+      return String(text)
+        .toLowerCase()
+        .replace(/[^a-z0-9\s'-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    // 學生一定會的功能字（冠詞、代名詞、介系詞、be 動詞、助動詞等）不標記，避免整句都是底線。
+    const GLOSS_STOPWORDS = new Set([
+      "a", "an", "the", "and", "but", "or", "nor", "so", "yet", "although", "though",
+      "because", "since", "if", "when", "while", "where", "as", "than", "that", "whether",
+      "however", "therefore", "thus", "then", "i", "you", "he", "she", "it", "we", "they",
+      "me", "him", "her", "us", "them", "my", "your", "his", "its", "our", "their", "this",
+      "these", "those", "who", "whom", "whose", "which", "what", "myself", "yourself",
+      "himself", "herself", "itself", "ourselves", "themselves", "of", "to", "in", "on",
+      "at", "by", "for", "from", "with", "into", "onto", "over", "under", "above", "below",
+      "behind", "through", "throughout", "during", "before", "after", "against", "about",
+      "between", "among", "within", "without", "is", "am", "are", "was", "were", "be",
+      "been", "being", "do", "does", "did", "have", "has", "had", "will", "would", "shall",
+      "should", "can", "could", "may", "might", "must", "not", "no", "all", "any", "some",
+      "many", "much", "more", "most", "both", "each", "every", "few", "little", "very",
+      "too", "also", "just", "only", "even", "ever", "never", "always", "often",
+      "sometimes", "usually", "now", "once", "again", "still", "already", "here", "there",
+      "well", "up", "down", "out", "off", "one", "own", "please", "like", "how", "next",
+      "today", "new", "good", "get"
+    ]);
+
+    // 全域單字表：涵蓋所有題目英文答案用到的實詞，讓沒被固定片語吃掉的單字也能各自查中文。
+    const WORD_GLOSS = {
+      ability: "能力", able: "能夠的", accidents: "事故、意外", according: "根據",
+      accustomed: "習慣於…的", achievable: "可達成的", acquire: "取得、習得",
+      activities: "活動", activity: "活動", addition: "增加；（in addition）此外",
+      advancement: "進步、進展", animals: "動物", answers: "答案；回答", app: "應用程式",
+      appeared: "出現（過去式）", approaches: "方法；接近", areas: "地區、領域",
+      attract: "吸引", attractions: "景點、吸引人的事物", avoiding: "避免",
+      become: "變成", becoming: "變成", beneficial: "有益的", bicycles: "腳踏車",
+      blind: "失明的、盲的", books: "書", born: "出生", borrow: "借（入）", bring: "帶來",
+      business: "商業、生意", care: "照顧；在乎", causes: "造成；原因", causing: "造成",
+      certain: "某些；確定的", challenges: "挑戰", challenging: "有挑戰性的",
+      changing: "改變", children: "孩子、兒童", choice: "選擇", city: "城市",
+      class: "課堂、班級", cleaned: "清理（過去式）", climbers: "登山者",
+      commitment: "承諾、投入", committee: "委員會", common: "常見的、共同的",
+      company: "公司", compared: "比較", completed: "完成", conducting: "進行、舉辦",
+      conflict: "衝突", conquering: "征服", consider: "考慮、認為", considered: "考慮、認為",
+      convenient: "方便的", cope: "應付、處理", countries: "國家", country: "國家",
+      covered: "覆蓋", creativity: "創意", cultivate: "培養", culture: "文化",
+      customs: "習俗；海關", cycling: "騎自行車", data: "資料、數據", deaf: "聾的",
+      demonstrate: "示範、證明", determination: "決心", development: "發展",
+      different: "不同的", disasters: "災難", discouraged: "氣餒的", discussed: "討論",
+      divide: "分開、分成", domestically: "在國內", door: "門", dreadful: "可怕的",
+      driving: "駕駛；驅動", effectively: "有效地", efficiency: "效率", effort: "努力",
+      election: "選舉", emphasize: "強調", encourage: "鼓勵", enforced: "執行、強制實施",
+      english: "英語", enhance: "提升、增強", enjoy: "享受、喜歡", enjoying: "享受",
+      ensure: "確保", ensuring: "確保", entire: "整個的", expect: "期待、預期",
+      experience: "經驗、體驗", explore: "探索", extremely: "極度地", facing: "面對",
+      fact: "事實", fascinated: "著迷的", fastest: "最快的", favorable: "有利的、贊同的",
+      feel: "感覺", filmed: "拍攝", films: "電影", food: "食物", forces: "力量；強迫",
+      freedom: "自由", friends: "朋友", gained: "獲得", generation: "世代", go: "去",
+      goal: "目標", goals: "目標", government: "政府", greatest: "最大的、最偉大的",
+      groups: "群組、組別", happiness: "快樂、幸福", happy: "快樂的",
+      hard: "努力地；困難的", healthier: "更健康的", high: "高的", "high-paying": "高薪的",
+      "high-speed": "高速的", history: "歷史", hobby: "嗜好", hometowns: "家鄉",
+      hope: "希望", human: "人類的", humanity: "人性；人類", "humanity's": "人類的",
+      imagination: "想像力", impact: "影響、衝擊", increased: "增加", increasingly: "越來越",
+      independently: "獨立地", indoors: "在室內", instrument: "樂器；儀器",
+      international: "國際的", internationally: "在國際上", introducing: "介紹、引進",
+      items: "物品、項目", jade: "玉", jobs: "工作", joy: "喜悅", keeping: "保持",
+      knowledge: "知識", launch: "發射；推出", learn: "學習", library: "圖書館",
+      life: "生活、生命", lifelong: "終身的", lifetime: "一生", limited: "有限的",
+      listening: "聆聽", live: "居住；現場的", lives: "生命（複）；居住",
+      living: "生活；居住", local: "當地的", locations: "地點", long: "長的", lose: "失去",
+      magical: "神奇的", main: "主要的", making: "製作；使", markets: "市場",
+      means: "意味著；方法", meet: "遇見；滿足", meeting: "會議", million: "百萬",
+      month: "月", morning: "早晨", mountain: "山", move: "移動、搬家", movies: "電影",
+      music: "音樂", musical: "音樂的", mysteries: "謎、奧秘", naturally: "自然地",
+      necessary: "必要的", needs: "需要", neglect: "忽視", news: "新聞", night: "夜晚",
+      noon: "中午", notes: "筆記；音符", nowadays: "現今", open: "開；開放的",
+      operation: "運作；手術", options: "選項", organic: "有機的", others: "其他人",
+      park: "公園", "parents'": "父母的", past: "過去的；經過", peace: "和平", peer: "同儕",
+      people: "人們", "people's": "人們的", percentage: "百分比", pet: "寵物", pets: "寵物",
+      place: "地方；放置", play: "玩；演奏", policies: "政策", politicians: "政治人物",
+      popular: "受歡迎的", praying: "祈禱", prepare: "準備", preferred: "偏好的",
+      pressure: "壓力", prices: "價格", primarily: "主要地", principles: "原則",
+      prioritize: "優先處理", problem: "問題", problems: "問題", produced: "生產、製作",
+      profits: "利潤", prosperity: "繁榮", proves: "證明", provide: "提供",
+      public: "公共的；大眾", quickly: "快速地", quit: "戒除、放棄", rail: "鐵路",
+      rapid: "快速的", rapidly: "快速地", reading: "閱讀", reality: "現實", recent: "最近的",
+      recognition: "認可、認出", recreational: "休閒的", regulations: "規定、法規",
+      renowned: "著名的", repeatedly: "反覆地", report: "報告", reports: "報告",
+      representative: "代表", respect: "尊重", responsibility: "責任", results: "結果",
+      return: "返回；歸還", reviewed: "檢視、複習", road: "道路", safe: "安全的",
+      safety: "安全", school: "學校", "sci-fi": "科幻", season: "季節", see: "看見",
+      senior: "高年級的；資深的", serious: "嚴重的；認真的", severe: "嚴重的；嚴厲的",
+      shimmer: "微光、閃爍", "short-term": "短期的", snow: "雪", social: "社會的",
+      society: "社會", solving: "解決", space: "太空；空間", speaking: "說話",
+      standard: "標準", start: "開始", stay: "停留", story: "故事", strictly: "嚴格地",
+      strive: "努力、奮鬥", student: "學生", students: "學生", studying: "研讀、學習",
+      succeeded: "成功", success: "成功", successful: "成功的", summit: "山頂；高峰會",
+      super: "超級的", taiwan: "台灣", "taiwan's": "台灣的", take: "拿、採取",
+      teachers: "老師", team: "團隊", technological: "科技的", technology: "科技",
+      temples: "寺廟", thick: "厚的、濃的", things: "事物", think: "認為、想",
+      thousands: "數千", time: "時間", "today's": "現今的、今天的", tourist: "觀光的",
+      tourists: "觀光客", traffic: "交通", transportation: "運輸、交通", travel: "旅行",
+      truly: "真正地", typhoon: "颱風", typhoons: "颱風", undoubtedly: "無疑地",
+      uphold: "維護、支持", urban: "都市的", used: "使用；習慣於", users: "使用者",
+      using: "使用", variety: "多樣；種類", vegetables: "蔬菜", visiting: "拜訪、參觀",
+      volunteers: "志工", war: "戰爭", workplace: "職場", world: "世界",
+      worldwide: "全世界的", wrote: "寫（過去式）", year: "年", years: "年", young: "年輕的"
+    };
+
+    // 由本題的固定片語與單字表，建立「英文 → 中文」查詢表（長片語優先比對）。
+    function getGlossary(data) {
+      if (data.__glossary) return data.__glossary;
+      const map = new Map();
+      const add = (entry) => {
+        if (!entry || !entry.text) return;
+        const key = normalizeGlossKey(entry.text);
+        if (!key || map.has(key)) return;
+        map.set(key, { en: entry.text, zh: entry.meaning || "", note: entry.note || "" });
+      };
+      (data.phraseNotes || []).forEach(add);
+      (data.vocabulary || []).forEach(add);
+      const entries = [...map.entries()]
+        .map(([key, value]) => ({ words: key.split(" "), value }))
+        .sort((a, b) => b.words.length - a.words.length);
+      data.__glossary = entries;
+      return entries;
+    }
+
+    function glossSpan(display, en, zh, note) {
+      return `<span class="glossable" data-gloss-en="${escapeHtml(en)}" data-gloss-zh="${escapeHtml(zh)}" data-gloss-note="${escapeHtml(note || "")}">${escapeHtml(display)}</span>`;
+    }
+
+    // 掃描英文字串：先比對本題的固定片語（長片語優先、整塊呈現），其餘單字再用全域單字表逐字補上。
+    function glossifyText(text, glossary) {
+      const raw = String(text);
+      const chunks = raw.split(" ");
+      const clean = chunks.map((chunk) => chunk.toLowerCase().replace(/[^a-z0-9'-]/g, ""));
+      const out = [];
+      let i = 0;
+      while (i < chunks.length) {
+        let match = null;
+        if (glossary && glossary.length) {
+          for (const entry of glossary) {
+            const len = entry.words.length;
+            if (i + len > chunks.length) continue;
+            let ok = true;
+            for (let j = 0; j < len; j++) {
+              if (clean[i + j] !== entry.words[j]) { ok = false; break; }
+            }
+            if (ok) { match = { entry, len }; break; }
+          }
+        }
+        if (match) {
+          const segment = chunks.slice(i, i + match.len).join(" ");
+          const value = match.entry.value;
+          out.push(glossSpan(segment, value.en, value.zh, value.note));
+          i += match.len;
+          continue;
+        }
+        const word = clean[i];
+        const zh = word && !GLOSS_STOPWORDS.has(word) ? WORD_GLOSS[word] : null;
+        if (zh) {
+          out.push(glossSpan(chunks[i], word, zh, ""));
+        } else {
+          out.push(escapeHtml(chunks[i]));
+        }
+        i += 1;
+      }
+      return out.join(" ");
+    }
+
+    const glossTip = (() => {
+      let tip = null;
+      function ensure() {
+        if (!tip) {
+          tip = document.createElement("div");
+          tip.className = "gloss-tip";
+          tip.hidden = true;
+          document.body.appendChild(tip);
+        }
+        return tip;
+      }
+      function show(target) {
+        const el = ensure();
+        const note = target.dataset.glossNote || "";
+        el.innerHTML = `
+          <span class="gloss-en">${escapeHtml(target.dataset.glossEn || "")}</span>
+          <span class="gloss-zh">${escapeHtml(target.dataset.glossZh || "")}</span>
+          ${note ? `<span class="gloss-note">${escapeHtml(note)}</span>` : ""}
+        `;
+        el.hidden = false;
+        const rect = target.getBoundingClientRect();
+        const tipRect = el.getBoundingClientRect();
+        const maxLeft = window.scrollX + document.documentElement.clientWidth - tipRect.width - 8;
+        let left = window.scrollX + rect.left + rect.width / 2 - tipRect.width / 2;
+        left = Math.max(window.scrollX + 8, Math.min(left, maxLeft));
+        let top = window.scrollY + rect.top - tipRect.height - 8;
+        if (top < window.scrollY + 4) top = window.scrollY + rect.bottom + 8;
+        el.style.left = `${left}px`;
+        el.style.top = `${top}px`;
+      }
+      function hide() {
+        if (tip) tip.hidden = true;
+      }
+      return { show, hide };
+    })();
+
+    window.addEventListener("scroll", () => glossTip.hide(), { passive: true });
+    window.addEventListener("resize", () => glossTip.hide());
+
+    // 桌機 hover 顯示翻譯；手機長按顯示（短按仍維持 token 原本的「放進句子」動作）。
+    function bindGloss(container) {
+      if (!container) return;
+      container.querySelectorAll(".glossable").forEach((span) => {
+        span.addEventListener("mouseenter", () => glossTip.show(span));
+        span.addEventListener("mouseleave", () => glossTip.hide());
+        let timer = null;
+        let longPress = false;
+        span.addEventListener("touchstart", () => {
+          longPress = false;
+          timer = window.setTimeout(() => {
+            longPress = true;
+            glossTip.show(span);
+          }, 350);
+        }, { passive: true });
+        span.addEventListener("touchmove", () => window.clearTimeout(timer), { passive: true });
+        span.addEventListener("touchend", (event) => {
+          window.clearTimeout(timer);
+          if (longPress) {
+            event.preventDefault();
+            event.stopPropagation();
+            window.setTimeout(() => glossTip.hide(), 1600);
+          }
+        });
+      });
+    }
+
+    function generateAiAnswer(rawQuestion, data) {
+      const query = rawQuestion.trim().toLowerCase();
+      const phrases = data.phraseNotes.map((item) => `${item.text}：${item.meaning}`).join("；");
+      const vocab = data.vocabulary.map((item) => `${item.text}：${item.meaning}`).join("；");
+
+      if (!query) return "可以問：為什麼用這個時態？這句怎麼排序？有哪些固定片語？有哪些可替換單字？";
+      if (query.includes("時態") || query.includes("tense") || query.includes("為什麼")) return data.tenseReason;
+      if (query.includes("主被動") || query.includes("被動") || query.includes("語態") || query.includes("voice")) return data.voiceReason;
+      if (query.includes("順序") || query.includes("排序") || query.includes("組句") || query.includes("order")) return data.orderReason;
+      if (query.includes("片語") || query.includes("固定") || query.includes("phrase")) return phrases || "這題沒有額外固定片語。";
+      if (query.includes("單字") || query.includes("替換") || query.includes("vocab") || query.includes("word")) return vocab || "這題沒有額外列出可替換單字。";
+      if (query.includes("答案") || query.includes("英文") || query.includes("answer")) return data.answer;
+      return `${data.summary} 你也可以問我「時態」、「主被動」、「組句順序」、「固定片語」或「可替換單字」。`;
+    }
+
+    function renderRewardPanel(data) {
+      if (!revealed) {
+        els.hintText.innerHTML = hintMessage
+          ? `<p>${escapeHtml(hintMessage)}</p>`
+          : `<p>答題完成後，這裡會解鎖本題關鍵、固定片語、可替換單字與 AI 小老師問答。</p>`;
+        return;
+      }
+
+      const phraseItems = data.phraseNotes.length
+        ? data.phraseNotes.map((item) => `<li><strong>${item.text}</strong>：${item.meaning}。${item.note}</li>`).join("")
+        : "<li>這題沒有額外固定片語。</li>";
+      const vocabItems = data.vocabulary.length
+        ? data.vocabulary.map((item) => `<li><strong>${item.text}</strong>：${item.meaning}。${item.note}</li>`).join("")
+        : "<li>這題沒有額外可替換單字。</li>";
+
+      els.hintText.innerHTML = `
+        <div>
+          <h4>本題關鍵</h4>
+          <p>${data.summary}</p>
+          <p>${data.tenseReason}</p>
+        </div>
+        <div>
+          <h4>固定片語</h4>
+          <ul>${phraseItems}</ul>
+        </div>
+        <div>
+          <h4>可替換單字</h4>
+          <ul>${vocabItems}</ul>
+        </div>
+        <div class="ai-box">
+          <h4>AI 小老師</h4>
+          <div class="ai-row">
+            <input class="ai-input" id="aiQuestionInput" type="text" placeholder="問：為什麼用這個時態？">
+            <button class="btn primary" id="aiAskButton" type="button">送出</button>
+          </div>
+          <div class="ai-answer" id="aiAnswer">可以問本題的時態、主被動、組句順序、固定片語或可替換單字。</div>
+        </div>
+      `;
+      bindRewardAiEvents(data);
+    }
+
+    function bindRewardAiEvents(data) {
+      const input = document.getElementById("aiQuestionInput");
+      const button = document.getElementById("aiAskButton");
+      const answer = document.getElementById("aiAnswer");
+      if (!input || !button || !answer) return;
+
+      const ask = () => {
+        const userQuestion = input.value.trim();
+        const aiText = generateAiAnswer(userQuestion, data);
+        answer.innerHTML = `<strong>你問：</strong>${escapeHtml(userQuestion || "請給我提示")}<br><strong>AI 小老師：</strong>${escapeHtml(aiText)}`;
+      };
+
+      button.addEventListener("click", ask);
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") ask();
+      });
+    }
+
+    function renderQuestionList() {
+      const years = [...new Set(questions.map((item) => item.year))].sort(sortYearGroup);
+      const savedQuestions = readSavedProgress().questions;
+      els.drawerSummary.textContent = `已展開 ${years.length} 個年份、${questions.length} 題`;
+      els.questionList.innerHTML = years.map((year) => {
+        const items = questions
+          .filter((item) => item.year === year)
+          .sort((a, b) => questionSortKey(a) - questionSortKey(b));
+        return `
+          <div class="year-group">
+            <p class="year-title">${year}</p>
+            ${items.map((item) => {
+              const index = questions.indexOf(item);
+              const completed = Boolean(savedQuestions[item.id]?.completed);
+              return `
+                <button class="question-card ${index === questionIndex ? "active" : ""} ${completed ? "completed" : ""}" data-question-index="${index}" type="button">
+                  <strong>${item.title}</strong>
+                  <p>${item.chinese}</p>
+                  <div class="tag-row">${[...item.tags, ...(completed ? ["已完成"] : [])].map((tag) => `<span class="tag">${tag}</span>`).join("")}</div>
+                </button>
+              `;
+            }).join("")}
+          </div>
+        `;
+      }).join("");
+
+      els.questionList.querySelectorAll("[data-question-index]").forEach((button) => {
+        button.addEventListener("click", () => selectQuestion(Number(button.dataset.questionIndex)));
+      });
+    }
+
+    function questionSortKey(item) {
+      const match = item.id.match(/^exam-\d+-(\d+)$/);
+      return match ? Number(match[1]) : 0;
+    }
+
+    function sortYearGroup(a, b) {
+      const aIsExamYear = a < 200;
+      const bIsExamYear = b < 200;
+      if (aIsExamYear !== bIsExamYear) return aIsExamYear ? -1 : 1;
+      return b - a;
+    }
+
+    els.authButton.addEventListener("click", toggleGoogleSignIn);
+    els.resetButton.addEventListener("click", resetQuestion);
+    els.revealButton.addEventListener("click", revealAll);
+    els.modeButton.addEventListener("click", togglePracticeMode);
+
+    let firebaseProgressSyncedUid = null;
+
+    async function syncFirebaseProgress(backend) {
+      if (!backend?.enabled) return;
+      if (firebaseProgressSyncedUid === backend.uid) return;
+      firebaseProgressSyncedUid = backend.uid;
+
+      try {
+        document.documentElement.dataset.firebaseProgressLoad = "loading";
+        delete document.documentElement.dataset.firebaseProgressLoadError;
+        const remoteStore = await backend.loadStore();
+        document.documentElement.dataset.firebaseProgressLoad = "loaded";
+        if (remoteStore) {
+          applyRemoteProgressStore(remoteStore);
+        } else {
+          scheduleCloudProgressSave(readSavedProgress());
+        }
+      } catch (error) {
+        document.documentElement.dataset.firebaseProgressLoad = "error";
+        document.documentElement.dataset.firebaseProgressLoadError = error?.message || String(error);
+        console.warn("Firebase progress load failed. Local progress is still available.", error);
+      }
+    }
+
+    document.addEventListener("practice-progress-backend-ready", async (event) => {
+      renderAuthState(event.detail?.backend);
+      syncFirebaseProgress(event.detail?.backend);
+    });
+
+    document.addEventListener("practice-progress-auth-changed", async (event) => {
+      renderAuthState(event.detail?.backend);
+      syncFirebaseProgress(event.detail?.backend);
+    });
+
+    restoreQuestionState();
+    render();
+    renderAuthState(window.practiceProgressBackend);
+    window.setTimeout(() => {
+      renderAuthState(window.practiceProgressBackend);
+      syncFirebaseProgress(window.practiceProgressBackend);
+    }, 0);
+</script>
+</body>
+</html>
