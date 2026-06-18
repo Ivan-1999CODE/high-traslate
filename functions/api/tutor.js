@@ -1,10 +1,15 @@
-// Cloudflare Pages Function：AI 小老師後端代理
-// 前端 POST /api/tutor，這裡用環境變數裡的 GEMINI_API_KEY 去呼叫 Gemini，
+// Cloudflare Pages Function：AI 小老師後端代理（OpenRouter）
+// 前端 POST /api/tutor，這裡用環境變數裡的 OPENROUTER_API_KEY 去呼叫 OpenRouter，
 // API Key 不會出現在前端、也不會進 git。
 //
-// 部署前要在 Cloudflare 後台設定環境變數（Settings → Environment variables）：
-//   GEMINI_API_KEY = 你的 Gemini API Key（必填，標記為 Secret）
-//   GEMINI_MODEL   = gemini-2.0-flash（選填，不填就用預設）
+// 部署前要在 Cloudflare 後台設定環境變數（Settings → Variables and Secrets）：
+//   OPENROUTER_API_KEY = 你的 OpenRouter Key（必填，建議標記為 Secret）
+//   OPENROUTER_MODEL   = 免費模型名稱（選填，不填就用下方預設）
+//
+// 免費模型去這裡挑（篩選 FREE）：https://openrouter.ai/models?max_price=0
+// 名稱通常以 :free 結尾，例如 meta-llama/llama-3.3-70b-instruct:free
+
+const DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
 
 const SYSTEM_PROMPT = [
   "你是臺灣高中英文老師，協助學生理解大考（學測、分科測驗）英文翻譯題。",
@@ -17,9 +22,9 @@ const JSON_HEADERS = { "Content-Type": "application/json; charset=utf-8" };
 
 export async function onRequestPost({ request, env }) {
   try {
-    if (!env.GEMINI_API_KEY) {
+    if (!env.OPENROUTER_API_KEY) {
       return new Response(
-        JSON.stringify({ error: "後端尚未設定 GEMINI_API_KEY 環境變數。" }),
+        JSON.stringify({ error: "後端尚未設定 OPENROUTER_API_KEY 環境變數。" }),
         { status: 503, headers: JSON_HEADERS }
       );
     }
@@ -27,41 +32,42 @@ export async function onRequestPost({ request, env }) {
     const payload = await request.json().catch(() => ({}));
     const question = (payload.question || "").toString().slice(0, 500);
     const context = (payload.context || "").toString().slice(0, 4000);
-    const model = env.GEMINI_MODEL || "gemini-2.0-flash";
+    const model = env.OPENROUTER_MODEL || DEFAULT_MODEL;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`;
     const body = {
-      systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents: [{
-        role: "user",
-        parts: [{ text: `${context}\n\n學生提問：${question || "請給我這題的提示"}` }]
-      }]
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: `${context}\n\n學生提問：${question || "請給我這題的提示"}` }
+      ]
     };
 
-    const res = await fetch(url, {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Authorization": `Bearer ${env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        // OpenRouter 建議帶這兩個（選填，用於統計/排名）
+        "X-Title": "歷屆試題句構練習"
+      },
       body: JSON.stringify(body)
     });
 
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
       return new Response(
-        JSON.stringify({ error: `Gemini 回應 ${res.status}`, detail }),
+        JSON.stringify({ error: `OpenRouter 回應 ${res.status}`, detail }),
         { status: 502, headers: JSON_HEADERS }
       );
     }
 
     const json = await res.json();
-    const text = (json && json.candidates && json.candidates[0] &&
-      json.candidates[0].content && json.candidates[0].content.parts || [])
-      .map((part) => part.text || "")
-      .join("")
-      .trim();
+    const text = (json && json.choices && json.choices[0] &&
+      json.choices[0].message && json.choices[0].message.content || "").trim();
 
     if (!text) {
       return new Response(
-        JSON.stringify({ error: "Gemini 回傳空白內容。" }),
+        JSON.stringify({ error: "OpenRouter 回傳空白內容。" }),
         { status: 502, headers: JSON_HEADERS }
       );
     }
