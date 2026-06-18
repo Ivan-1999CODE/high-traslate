@@ -1143,6 +1143,10 @@
       color: #344054;
       padding: 10px;
       font-size: 13px;
+      /* AI 回答可能很長：限制高度、區塊內自己捲動，不帶動整個畫面 */
+      max-height: 220px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     /* AI 小老師：問句與回答之間用分隔線區隔 */
@@ -3807,6 +3811,11 @@
       }
     }
 
+    // 標記登入流程進行中。若使用者直接關掉 Google 登入視窗，Firebase 的
+    // signInWithPopup 有時不會 reject（promise 卡住），按鈕會一直停在「登入中」
+    // 且不可點；下方的 focus 監聽負責解除這個卡住狀態。
+    let signInPending = false;
+
     async function toggleGoogleSignIn() {
       const backend = window.practiceProgressBackend;
       if (!backend?.firebaseReady) return;
@@ -3821,6 +3830,7 @@
         } else {
           els.authStatus.textContent = "前往 Google 登入...";
           els.authButton.textContent = "登入中";
+          signInPending = true;
           await backend.signIn();
         }
       } catch (error) {
@@ -3829,9 +3839,24 @@
         console.warn("Google sign-in action failed.", error);
         renderAuthState(backend);
       } finally {
+        signInPending = false;
         els.authButton.disabled = false;
       }
     }
+
+    // 關掉登入視窗後焦點會回到主視窗；若稍候仍未登入成功，就解除「登入中」
+    // 的卡住狀態，讓使用者能再按一次登入。
+    window.addEventListener("focus", () => {
+      if (!signInPending) return;
+      window.setTimeout(() => {
+        const backend = window.practiceProgressBackend;
+        if (signInPending && !backend?.signedIn) {
+          signInPending = false;
+          els.authButton.disabled = false;
+          renderAuthState(backend);
+        }
+      }, 1200);
+    });
 
 
     function resetWorkingState() {
@@ -5317,7 +5342,7 @@
                 <button class="question-card ${index === questionIndex ? "active" : ""} ${completed ? "completed" : ""}" data-question-index="${index}" type="button">
                   <strong>${item.title}</strong>
                   <p>${item.chinese}</p>
-                  <div class="tag-row">${[...item.tags, ...(completed ? ["已完成"] : [])].map((tag) => `<span class="tag">${tag}</span>`).join("")}</div>
+                  ${completed ? `<div class="tag-row"><span class="tag">已完成</span></div>` : ""}
                 </button>
               `;
             }).join("")}
