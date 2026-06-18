@@ -1145,6 +1145,17 @@
       font-size: 13px;
     }
 
+    /* AI 小老師：問句與回答之間用分隔線區隔 */
+    .ai-qa-question {
+      padding-bottom: 8px;
+    }
+
+    .ai-qa-answer {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #c7d2fe;
+    }
+
     .locked {
       opacity: .52;
       pointer-events: none;
@@ -4370,6 +4381,8 @@
       }
 
       els.modeButton.textContent = practiceMode === "advanced" ? "進階模式：開" : "進階模式：關";
+      // 開＝藍色（primary），關＝白色（預設）
+      els.modeButton.classList.toggle("primary", practiceMode === "advanced");
 
       renderHighlightStage(data);
       renderStageBridge();
@@ -5209,7 +5222,7 @@
       const ask = () => {
         const userQuestion = input.value.trim();
         const aiText = generateAiAnswer(userQuestion, data);
-        answer.innerHTML = `<strong>你問：</strong>${escapeHtml(userQuestion || "請給我提示")}<br><strong>AI 小老師：</strong>${escapeHtml(aiText)}`;
+        answer.innerHTML = `<div class="ai-qa-question"><strong>你問：</strong>${escapeHtml(userQuestion || "請給我提示")}</div><div class="ai-qa-answer"><strong>AI 小老師：</strong>${escapeHtml(aiText)}</div>`;
       };
 
       button.addEventListener("click", ask);
