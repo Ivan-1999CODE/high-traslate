@@ -9,7 +9,15 @@
 // 免費模型去這裡挑（篩選 FREE）：https://openrouter.ai/models?max_price=0
 // 名稱通常以 :free 結尾，例如 meta-llama/llama-3.3-70b-instruct:free
 
-const DEFAULT_MODEL = "meta-llama/llama-3.3-70b-instruct:free";
+// 免費模型很容易被上游限流（429），所以準備一串候選，後端會依序嘗試，
+// 一個被限流／失敗就自動換下一個。OPENROUTER_MODEL（若有設）會排在最前面優先用。
+const FALLBACK_MODELS = [
+  "deepseek/deepseek-chat-v3-0324:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "qwen/qwen-2.5-72b-instruct:free",
+  "google/gemini-2.0-flash-exp:free",
+  "meta-llama/llama-3.1-8b-instruct:free"
+];
 
 const SYSTEM_PROMPT = [
   "你是臺灣高中英文老師，協助學生理解大考（學測、分科測驗）英文翻譯題。",
@@ -32,47 +40,52 @@ export async function onRequestPost({ request, env }) {
     const payload = await request.json().catch(() => ({}));
     const question = (payload.question || "").toString().slice(0, 500);
     const context = (payload.context || "").toString().slice(0, 4000);
-    const model = env.OPENROUTER_MODEL || DEFAULT_MODEL;
 
-    const body = {
-      model,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: `${context}\n\n學生提問：${question || "請給我這題的提示"}` }
-      ]
-    };
+    // 候選模型：自訂的（若有）排最前，再接預設清單，去重。
+    const models = [env.OPENROUTER_MODEL, ...FALLBACK_MODELS].filter(
+      (name, index, all) => name && all.indexOf(name) === index
+    );
 
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json",
-        // OpenRouter 建議帶這兩個（選填，用於統計/排名）
-        "X-Title": "歷屆試題句構練習"
-      },
-      body: JSON.stringify(body)
-    });
+    const messages = [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: `${context}\n\n學生提問：${question || "請給我這題的提示"}` }
+    ];
 
-    if (!res.ok) {
-      const detail = await res.text().catch(() => "");
-      return new Response(
-        JSON.stringify({ error: `OpenRouter 回應 ${res.status}`, detail }),
-        { status: 502, headers: JSON_HEADERS }
-      );
+    let lastStatus = 0;
+    let lastDetail = "";
+    for (const model of models) {
+      const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${env.OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "X-Title": "歷屆試題句構練習"
+        },
+        body: JSON.stringify({ model, messages })
+      });
+
+      if (!res.ok) {
+        lastStatus = res.status;
+        lastDetail = await res.text().catch(() => "");
+        // 401/403（金鑰問題）沒必要再換模型，直接回報
+        if (res.status === 401 || res.status === 403) break;
+        continue; // 429、404、502… 換下一個模型再試
+      }
+
+      const json = await res.json();
+      const text = (json && json.choices && json.choices[0] &&
+        json.choices[0].message && json.choices[0].message.content || "").trim();
+      if (text) {
+        return new Response(JSON.stringify({ answer: text, model }), { status: 200, headers: JSON_HEADERS });
+      }
+      lastStatus = 502;
+      lastDetail = "回傳空白內容";
     }
 
-    const json = await res.json();
-    const text = (json && json.choices && json.choices[0] &&
-      json.choices[0].message && json.choices[0].message.content || "").trim();
-
-    if (!text) {
-      return new Response(
-        JSON.stringify({ error: "OpenRouter 回傳空白內容。" }),
-        { status: 502, headers: JSON_HEADERS }
-      );
-    }
-
-    return new Response(JSON.stringify({ answer: text }), { status: 200, headers: JSON_HEADERS });
+    return new Response(
+      JSON.stringify({ error: `OpenRouter 全部模型失敗（最後 ${lastStatus}）`, detail: lastDetail }),
+      { status: 502, headers: JSON_HEADERS }
+    );
   } catch (error) {
     return new Response(
       JSON.stringify({ error: (error && error.message) || String(error) }),
