@@ -1499,6 +1499,21 @@
     initializeFirebaseProgress();
   </script>
   <script>
+    /* =========================================================
+       AI 小老師設定
+       API Key 不放在這裡！改放在 Cloudflare 後端（環境變數 GEMINI_API_KEY），
+       前端只呼叫自己的 /api/tutor 代理，key 不會外洩。
+       系統提示（臺灣高中正式翻譯、不口語）與模型都設定在 functions/api/tutor.js。
+
+       useAi: true  = 透過 /api/tutor 呼叫 Gemini（部署在 Cloudflare 才有作用）
+       useAi: false = 一律使用內建關鍵字答案（離線、免費）
+       本機直接開檔（file://）時沒有 /api/tutor，會自動退回內建答案，屬正常。
+       ========================================================= */
+    const AI_TUTOR_CONFIG = {
+      useAi: true,
+      endpoint: "/api/tutor"
+    };
+
     const tenseOptions = [
       { id: "present-simple", label: "現在簡單式", pattern: "do / does" },
       { id: "present-continuous", label: "現在進行式", pattern: "am/is/are + V-ing" },
@@ -5172,6 +5187,38 @@
       return `${data.summary} 你也可以問我「時態」、「主被動」、「組句順序」、「固定片語」或「可替換單字」。`;
     }
 
+    function aiTutorEnabled() {
+      return Boolean(AI_TUTOR_CONFIG.useAi);
+    }
+
+    // 呼叫自家後端代理 /api/tutor（key 藏在 Cloudflare 環境變數），回傳 AI 的繁體中文解說。
+    async function askAiTutor(userQuestion, data) {
+      const context = [
+        `中文題目：${data.chinese}`,
+        `參考英文答案：${data.answer}`,
+        `時態：${tenseById(data.tense)?.label || ""}；語態：${voiceById(data.voice)?.label || ""}`,
+        `時態原因：${data.tenseReason}`,
+        `語態原因：${data.voiceReason}`,
+        `組句順序原因：${data.orderReason}`,
+        `固定片語：${data.phraseNotes.map((p) => `${p.text}（${p.meaning}）`).join("、") || "無"}`,
+        `可替換單字：${data.vocabulary.map((v) => `${v.text}（${v.meaning}）`).join("、") || "無"}`
+      ].join("\n");
+
+      const res = await fetch(AI_TUTOR_CONFIG.endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: userQuestion, context })
+      });
+      if (!res.ok) {
+        const detail = await res.text().catch(() => "");
+        throw new Error(`AI 代理 ${res.status}：${detail}`);
+      }
+      const json = await res.json();
+      const text = ((json && json.answer) || "").trim();
+      if (!text) throw new Error("AI 代理回傳空白內容");
+      return text;
+    }
+
     function renderRewardPanel(data) {
       if (!revealed) {
         els.hintText.innerHTML = hintMessage
@@ -5219,10 +5266,31 @@
       const answer = document.getElementById("aiAnswer");
       if (!input || !button || !answer) return;
 
-      const ask = () => {
+      const renderQa = (userQuestion, label, answerText) => {
+        answer.innerHTML = `<div class="ai-qa-question"><strong>你問：</strong>${escapeHtml(userQuestion || "請給我提示")}</div><div class="ai-qa-answer"><strong>${label}：</strong>${escapeHtml(answerText)}</div>`;
+      };
+
+      const ask = async () => {
         const userQuestion = input.value.trim();
-        const aiText = generateAiAnswer(userQuestion, data);
-        answer.innerHTML = `<div class="ai-qa-question"><strong>你問：</strong>${escapeHtml(userQuestion || "請給我提示")}</div><div class="ai-qa-answer"><strong>AI 小老師：</strong>${escapeHtml(aiText)}</div>`;
+
+        // 沒設定 API Key → 沿用內建關鍵字回答（離線、免費）
+        if (!aiTutorEnabled()) {
+          renderQa(userQuestion, "AI 小老師", generateAiAnswer(userQuestion, data));
+          return;
+        }
+
+        // 有設定 API Key → 呼叫 Gemini，失敗時自動退回內建回答
+        renderQa(userQuestion, "AI 小老師", "思考中…");
+        button.disabled = true;
+        try {
+          const aiText = await askAiTutor(userQuestion || "請給我這題的提示", data);
+          renderQa(userQuestion, "AI 小老師", aiText);
+        } catch (error) {
+          console.warn("Gemini 問答失敗，改用內建回答。", error);
+          renderQa(userQuestion, "AI 小老師（離線備援）", generateAiAnswer(userQuestion, data));
+        } finally {
+          button.disabled = false;
+        }
       };
 
       button.addEventListener("click", ask);
