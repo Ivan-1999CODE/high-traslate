@@ -1326,7 +1326,6 @@
         <section class="chinese-question">
           <p class="question-label">中文題目</p>
           <h3 id="chineseQuestionText"></h3>
-          <div class="tag-row" id="tagRow"></div>
         </section>
       </div>
 
@@ -3636,7 +3635,6 @@
       promptBody: document.getElementById("promptBody"),
       stageBridge: document.getElementById("stageBridge"),
       chineseQuestionText: document.getElementById("chineseQuestionText"),
-      tagRow: document.getElementById("tagRow"),
       stageHighlight: document.getElementById("stageHighlight"),
       stageOne: document.getElementById("stageOne"),
       stageTwo: document.getElementById("stageTwo"),
@@ -4392,7 +4390,6 @@
       els.titleText.textContent = `${data.year}｜${data.title}`;
       els.subtitleText.textContent = "主畫面先呈現中文題目，完成流程後才顯示英文答案。";
       els.chineseQuestionText.textContent = data.chinese;
-      els.tagRow.innerHTML = data.tags.map((tag) => `<span class="tag">${tag}</span>`).join("");
       els.revealButton.disabled = !canRevealAnswer();
       els.revealButton.title = canRevealAnswer() ? "顯示這題的英文答案" : "完成作答流程後才能顯示英文答案";
       els.promptPanel.hidden = isHighlightDone() && !isStageOneDone() && !revealed;
