@@ -3576,7 +3576,19 @@
 
     // 開發用：true = 每題都能直接按「顯示英文答案」（方便校對翻譯）。
     // 校對完請改回 false，恢復「未完成作答就不能看完整解答」的設定。
-    const DEV_ALWAYS_REVEAL = true;
+    const DEV_ALWAYS_REVEAL = false;
+
+    // 特權帳號：登入這些 Google 帳號後，所有題目都能直接看英文答案（不受「未完成不能偷看」限制）。
+    // email 一律小寫；要再加帳號就往陣列裡補。
+    const PRIVILEGED_EMAILS = [
+      "chenchong885@gmail.com"
+    ];
+
+    function isPrivilegedUser() {
+      const backend = window.practiceProgressBackend;
+      const email = backend?.signedIn ? (backend.email || "").trim().toLowerCase() : "";
+      return Boolean(email) && PRIVILEGED_EMAILS.includes(email);
+    }
     let analysisMessage = null;
     let attentionShakeTimer = null;
     let hasAttempted = false;
@@ -4010,7 +4022,10 @@
     }
 
     function canRevealAnswer() {
-      return DEV_ALWAYS_REVEAL || revealed || hasAttempted || isSentenceDone();
+      // 一般帳號：四個步驟（螢光筆、拆句、時態主被動、英文組句）全部做完才能看答案。
+      // （拿掉「動一下就解鎖」的 hasAttempted。）特權／開發帳號不受限制；
+      // revealed 維持「揭露過就保持開啟」。
+      return DEV_ALWAYS_REVEAL || isPrivilegedUser() || revealed || completedStages() === 4;
     }
 
     function currentStageElement() {
@@ -4291,16 +4306,27 @@
       selectedTense = data.tense;
       selectedVoice = data.voice;
       builtPieces = data.answerPieces.map((piece) => piece.id);
+      // 進階模式的片語拆解：一般帳號只保留學生自己已經正確拼好的片語，
+      // 沒做過的片語維持空白，逼他在進階模式自己做一次；
+      // 特權／開發帳號則直接補滿，方便校對。
+      const revealAllPhrases = DEV_ALWAYS_REVEAL || isPrivilegedUser();
+      const builtBefore = new Set(
+        data.answerPieces.filter(isPieceBuilt).map((piece) => piece.id)
+      );
       phraseWordBuilds = {};
       data.answerPieces.forEach((piece) => {
-        phraseWordBuilds[piece.id] = pieceWordTokens(piece).map((token) => token.id);
+        if (revealAllPhrases || builtBefore.has(piece.id)) {
+          phraseWordBuilds[piece.id] = pieceWordTokens(piece).map((token) => token.id);
+        }
       });
       stage = 4;
       revealed = true;
       analysisMessage = {
         type: "correct",
         title: "解答已揭露",
-        text: "固定片語與比較難的單字已解鎖。"
+        text: revealAllPhrases
+          ? "固定片語與比較難的單字已解鎖。"
+          : "英文整句已顯示；進階模式的片語要自己正確做過一次才會出現。"
       };
       els.feedback.className = "feedback correct";
       els.feedback.textContent = `英文答案已顯示。${data.summary}`;
@@ -5271,6 +5297,7 @@
 
     document.addEventListener("practice-progress-auth-changed", async (event) => {
       renderAuthState(event.detail?.backend);
+      render();
       syncFirebaseProgress(event.detail?.backend);
     });
 
