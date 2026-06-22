@@ -1161,10 +1161,15 @@
         position: static;
         grid-template-rows: auto auto auto auto;
         overflow: visible;
+        /* 手機版：讓深色側欄變成「浮在淺色背景上的卡片」，
+           而不是滿版深色色塊直接撞上白色內容（避免深淺硬接縫的斷層感）。 */
+        margin: 14px;
+        border-radius: 14px;
+        box-shadow: var(--shadow);
       }
 
       .sidebar .drawer-body {
-        max-height: 380px;
+        max-height: 220px;
       }
     }
 

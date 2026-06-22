@@ -1293,6 +1293,24 @@
       border-top: 1px solid #c7d2fe;
     }
 
+    /* AI 回答：第一行結論用段落、其後重點用條列，行距收緊避免鬆散 */
+    .ai-qa-answer p {
+      margin: 0 0 6px;
+    }
+
+    .ai-qa-answer p:last-child {
+      margin-bottom: 0;
+    }
+
+    .ai-bullets {
+      margin: 4px 0 0;
+      padding-left: 18px;
+    }
+
+    .ai-bullets li {
+      margin-top: 3px;
+    }
+
     .locked {
       opacity: .52;
       pointer-events: none;
@@ -1309,10 +1327,15 @@
         position: static;
         grid-template-rows: auto auto auto auto;
         overflow: visible;
+        /* 手機版：讓深色側欄變成「浮在淺色背景上的卡片」，
+           而不是滿版深色色塊直接撞上白色內容（避免深淺硬接縫的斷層感）。 */
+        margin: 14px;
+        border-radius: 14px;
+        box-shadow: var(--shadow);
       }
 
       .sidebar .drawer-body {
-        max-height: 380px;
+        max-height: 220px;
       }
 
       /* 手機／平板：固定區只留年份資訊與中文題目，副標收起以省空間 */
@@ -5087,6 +5110,26 @@
         .replaceAll("'", "&#039;");
     }
 
+    // 把 AI 小老師回答（第一行結論＋「・」開頭的條列）轉成 HTML，
+    // 讓換行與重點清單能正確顯示，而不是被擠成一整行。
+    function formatAiAnswer(text) {
+      const bulletRe = /^[・·••\-\*]\s*/;
+      const lines = String(text).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      let html = "";
+      let inList = false;
+      lines.forEach((line) => {
+        if (bulletRe.test(line)) {
+          if (!inList) { html += '<ul class="ai-bullets">'; inList = true; }
+          html += `<li>${escapeHtml(line.replace(bulletRe, ""))}</li>`;
+        } else {
+          if (inList) { html += "</ul>"; inList = false; }
+          html += `<p>${escapeHtml(line)}</p>`;
+        }
+      });
+      if (inList) html += "</ul>";
+      return html || escapeHtml(text);
+    }
+
     function normalizeGlossKey(text) {
       return String(text)
         .toLowerCase()
@@ -5425,7 +5468,7 @@
       if (!input || !button || !answer) return;
 
       const renderQa = (userQuestion, label, answerText) => {
-        answer.innerHTML = `<div class="ai-qa-question"><strong>你問：</strong>${escapeHtml(userQuestion || "請給我提示")}</div><div class="ai-qa-answer"><strong>${label}：</strong>${escapeHtml(answerText)}</div>`;
+        answer.innerHTML = `<div class="ai-qa-question"><strong>你問：</strong>${escapeHtml(userQuestion || "請給我提示")}</div><div class="ai-qa-answer"><strong>${label}：</strong>${formatAiAnswer(answerText)}</div>`;
       };
 
       const ask = async () => {
