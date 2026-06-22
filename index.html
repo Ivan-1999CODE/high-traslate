@@ -66,6 +66,32 @@
       overflow: hidden;
     }
 
+    .brand-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand-text {
+      min-width: 0;
+    }
+
+    .brand-auth {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex: 0 0 auto;
+    }
+
+    .brand-auth .auth-status {
+      color: #cbd5e1;
+      font-size: 11px;
+      text-align: right;
+      white-space: normal;
+    }
+
     .brand h1 {
       margin: 0;
       font-size: 22px;
@@ -127,8 +153,12 @@
 
     .workspace {
       min-width: 0;
-      display: grid;
-      grid-template-rows: auto 1fr;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .workspace .main {
+      flex: 1;
     }
 
     .workspace-head {
@@ -140,6 +170,7 @@
       backdrop-filter: blur(8px);
     }
 
+    /* 桌機：標題＋模式＋操作按鈕全部在同一條 top bar（維持原本版面） */
     .topbar {
       min-height: 70px;
       padding: 14px 22px;
@@ -152,6 +183,28 @@
     .top-mode {
       display: flex;
       justify-content: center;
+    }
+
+    /* 手機／平板：操作按鈕獨立成一列放在最上方，不固定（捲動時跟著捲走） */
+    .action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 22px;
+      background: rgba(255, 255, 255, .92);
+      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+
+    .action-bar[hidden] {
+      display: none;
+    }
+
+    .action-bar-right {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     @keyframes attention-shake {
@@ -984,6 +1037,26 @@
       justify-content: space-between;
       gap: 12px;
       text-align: left;
+      cursor: pointer;
+    }
+
+    .drawer-caret {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 14px;
+      transition: transform .2s ease;
+    }
+
+    .question-drawer.collapsed .drawer-body {
+      display: none;
+    }
+
+    .question-drawer.collapsed .drawer-header {
+      border-bottom: 0;
+    }
+
+    .question-drawer.collapsed .drawer-caret {
+      transform: rotate(-90deg);
     }
 
     .drawer-header strong {
@@ -1112,6 +1185,69 @@
       margin-top: 5px;
     }
 
+    /* 本題關鍵：拆成「時態 / 主被動 / 組句順序」三個小區塊，方便閱讀 */
+    .reward-key {
+      display: grid;
+      gap: 8px;
+    }
+
+    .reward-summary {
+      margin: 0;
+      color: #344054 !important;
+      font-weight: 600;
+    }
+
+    .key-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .key-item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    .key-item p {
+      margin: 0;
+      color: #475467;
+      font-size: 13px;
+    }
+
+    .key-tag {
+      flex: 0 0 auto;
+      min-width: 52px;
+      text-align: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* 固定片語／可替換單字：在獎勵欄各自獨立成框，垂直堆疊 */
+    .reward-content .learning-card {
+      background: #fff;
+    }
+
+    /* 英文組句／片語階段：標示這句對應的中文，避免只看到英文字 */
+    .sentence-zh {
+      margin: 0 0 6px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .sentence-zh strong {
+      color: #7c2d12;
+    }
+
     .ai-box {
       border-top: 1px solid #e5eaf2;
       padding-top: 10px;
@@ -1178,22 +1314,43 @@
       .sidebar .drawer-body {
         max-height: 380px;
       }
+
+      /* 手機／平板：固定區只留年份資訊與中文題目，副標收起以省空間 */
+      .workspace-head .lesson-title p {
+        display: none;
+      }
     }
 
     @media (max-width: 560px) {
+      .action-bar,
       .topbar,
-      .main,
-      .workspace-head .chinese-question {
+      .main {
         padding: 14px;
-      }
-
-      .workspace-head .chinese-question {
-        margin: 0 14px 14px;
       }
 
       .topbar {
         grid-template-columns: 1fr;
+        gap: 8px;
+        min-height: 0;
+      }
+
+      .workspace-head .chinese-question {
+        margin: 0 14px 14px;
+        padding: 14px;
+      }
+
+      .action-bar {
+        flex-direction: column;
         align-items: stretch;
+      }
+
+      .action-bar-mode,
+      .action-bar-mode > .btn {
+        width: 100%;
+      }
+
+      .action-bar-right {
+        justify-content: flex-start;
       }
 
       .main {
@@ -1278,17 +1435,23 @@
   <div class="app">
     <aside class="sidebar">
       <section class="brand">
-        <h1>歷屆試題句構練習</h1>
-        <p>先用中文拆骨架，再決定英文時態與主被動。</p>
+        <div class="brand-row">
+          <div class="brand-text">
+            <h1>歷屆試題句構練習</h1>
+            <p>先用中文拆骨架，再決定英文時態與主被動。</p>
+          </div>
+          <div class="brand-auth" id="brandAuthSlot"></div>
+        </div>
       </section>
 
       <section class="panel question-drawer" id="questionDrawer">
-        <div class="drawer-header">
+        <button class="drawer-header" id="drawerToggle" type="button" aria-expanded="true">
           <span>
             <strong>歷屆題目</strong>
             <span id="drawerSummary">點選年份切換練習句子</span>
           </span>
-        </div>
+          <span class="drawer-caret" aria-hidden="true">▾</span>
+        </button>
         <div class="drawer-body" id="questionList"></div>
       </section>
 
@@ -1306,16 +1469,20 @@
     </aside>
 
     <section class="workspace">
+      <div class="action-bar" id="actionBar" hidden>
+        <div class="action-bar-mode" id="actionBarMode"></div>
+        <div class="action-bar-right" id="actionBarActions"></div>
+      </div>
       <div class="workspace-head">
         <header class="topbar">
           <div class="lesson-title">
             <h2 id="titleText">題目</h2>
             <p id="subtitleText">請先閱讀中文題目。</p>
           </div>
-          <div class="top-mode">
+          <div class="top-mode" id="topMode">
             <button class="btn" id="modeButton">進階模式：關</button>
           </div>
-          <div class="top-actions">
+          <div class="top-actions" id="topActions">
             <button class="btn" id="resetButton">重做本題</button>
             <button class="btn primary" id="revealButton">顯示英文答案</button>
             <button class="btn auth-button" id="authButton" type="button">Google 登入</button>
@@ -1349,7 +1516,6 @@
 
             <div class="feedback" id="feedback">一開始不顯示英文答案。請先把中文拆成主詞、動詞、受詞。</div>
             <div class="analysis-box" id="analysisBox" hidden></div>
-            <section class="stage-panel unlock-panel" id="learningPanel" hidden></section>
           </article>
         </div>
 
@@ -1836,8 +2002,8 @@
         pieces: [
           "In addition to praying for favorable election results,",
           "they also hope",
-          "to demonstrate respect",
-          "for local culture and customs."
+          "to demonstrate respect for",
+          "local culture and customs."
         ],
         pieceOrder: ["p3", "p1", "p4", "p2"],
         tenseReason: "這句描述政治人物在選舉季節的目的與期待，英文用 they also hope，所以選現在簡單式。",
@@ -2547,7 +2713,7 @@
             note: "that 後面是一個完整句子，整段當 know 的受詞內容。"
           }
         ],
-        pieces: ["Most people", "know", "that reading is beneficial", "for children."],
+        pieces: ["Most people", "know", "that reading is beneficial for", "children."],
         pieceOrder: ["p3", "p1", "p4", "p2"],
         tenseReason: "這句是一般事實，英文用 know，所以是現在簡單式。",
         voiceReason: "英文句首放 Most people，表示人們主動知道某件事。",
@@ -2956,8 +3122,8 @@
         answerPieces: [
           { id: "p1", text: "Keeping a pet" },
           { id: "p2", text: "is not a short-term life experience" },
-          { id: "p3", text: "but a lifelong commitment" },
-          { id: "p4", text: "to animals." }
+          { id: "p3", text: "but a lifelong commitment to" },
+          { id: "p4", text: "animals." }
         ],
         pieceOrder: ["p3", "p1", "p4", "p2"],
         summary: "not...but... 是這句的核心，前面否定短暫體驗，後面強調終生承諾。",
@@ -3156,8 +3322,8 @@
           { id: "p1", text: "The high housing prices" },
           { id: "p2", text: "in urban areas" },
           { id: "p3", text: "have had" },
-          { id: "p4", text: "a serious impact" },
-          { id: "p5", text: "on society." }
+          { id: "p4", text: "a serious impact on" },
+          { id: "p5", text: "society." }
         ],
         pieceOrder: ["p2", "p4", "p1", "p5", "p3"],
         summary: "have had an impact on 是固定搭配，on 後面接受到影響的對象。",
@@ -3231,8 +3397,8 @@
         answerPieces: [
           { id: "p1", text: "Taiwan's night markets" },
           { id: "p2", text: "have long been considered" },
-          { id: "p3", text: "representative of" },
-          { id: "p4", text: "our local culture." }
+          { id: "p3", text: "representative" },
+          { id: "p4", text: "of our local culture." }
         ],
         pieceOrder: ["p3", "p1", "p4", "p2"],
         summary: "中文語意可拆成人們認為夜市有代表性；英文把夜市放句首，所以轉成完成式被動。",
@@ -3619,6 +3785,7 @@
     let attentionShakeTimer = null;
     let hasAttempted = false;
     let hintMessage = "";
+    let mobileLayout = false;
 
     const els = {
       progressText: document.getElementById("progressText"),
@@ -3642,8 +3809,8 @@
       stageThree: document.getElementById("stageThree"),
       feedback: document.getElementById("feedback"),
       analysisBox: document.getElementById("analysisBox"),
-      learningPanel: document.getElementById("learningPanel"),
       questionDrawer: document.getElementById("questionDrawer"),
+      drawerToggle: document.getElementById("drawerToggle"),
       drawerSummary: document.getElementById("drawerSummary"),
       questionList: document.getElementById("questionList"),
       hintText: document.getElementById("hintText")
@@ -4387,7 +4554,7 @@
 
       els.progressText.textContent = `${completed} / 4`;
       els.progressFill.style.width = `${Math.round((completed / 4) * 100)}%`;
-      els.titleText.textContent = `${data.year}｜${data.title}`;
+      els.titleText.textContent = mobileLayout ? `${data.year} 年${data.title}` : `${data.year}｜${data.title}`;
       els.subtitleText.textContent = "主畫面先呈現中文題目，完成流程後才顯示英文答案。";
       els.chineseQuestionText.textContent = data.chinese;
       els.revealButton.disabled = !canRevealAnswer();
@@ -4425,7 +4592,6 @@
       renderPhraseStage(data);
       renderStageThree(data);
       renderAnalysis();
-      renderLearningPanel(data);
       saveCurrentProgress();
       renderQuestionList();
       renderRewardPanel(data);
@@ -4826,6 +4992,7 @@
           </div>
           <span class="stage-badge">${isPhraseStageDone(data) ? "完成" : locked ? "未解鎖" : "作答中"}</span>
         </div>
+        <p class="sentence-zh"><strong>這題的中文：</strong>${data.chinese}</p>
         ${rows}
       `;
 
@@ -4855,6 +5022,7 @@
           </div>
           <span class="stage-badge">${isSentenceDone() ? "完成" : locked ? "未解鎖" : "作答中"}</span>
         </div>
+        <p class="sentence-zh"><strong>這句的中文：</strong>${data.chinese}</p>
         <div class="builder-box">
           <p class="line-label">英文組句區</p>
           <div class="built-line">
@@ -4907,39 +5075,6 @@
       els.analysisBox.innerHTML = `
         <strong>${analysisMessage.title}</strong>
         <span>${analysisMessage.text}</span>
-      `;
-    }
-
-    function renderLearningPanel(data) {
-      if (!revealed) {
-        els.learningPanel.hidden = true;
-        els.learningPanel.innerHTML = "";
-        return;
-      }
-
-      els.learningPanel.hidden = false;
-      els.learningPanel.innerHTML = `
-        <div class="stage-heading">
-          <div>
-            <h3>解鎖：固定片語與難字</h3>
-            <p>答對後再整理這句真正需要吸收的語言單位。</p>
-          </div>
-          <span class="stage-badge">已解鎖</span>
-        </div>
-        <div class="learning-grid">
-          <div class="learning-card">
-            <h4>固定片語</h4>
-            <ul>
-              ${data.phraseNotes.map((item) => `<li><strong>${item.text}</strong>：${item.meaning}。${item.note}</li>`).join("")}
-            </ul>
-          </div>
-          <div class="learning-card">
-            <h4>比較難的單字</h4>
-            <ul>
-              ${data.vocabulary.map((item) => `<li><strong>${item.text}</strong>：${item.meaning}。${item.note}</li>`).join("")}
-            </ul>
-          </div>
-        </div>
       `;
     }
 
@@ -5254,16 +5389,20 @@
         : "<li>這題沒有額外可替換單字。</li>";
 
       els.hintText.innerHTML = `
-        <div>
+        <div class="reward-key">
           <h4>本題關鍵</h4>
-          <p>${data.summary}</p>
-          <p>${data.tenseReason}</p>
+          <p class="reward-summary">${data.summary}</p>
+          <div class="key-grid">
+            <div class="key-item"><span class="key-tag">時態</span><p>${data.tenseReason}</p></div>
+            <div class="key-item"><span class="key-tag">主被動</span><p>${data.voiceReason}</p></div>
+            <div class="key-item"><span class="key-tag">組句順序</span><p>${data.orderReason}</p></div>
+          </div>
         </div>
-        <div>
+        <div class="learning-card">
           <h4>固定片語</h4>
           <ul>${phraseItems}</ul>
         </div>
-        <div>
+        <div class="learning-card">
           <h4>可替換單字</h4>
           <ul>${vocabItems}</ul>
         </div>
@@ -5365,6 +5504,50 @@
     els.resetButton.addEventListener("click", resetQuestion);
     els.revealButton.addEventListener("click", revealAll);
     els.modeButton.addEventListener("click", togglePracticeMode);
+
+    // 響應式版面：桌機把模式／操作／登入鈕全部放回頂部 top bar（維持原本畫面）；
+    // 手機／平板則把操作鈕搬到上方獨立列、登入鈕搬到側欄標題右上角。
+    // 元素只有一份，用 appendChild 在兩種版面間搬移，ID 與事件都不變。
+    const layoutMq = window.matchMedia("(max-width: 1180px)");
+    function applyResponsiveLayout() {
+      mobileLayout = layoutMq.matches;
+      const actionBar = document.getElementById("actionBar");
+      if (mobileLayout) {
+        document.getElementById("actionBarMode").appendChild(els.modeButton);
+        const right = document.getElementById("actionBarActions");
+        right.appendChild(els.resetButton);
+        right.appendChild(els.revealButton);
+        const auth = document.getElementById("brandAuthSlot");
+        auth.appendChild(els.authButton);
+        auth.appendChild(els.authStatus);
+        actionBar.hidden = false;
+      } else {
+        document.getElementById("topMode").appendChild(els.modeButton);
+        const actions = document.getElementById("topActions");
+        actions.appendChild(els.resetButton);
+        actions.appendChild(els.revealButton);
+        actions.appendChild(els.authButton);
+        actions.appendChild(els.authStatus);
+        actionBar.hidden = true;
+      }
+    }
+    layoutMq.addEventListener("change", () => {
+      applyResponsiveLayout();
+      render();
+    });
+    applyResponsiveLayout();
+
+    // 歷屆題目清單可收合：手機／平板預設收起，省下垂直空間。
+    if (els.drawerToggle) {
+      const setDrawerCollapsed = (collapsed) => {
+        els.questionDrawer.classList.toggle("collapsed", collapsed);
+        els.drawerToggle.setAttribute("aria-expanded", String(!collapsed));
+      };
+      if (window.matchMedia("(max-width: 1180px)").matches) setDrawerCollapsed(true);
+      els.drawerToggle.addEventListener("click", () => {
+        setDrawerCollapsed(!els.questionDrawer.classList.contains("collapsed"));
+      });
+    }
 
     let firebaseProgressSyncedUid = null;
 
