@@ -30,6 +30,34 @@
 - 112-1：`that war causes extremely dreadful disasters`，名詞子句，當 `proves` 的受詞。
 - 114-2：`that once appeared in sci-fi movies`，形容詞子句，修飾 `magical items`。
 
+## 介系詞切分規則
+
+決定「介系詞要切給前面的動詞／名詞，還是後面的名詞」時，依下列規則（用於 `pieces` / `answerPieces`）：
+
+1. **固定搭配 → 介系詞黏前面那個字。**
+   動詞或名詞「鎖死」某個介系詞、換掉就變別的意思時，介系詞跟著前面的字，讓學生重組時順便學搭配。
+   - `a serious impact on` ＋ `society`（impact on）
+   - `to demonstrate respect for` ＋ `local culture and customs`（respect for）
+   - `a lifelong commitment to` ＋ `animals`（commitment to）
+   - `that reading is beneficial for` ＋ `children`（beneficial for）
+   - 包在同一塊裡、不另外切開的搭配也算（cope with、listen to、accustomed to、based on、take on、go against、covered with、fascinated by、take care of）。
+
+2. **自由的介系詞片語 → 介系詞跟後面名詞。**
+   地點、時間、情境等副詞片語，介系詞是後面名詞的頭，整組切給後面。
+   - `in class`、`in urban areas`、`in winter`、`in Taiwan`、`for a lifetime`、`from different countries`、`throughout the country`、`on their own`、`as the main goal`。
+
+3. **屬格 `of` → 一律跟後面名詞**（相當於中文「的」，沒有教搭配的價值，不黏前面）。
+   - `representative` ＋ `of our local culture`
+   - `The rapid development` ＋ `of space technology`
+   - `the goal` ＋ `of all humanity`
+
+4. **動詞 governs 的 `into` / `from`（divide X into Y、borrow X from Y）→ 維持原樣，介系詞跟後面名詞。**
+   這類動詞與介系詞之間隔了受詞、連結不夠緊密，硬黏前面反而難判讀，故不黏。
+   - `divide students` ＋ `into different groups`
+   - `to borrow books` ＋ `from the library more`
+
+> 例外備註：beneficial for 屬第 1 條（已於 95-1 改為 `beneficial for` ＋ `children`）。
+
 ## 資料格式
 
 ```js

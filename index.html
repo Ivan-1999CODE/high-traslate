@@ -1342,6 +1342,21 @@
       .workspace-head .lesson-title p {
         display: none;
       }
+
+      /* 手機／平板：標題與「進階模式」開關並排放在固定抬頭裡，
+         捲動時兩者會一起被釘在上方（操作鈕則留在下方獨立列、跟著捲走）。 */
+      .topbar {
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+      }
+
+      .topbar .top-actions {
+        display: none;
+      }
+
+      .action-bar-mode:empty {
+        display: none;
+      }
     }
 
     @media (max-width: 560px) {
@@ -1352,8 +1367,8 @@
       }
 
       .topbar {
-        grid-template-columns: 1fr;
-        gap: 8px;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
         min-height: 0;
       }
 
@@ -5550,13 +5565,15 @@
 
     // 響應式版面：桌機把模式／操作／登入鈕全部放回頂部 top bar（維持原本畫面）；
     // 手機／平板則把操作鈕搬到上方獨立列、登入鈕搬到側欄標題右上角。
+    // 「進階模式」開關不論版面都留在固定抬頭的 top bar（topMode）裡，
+    // 手機／平板捲動時會跟著題目標題一起被釘在上方，比較明顯。
     // 元素只有一份，用 appendChild 在兩種版面間搬移，ID 與事件都不變。
     const layoutMq = window.matchMedia("(max-width: 1180px)");
     function applyResponsiveLayout() {
       mobileLayout = layoutMq.matches;
       const actionBar = document.getElementById("actionBar");
+      document.getElementById("topMode").appendChild(els.modeButton);
       if (mobileLayout) {
-        document.getElementById("actionBarMode").appendChild(els.modeButton);
         const right = document.getElementById("actionBarActions");
         right.appendChild(els.resetButton);
         right.appendChild(els.revealButton);
@@ -5565,7 +5582,6 @@
         auth.appendChild(els.authStatus);
         actionBar.hidden = false;
       } else {
-        document.getElementById("topMode").appendChild(els.modeButton);
         const actions = document.getElementById("topActions");
         actions.appendChild(els.resetButton);
         actions.appendChild(els.revealButton);
