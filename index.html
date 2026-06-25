@@ -897,6 +897,16 @@
       gap: 10px;
     }
 
+    .choice-card {
+      min-height: 72px;
+      align-content: center;
+      text-align: center;
+    }
+
+    .choice-card strong {
+      font-size: 18px;
+    }
+
     .builder-box {
       border: 1px solid #e4e9f2;
       border-radius: 8px;
@@ -1043,7 +1053,8 @@
     .drawer-caret {
       flex: 0 0 auto;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 30px;
+      line-height: 1;
       transition: transform .2s ease;
     }
 
@@ -1327,11 +1338,6 @@
         position: static;
         grid-template-rows: auto auto auto auto;
         overflow: visible;
-        /* 手機版：讓深色側欄變成「浮在淺色背景上的卡片」，
-           而不是滿版深色色塊直接撞上白色內容（避免深淺硬接縫的斷層感）。 */
-        margin: 14px;
-        border-radius: 14px;
-        box-shadow: var(--shadow);
       }
 
       .sidebar .drawer-body {
@@ -1488,7 +1494,7 @@
             <strong>歷屆題目</strong>
             <span id="drawerSummary">點選年份切換練習句子</span>
           </span>
-          <span class="drawer-caret" aria-hidden="true">▾</span>
+          <span class="drawer-caret" aria-hidden="true">▼</span>
         </button>
         <div class="drawer-body" id="questionList"></div>
       </section>
@@ -4701,6 +4707,7 @@
       if (highlightDone) return;
       event.preventDefault();
       isHighlightPainting = true;
+      event.currentTarget.releasePointerCapture(event.pointerId);
       applyHighlightMark(event.currentTarget);
       document.addEventListener("pointerup", stopHighlightPaint, { once: true });
     }
@@ -4933,17 +4940,14 @@
             `).join("")}
           </div>
         </div>
-        <div class="tense-grid">
-          <div>
-            <p class="line-label">選擇主被動</p>
-            <div class="choice-row">
-              ${voiceOptions.map((voice) => `
-                <button class="choice-card ${selectedVoice === voice.id ? (voice.id === data.voice ? "selected" : "wrong") : ""}" data-voice-id="${voice.id}" ${decisionLocked ? "disabled" : ""} type="button">
-                  <strong>${voice.label}</strong>
-                  <span>${voice.pattern}</span>
-                </button>
-              `).join("")}
-            </div>
+        <div>
+          <p class="line-label">選擇主被動</p>
+          <div class="choice-row">
+            ${voiceOptions.map((voice) => `
+              <button class="choice-card ${selectedVoice === voice.id ? (voice.id === data.voice ? "selected" : "wrong") : ""}" data-voice-id="${voice.id}" ${decisionLocked ? "disabled" : ""} type="button">
+                <strong>${voice.label}</strong>
+              </button>
+            `).join("")}
           </div>
         </div>
       `;
