@@ -496,6 +496,31 @@
       font-weight: 700;
     }
 
+    /* 時態與主被動完成後收合成的結果小卡 */
+    .decision-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .summary-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--blue-soft);
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .summary-chip b {
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
     .highlighter-tools {
       display: flex;
       flex-wrap: wrap;
@@ -760,6 +785,8 @@
       gap: 6px;
       box-shadow: var(--small-shadow);
       transition: transform .12s, border-color .12s, background .12s;
+      max-width: 100%;
+      word-break: break-word;
     }
 
     .token:hover {
@@ -1259,6 +1286,15 @@
       color: #7c2d12;
     }
 
+    /* 進階模式：每個要重組片語上方的「這一小句中文」 */
+    .piece-zh {
+      margin: 0 0 6px;
+      color: #9a3412;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
     .ai-box {
       border-top: 1px solid #e5eaf2;
       padding-top: 10px;
@@ -1342,6 +1378,14 @@
 
       .sidebar .drawer-body {
         max-height: 220px;
+      }
+
+      /* 手機／平板：固定抬頭改用不透明實色背景、移除 backdrop-filter，
+         避免部分行動瀏覽器在捲動時對毛玻璃重繪造成抬頭忽縮忽現。 */
+      .workspace-head {
+        background: #ffffff;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
       }
 
       /* 手機／平板：固定區只留年份資訊與中文題目，副標收起以省空間 */
@@ -1864,8 +1908,8 @@
           ["in class", "在課堂上", "常見地點片語。"]
         ],
         vocab: [
-          ["Nowadays", "現在、如今", "常放在句首標示現代趨勢。"],
-          ["senior high school English teachers", "高中英文老師", "整塊當主詞核心，不另外拆成可移動細節。"]
+          ["Nowadays", "現在、如今", "也可替換為：Currently / These days / In recent years。"],
+          ["senior high school English teachers", "高中英文老師", "也可說 high school English teachers；senior 特指高中而非國中。"]
         ]
       }),
       makeExamQuestion({
@@ -1903,8 +1947,8 @@
           ["a variety of", "多樣的", "後面接複數名詞。"]
         ],
         vocab: [
-          ["ability", "能力", "English ability 指英語能力。"],
-          ["conducting", "進行、舉辦", "常用於活動、研究、調查。"]
+          ["ability", "能力", "也可替換為：proficiency / competence / skill。"],
+          ["conducting", "進行、舉辦", "也可替換為：carrying out / organizing / running。"]
         ]
       }),
       makeExamQuestion({
@@ -1938,8 +1982,8 @@
           ["technological advancement", "科技進步", "也可說 technological progress。"]
         ],
         vocab: [
-          ["imagination", "想像", "抽象名詞。"],
-          ["creativity", "創意", "抽象名詞，常和 imagination 並列。"]
+          ["imagination", "想像", "也可替換為：vision / ingenuity / inventiveness。"],
+          ["creativity", "創意", "也可替換為：innovation / originality / inventiveness。"]
         ]
       }),
       makeExamQuestion({
@@ -1986,8 +2030,8 @@
           ["one by one", "逐一", "表示一個接一個。"]
         ],
         vocab: [
-          ["magical items", "神奇物件", "也可用 magical objects。"],
-          ["once", "曾經、過去", "表示過去曾發生。"]
+          ["magical items", "神奇物件", "也可替換為：magical objects / enchanted things / futuristic gadgets。"],
+          ["once", "曾經、過去", "也可替換為：previously / formerly / in the past。"]
         ]
       }),
       makeExamQuestion({
@@ -2024,8 +2068,8 @@
           ["throughout the country", "全國各地", "throughout 表示遍及整個範圍。"]
         ],
         vocab: [
-          ["politicians", "政治人物", "也可寫 political figures。"],
-          ["renowned temples", "著名廟宇", "renowned、famous、well-known 都可表示著名。"]
+          ["politicians", "政治人物", "也可替換為：political figures / officials / public figures。"],
+          ["renowned temples", "著名廟宇", "renowned 也可替換為：famous / well-known / notable。"]
         ]
       }),
       makeExamQuestion({
@@ -2059,8 +2103,8 @@
           ["demonstrate respect for", "展現對……的尊重", "也可用 show respect for。"]
         ],
         vocab: [
-          ["favorable election results", "好的選舉結果", "favorable 表示有利的、正面的。"],
-          ["local culture and customs", "在地文化與習俗", "customs 指習俗。"]
+          ["favorable election results", "好的選舉結果", "favorable 也可替換為：positive / successful / good。"],
+          ["local culture and customs", "在地文化與習俗", "customs 也可替換為：traditions / practices / heritage。"]
         ]
       }),
       makeExamQuestion({
@@ -2087,8 +2131,8 @@
           ["the goal of all humanity", "所有人類的目標", "of all humanity 補充 goal 的範圍。"]
         ],
         vocab: [
-          ["conflict", "衝突", "正式寫作常見字。"],
-          ["humanity", "人類", "集合名詞，指全體人類。"]
+          ["conflict", "衝突", "也可替換為：war / dispute / tension / clash。"],
+          ["humanity", "人類", "也可替換為：humankind / mankind / the human race。"]
         ]
       }),
       makeExamQuestion({
@@ -2116,8 +2160,8 @@
           ["take care of", "照顧", "常見動詞片語。"]
         ],
         vocab: [
-          ["neglect", "忽略", "表示沒有盡到應有注意或責任。"],
-          ["responsibility", "責任", "正式寫作常用字。"]
+          ["neglect", "忽略", "也可替換為：ignore / overlook / disregard。"],
+          ["responsibility", "責任", "也可替換為：duty / obligation / accountability。"]
         ]
       }),
       makeExamQuestion({
@@ -2146,8 +2190,8 @@
           ["road users", "用路人", "道路使用者的自然說法。"]
         ],
         vocab: [
-          ["regulations", "法規", "常用複數。"],
-          ["enforced", "執行、強制實施", "常用於法律、規則。"]
+          ["regulations", "法規", "也可替換為：laws / rules / restrictions / policies。"],
+          ["enforced", "執行、強制實施", "也可替換為：implemented / applied / carried out。"]
         ]
       }),
       makeExamQuestion({
@@ -2176,8 +2220,8 @@
           ["uphold our principles", "堅持自己的原則", "uphold 比 keep 更正式。"]
         ],
         vocab: [
-          ["principles", "原則", "通常用複數表示一套原則。"],
-          ["pressure", "壓力", "peer pressure 是固定搭配。"]
+          ["principles", "原則", "也可替換為：values / guidelines / standards。"],
+          ["pressure", "壓力", "也可替換為：stress / influence / burden。"]
         ]
       }),
       makeExamQuestion({
@@ -2219,8 +2263,8 @@
           ["the preferred choice", "首選", "preferred 表示較受偏好的。"]
         ],
         vocab: [
-          ["undoubtedly", "無疑地、當然", "正式語氣副詞。"],
-          ["business travel", "商務旅行", "常見名詞片語。"]
+          ["undoubtedly", "無疑地、當然", "也可替換為：certainly / without doubt / unquestionably。"],
+          ["business travel", "商務旅行", "也可替換為：business trips / work-related travel / corporate travel。"]
         ]
       }),
       makeExamQuestion({
@@ -2248,8 +2292,8 @@
           ["severe disasters", "嚴重災害", "severe 表示嚴重的。"]
         ],
         vocab: [
-          ["increasingly", "越來越", "表示程度逐漸增加。"],
-          ["typhoons", "颱風", "可數名詞複數。"]
+          ["increasingly", "越來越", "也可替換為：more and more / progressively / ever more。"],
+          ["typhoons", "颱風", "也可替換為：tropical storms / cyclones / severe storms。"]
         ]
       }),
       makeExamQuestion({
@@ -2290,8 +2334,8 @@
           ["if necessary", "若有必要", "常放在分句前補充條件。"]
         ],
         vocab: [
-          ["approaches", "接近、來襲", "颱風接近可用 approach。"],
-          ["quickly", "迅速地", "修飾 move。"]
+          ["approaches", "接近、來襲", "也可替換為：comes near / nears / draws close。"],
+          ["quickly", "迅速地", "也可替換為：rapidly / swiftly / fast。"]
         ]
       }),
       makeExamQuestion({
@@ -2319,8 +2363,8 @@
           ["freedom and prosperity", "自由與繁榮", "兩個抽象名詞並列。"]
         ],
         vocab: [
-          ["generation", "世代", "parents' generation 指父母那一代。"],
-          ["prosperity", "繁榮", "正式抽象名詞。"]
+          ["generation", "世代", "也可替換為：era / age / cohort。"],
+          ["prosperity", "繁榮", "也可替換為：wealth / success / well-being。"]
         ]
       }),
       makeExamQuestion({
@@ -2360,8 +2404,8 @@
           ["cope with new challenges", "因應新的挑戰", "cope with 是固定片語。"]
         ],
         vocab: [
-          ["effectively", "有效地", "修飾 cope with。"],
-          ["challenges", "挑戰", "可數名詞複數。"]
+          ["effectively", "有效地", "也可替換為：successfully / efficiently / well。"],
+          ["challenges", "挑戰", "也可替換為：difficulties / obstacles / problems。"]
         ]
       }),
       makeExamQuestion({
@@ -2389,8 +2433,8 @@
           ["as the main goal", "作為主要目標", "as 表示身分或用途。"]
         ],
         vocab: [
-          ["business", "企業", "這裡不是生意，而是企業。"],
-          ["profits", "獲利", "常用複數表示利潤。"]
+          ["business", "企業", "也可替換為：companies / corporations / firms。"],
+          ["profits", "獲利", "也可替換為：revenue / earnings / income。"]
         ]
       }),
       makeExamQuestion({
@@ -2407,19 +2451,19 @@
         details: [
           { label: "目的", text: "增進大眾福祉" }
         ],
-        pieces: ["It", "should take on", "social responsibility", "to enhance the well-being of the public."],
-        pieceOrder: ["p4", "p2", "p1", "p3"],
+        pieces: ["It", "should take on", "social responsibility", "to enhance", "the well-being of the public."],
+        pieceOrder: ["p5", "p3", "p1", "p4", "p2"],
         tenseReason: "中文有「應該」，英文答案用 should take on，所以要選情態助動詞。",
         voiceReason: "英文句首放 It，表示企業主動負起責任。",
-        orderReason: "英文先放 It should take on social responsibility，再用 to enhance 補目的。",
+        orderReason: "英文先放 It should take on social responsibility，再用 to enhance 補目的，最後放 the well-being of the public 說明要增進的對象。",
         summary: "take on responsibility 是固定搭配；to enhance... 說明目的。",
         phrases: [
           ["take on social responsibility", "負起社會責任", "take on 表示承擔。"],
           ["well-being of the public", "大眾的福祉", "well-being 指幸福、安康。"]
         ],
         vocab: [
-          ["enhance", "增進", "正式動詞。"],
-          ["public", "大眾", "the public 指一般民眾。"]
+          ["enhance", "增進", "也可替換為：improve / boost / promote。"],
+          ["public", "大眾", "也可替換為：people / citizens / society / community。"]
         ]
       }),
       makeExamQuestion({
@@ -2448,8 +2492,8 @@
           ["cultivate organic vegetables", "種植有機蔬菜", "cultivate 比 grow 更正式。"]
         ],
         vocab: [
-          ["hometowns", "家鄉", "複數對應多位年輕人的家鄉。"],
-          ["organic", "有機的", "常修飾食物或農業。"]
+          ["hometowns", "家鄉", "也可替換為：home villages / places of origin / native places。"],
+          ["organic", "有機的", "也可替換為：natural / chemical-free / eco-friendly。"]
         ]
       }),
       makeExamQuestion({
@@ -2479,8 +2523,8 @@
           ["not only...but also...", "不但……還……", "常用來並列兩個重點。"]
         ],
         vocab: [
-          ["determination", "決心", "正式抽象名詞。"],
-          ["profits", "獲利", "常用複數表示收益。"]
+          ["determination", "決心", "也可替換為：perseverance / resolve / persistence。"],
+          ["profits", "獲利", "也可替換為：revenue / earnings / income。"]
         ]
       }),
       makeExamQuestion({
@@ -2518,8 +2562,8 @@
           ["tourist attractions", "觀光景點", "常見名詞片語。"]
         ],
         vocab: [
-          ["locations", "地點", "可指拍攝地。"],
-          ["filmed", "拍攝", "被動子句中使用 are filmed。"]
+          ["locations", "地點", "也可替換為：sites / spots / venues / settings。"],
+          ["filmed", "拍攝", "也可替換為：shot / recorded / captured on film。"]
         ]
       }),
       makeExamQuestion({
@@ -2558,8 +2602,8 @@
           ["on their own", "靠自己", "表示獨立完成。"]
         ],
         vocab: [
-          ["standard answers", "標準答案", "standard 表示標準的。"],
-          ["expect", "期待", "expect someone to do something 是常見結構。"]
+          ["standard answers", "標準答案", "standard 也可替換為：model / correct / expected。"],
+          ["expect", "期待", "也可替換為：require / demand / ask。"]
         ]
       }),
       makeExamQuestion({
@@ -2587,8 +2631,8 @@
           ["think independently", "獨立思考", "independently 是副詞。"]
         ],
         vocab: [
-          ["cultivate", "培養", "常用於能力、習慣、品格。"],
-          ["acquire", "獲取", "比 get 更正式。"]
+          ["cultivate", "培養", "也可替換為：develop / foster / build。"],
+          ["acquire", "獲取", "也可替換為：gain / obtain / develop。"]
         ]
       }),
       makeExamQuestion({
@@ -2616,8 +2660,8 @@
           ["a hobby you can enjoy", "你可以享受的嗜好", "you can enjoy 是省略關係代名詞的修飾語。"]
         ],
         vocab: [
-          ["hobby", "嗜好", "可數名詞。"],
-          ["lifetime", "一生", "life + time 組成的名詞。"]
+          ["hobby", "嗜好", "也可替換為：interest / pastime / leisure activity。"],
+          ["lifetime", "一生", "也可替換為：life / lifespan / entire life。"]
         ]
       }),
       makeExamQuestion({
@@ -2645,8 +2689,8 @@
           ["even more joy", "更多的喜悅", "even 加強 more。"]
         ],
         vocab: [
-          ["instrument", "樂器", "musical instrument 是完整說法。"],
-          ["joy", "喜悅", "抽象名詞。"]
+          ["instrument", "樂器", "也可直接說 piano / guitar / violin 等具體樂器名稱。"],
+          ["joy", "喜悅", "也可替換為：happiness / pleasure / delight。"]
         ]
       }),
       makeExamQuestion({
@@ -2687,8 +2731,8 @@
           ["truly feel happy", "真正感到快樂", "truly 修飾 feel。"]
         ],
         vocab: [
-          ["ourselves", "我們自己", "反身代名詞。"],
-          ["happy", "快樂", "形容詞作補語。"]
+          ["ourselves", "我們自己", "也可說 for our own sake 表示「只為了自己」。"],
+          ["happy", "快樂", "也可替換為：content / satisfied / joyful。"]
         ]
       }),
       makeExamQuestion({
@@ -2728,8 +2772,8 @@
           ["the door to happiness", "快樂之門", "to 表示通往。"]
         ],
         vocab: [
-          ["naturally", "自然地", "修飾 open。"],
-          ["open", "開啟", "這裡是不及物動詞。"]
+          ["naturally", "自然地", "也可替換為：automatically / inevitably / on its own。"],
+          ["open", "開啟", "也可替換為：unlock / be revealed / swing open。"]
         ]
       }),
       makeExamQuestion({
@@ -2768,8 +2812,8 @@
           ["Most people know that", "一般人都知道", "that 後接完整子句。"]
         ],
         vocab: [
-          ["reading", "閱讀", "動名詞可作主詞。"],
-          ["beneficial", "有益的", "正式形容詞。"]
+          ["reading", "閱讀", "也可替換為：reading books / literacy / studying。"],
+          ["beneficial", "有益的", "也可替換為：helpful / good / advantageous。"]
         ]
       }),
       makeExamQuestion({
@@ -2798,8 +2842,8 @@
           ["from the library", "從圖書館", "from 表示借書來源。"]
         ],
         vocab: [
-          ["borrow", "借入", "和 lend 借出不同。"],
-          ["library", "圖書館", "前面常加 the 指特定場所。"]
+          ["borrow", "借入", "也可說 check out / take out（圖書館借書用語）。"],
+          ["library", "圖書館", "也可說 school library 或 public library 指特定類型圖書館。"]
         ]
       }),
       makeExamQuestion({
@@ -2840,8 +2884,8 @@
           ["for a long time", "長久以來", "表示一段持續時間。"]
         ],
         vocab: [
-          ["Humanity", "人類", "集合名詞。"],
-          ["fascinated", "著迷的", "常用 be fascinated by。" ]
+          ["Humanity", "人類", "也可替換為：humankind / mankind / the human race。"],
+          ["fascinated", "著迷的", "也可替換為：intrigued / captivated / mesmerized。" ]
         ]
       }),
       makeExamQuestion({
@@ -2881,8 +2925,8 @@
           ["has never been discouraged", "從來不氣餒", "never 放在完成式助動詞後。"]
         ],
         vocab: [
-          ["blind", "失明的", "形容詞。"],
-          ["discouraged", "氣餒的", "常用於被動或形容詞用法。"]
+          ["blind", "失明的", "也可說 visually impaired（更正式婉轉的說法）。"],
+          ["discouraged", "氣餒的", "也可替換為：disheartened / dejected / downhearted。"]
         ]
       })
     ];
@@ -2932,8 +2976,8 @@
           { text: "extremely dreadful disasters", meaning: "極為可怕的災難", note: "extremely 強化 dreadful 的程度。" }
         ],
         vocabulary: [
-          { text: "dreadful", meaning: "可怕的", note: "比 bad 更正式且語氣更強。" },
-          { text: "disasters", meaning: "災難", note: "可數名詞，這裡用複數表示多種或多次災難。" }
+          { text: "dreadful", meaning: "可怕的", note: "也可替換為：terrible / horrible / devastating。" },
+          { text: "disasters", meaning: "災難", note: "也可替換為：catastrophes / tragedies / calamities。" }
         ]
       },
       {
@@ -2972,8 +3016,8 @@
           { text: "one of the most...", meaning: "最……之一", note: "one of 後接複數名詞。" }
         ],
         vocabulary: [
-          { text: "operation", meaning: "營運", note: "可指交通系統、公司或機器的運作。" },
-          { text: "transportation options", meaning: "交通工具選項", note: "options 比 tools 更自然。" }
+          { text: "operation", meaning: "營運", note: "也可替換為：service / launch / running。" },
+          { text: "transportation options", meaning: "交通工具選項", note: "也可替換為：modes of transportation / travel choices / transit options。" }
         ]
       },
       {
@@ -3010,8 +3054,8 @@
           { text: "gained international recognition", meaning: "受到國際重視", note: "gain recognition 是常見搭配。" }
         ],
         vocabulary: [
-          { text: "recognition", meaning: "認可、重視", note: "正式文章常用字。" },
-          { text: "produced", meaning: "製作的", note: "過去分詞放在名詞後修飾 films。" }
+          { text: "recognition", meaning: "認可、重視", note: "也可替換為：attention / acclaim / appreciation。" },
+          { text: "produced", meaning: "製作的", note: "也可替換為：made / created / directed。" }
         ]
       },
       {
@@ -3050,8 +3094,8 @@
           { text: "from different countries", meaning: "來自不同國家", note: "from 補充來源。" }
         ],
         vocabulary: [
-          { text: "attract", meaning: "吸引", note: "主詞可以是地點、活動或特色。" },
-          { text: "tourists", meaning: "觀光客", note: "tourist 是可數名詞。" }
+          { text: "attract", meaning: "吸引", note: "也可替換為：draw / bring in / lure。" },
+          { text: "tourists", meaning: "觀光客", note: "也可替換為：visitors / travelers / sightseers。" }
         ]
       },
       {
@@ -3089,8 +3133,8 @@
           { text: "as a means of transportation", meaning: "作為一種交通工具", note: "as 表示用途或身分。" }
         ],
         vocabulary: [
-          { text: "primarily", meaning: "主要地", note: "比 mainly 更正式。" },
-          { text: "transportation", meaning: "交通、運輸", note: "不可數名詞，常用於正式語境。" }
+          { text: "primarily", meaning: "主要地", note: "也可替換為：mainly / chiefly / predominantly。" },
+          { text: "transportation", meaning: "交通、運輸", note: "也可替換為：commuting / transit / travel。" }
         ]
       },
       {
@@ -3136,8 +3180,8 @@
           { text: "success is achievable", meaning: "成功是可達成的", note: "achievable 比 can succeed 更正式。" }
         ],
         vocabulary: [
-          { text: "strive", meaning: "努力", note: "比 try 更正式，常用於書面語。" },
-          { text: "achievable", meaning: "可達成的", note: "由 achieve 加 -able 形成形容詞。" }
+          { text: "strive", meaning: "努力", note: "也可替換為：work hard / make an effort / endeavor。" },
+          { text: "achievable", meaning: "可達成的", note: "也可替換為：attainable / possible / within reach。" }
         ]
       },
       {
@@ -3176,8 +3220,8 @@
           { text: "a lifelong commitment", meaning: "終生承諾", note: "lifelong 表示持續一生的。" }
         ],
         vocabulary: [
-          { text: "commitment", meaning: "承諾、責任", note: "比 promise 更正式，帶有長期責任感。" },
-          { text: "short-term", meaning: "短期的", note: "和 lifelong 形成對比。" }
+          { text: "commitment", meaning: "承諾、責任", note: "也可替換為：responsibility / dedication / obligation。" },
+          { text: "short-term", meaning: "短期的", note: "也可替換為：temporary / brief / passing。" }
         ]
       },
       {
@@ -3217,8 +3261,8 @@
           { text: "lose their lives", meaning: "喪失性命", note: "比 die 更正式、委婉。" }
         ],
         vocabulary: [
-          { text: "worldwide", meaning: "全球", note: "可作副詞或形容詞，這裡修飾 people 的範圍。" },
-          { text: "road accidents", meaning: "道路事故", note: "accident 是可數名詞。" }
+          { text: "worldwide", meaning: "全球", note: "也可替換為：globally / around the world / across the globe。" },
+          { text: "road accidents", meaning: "道路事故", note: "也可替換為：traffic accidents / car crashes / vehicle collisions。" }
         ]
       },
       {
@@ -3257,8 +3301,8 @@
           { text: "just to please friends", meaning: "只為了取悅朋友", note: "just to 表示目的，而且帶有『只是為了』的語氣。" }
         ],
         vocabulary: [
-          { text: "certain", meaning: "某些", note: "certain things 指不特定的一些事情。" },
-          { text: "please", meaning: "取悅", note: "這裡是動詞，不是 please 當禮貌用語。" }
+          { text: "certain", meaning: "某些", note: "也可替換為：some / specific / particular。" },
+          { text: "please", meaning: "取悅", note: "也可替換為：satisfy / make happy / appease。" }
         ]
       },
       {
@@ -3296,8 +3340,8 @@
           { text: "shimmer like jade", meaning: "閃耀如玉", note: "like jade 用來做比喻。" }
         ],
         vocabulary: [
-          { text: "summit", meaning: "山頂", note: "比 mountain top 更正式。" },
-          { text: "shimmer", meaning: "閃耀", note: "表示柔和、閃爍的光。" }
+          { text: "summit", meaning: "山頂", note: "也可替換為：peak / mountaintop / apex。" },
+          { text: "shimmer", meaning: "閃耀", note: "也可替換為：glow / gleam / sparkle。" }
         ]
       },
       {
@@ -3336,8 +3380,8 @@
           { text: "both domestically and internationally", meaning: "國內外", note: "both...and... 平衡兩個副詞。" }
         ],
         vocabulary: [
-          { text: "conquering", meaning: "征服", note: "動名詞可放句首當主詞。" },
-          { text: "challenging", meaning: "具挑戰性的", note: "比 difficult 更有『值得挑戰』的語感。" }
+          { text: "conquering", meaning: "征服", note: "也可替換為：climbing / scaling / reaching the top of。" },
+          { text: "challenging", meaning: "具挑戰性的", note: "也可替換為：difficult / demanding / tough。" }
         ]
       },
       {
@@ -3376,8 +3420,8 @@
           { text: "in urban areas", meaning: "在都會地區", note: "地點片語修飾 housing prices。" }
         ],
         vocabulary: [
-          { text: "housing prices", meaning: "房價", note: "housing 指住房相關。" },
-          { text: "urban", meaning: "都市的", note: "相對於 rural 鄉村的。" }
+          { text: "housing prices", meaning: "房價", note: "也可替換為：home prices / real estate prices / property values。" },
+          { text: "urban", meaning: "都市的", note: "也可替換為：city / metropolitan / downtown。" }
         ]
       },
       {
@@ -3415,8 +3459,8 @@
           { text: "meet people's housing needs", meaning: "滿足人們住房需求", note: "meet needs 是常見搭配。" }
         ],
         vocabulary: [
-          { text: "policies", meaning: "政策", note: "policy 的複數。" },
-          { text: "housing needs", meaning: "住房需求", note: "housing 作名詞修飾 needs。" }
+          { text: "policies", meaning: "政策", note: "也可替換為：measures / regulations / plans。" },
+          { text: "housing needs", meaning: "住房需求", note: "也可替換為：residential needs / accommodation needs / shelter needs。" }
         ]
       },
       {
@@ -3451,8 +3495,8 @@
           { text: "representative of", meaning: "足以代表", note: "of 後接被代表的對象。" }
         ],
         vocabulary: [
-          { text: "night markets", meaning: "夜市", note: "market 是可數名詞，這裡用複數。" },
-          { text: "local culture", meaning: "在地文化", note: "local 表示本地的、在地的。" }
+          { text: "night markets", meaning: "夜市", note: "也可替換為：street markets / evening markets / outdoor markets。" },
+          { text: "local culture", meaning: "在地文化", note: "也可替換為：regional culture / cultural identity / native culture。" }
         ]
       },
       {
@@ -3489,8 +3533,8 @@
           { text: "a popular recreational activity", meaning: "熱門休閒活動", note: "recreational 表示休閒用途。" }
         ],
         vocabulary: [
-          { text: "cycling", meaning: "騎腳踏車", note: "動名詞可當主詞。" },
-          { text: "recreational", meaning: "休閒的", note: "正式寫作常用字。" }
+          { text: "cycling", meaning: "騎腳踏車", note: "也可替換為：bike riding / bicycling / riding a bicycle。" },
+          { text: "recreational", meaning: "休閒的", note: "也可替換為：leisure / hobbyist / fun。" }
         ]
       },
       {
@@ -3527,8 +3571,8 @@
           { text: "explore its mysteries", meaning: "探索它的奧秘", note: "explore 常用於未知領域。" }
         ],
         vocabulary: [
-          { text: "rapid development", meaning: "快速發展", note: "rapid 比 fast 更正式。" },
-          { text: "mysteries", meaning: "奧秘", note: "mystery 的複數，表示多個未知之處。" }
+          { text: "rapid development", meaning: "快速發展", note: "rapid 也可替換為：fast / swift / dramatic。" },
+          { text: "mysteries", meaning: "奧秘", note: "也可替換為：secrets / wonders / unknowns。" }
         ]
       },
       {
@@ -3567,8 +3611,8 @@
           { text: "after class", meaning: "下課後", note: "常見時間片語，英文通常放在地點之後。" }
         ],
         vocabulary: [
-          { text: "notes", meaning: "筆記", note: "可數名詞，這裡用複數表示多則筆記。" },
-          { text: "wrote", meaning: "寫", note: "write 的過去式，提示本句使用過去簡單式。" }
+          { text: "notes", meaning: "筆記", note: "也可替換為：records / summaries / memos。" },
+          { text: "wrote", meaning: "寫", note: "也可替換為：jotted down / recorded / put down。" }
         ]
       },
       {
@@ -3606,8 +3650,8 @@
           { text: "before noon", meaning: "中午前", note: "before + 時間點，放在句尾補充期限。" }
         ],
         vocabulary: [
-          { text: "completed", meaning: "完成", note: "complete 的過去分詞，可用於被動語態。" },
-          { text: "report", meaning: "報告", note: "被動句中放到句首，成為英文主詞。" }
+          { text: "completed", meaning: "完成", note: "也可替換為：finished / done / accomplished。" },
+          { text: "report", meaning: "報告", note: "也可替換為：document / assignment / paper。" }
         ]
       },
       {
@@ -3643,8 +3687,8 @@
           { text: "next month", meaning: "下個月", note: "明確未來時間，常和 will 搭配。" }
         ],
         vocabulary: [
-          { text: "launch", meaning: "推出", note: "產品或服務上市、發布時常用 launch。" },
-          { text: "app", meaning: "應用程式", note: "application 的常見縮寫。" }
+          { text: "launch", meaning: "推出", note: "也可替換為：release / roll out / introduce。" },
+          { text: "app", meaning: "應用程式", note: "也可替換為：application / software / platform。" }
         ]
       },
       {
@@ -3680,8 +3724,8 @@
           { text: "since morning", meaning: "從早上開始", note: "since 指起點，常提示現在完成式。" }
         ],
         vocabulary: [
-          { text: "volunteers", meaning: "志工們", note: "volunteer 可作名詞或動詞，這裡是名詞。" },
-          { text: "cleaned", meaning: "清理", note: "clean 的過去分詞，和 have 組成現在完成式。" }
+          { text: "volunteers", meaning: "志工們", note: "也可替換為：helpers / community workers / participants。" },
+          { text: "cleaned", meaning: "清理", note: "也可替換為：tidied up / cleared / swept。" }
         ]
       },
       {
@@ -3720,8 +3764,8 @@
           { text: "by the committee", meaning: "由委員會", note: "被動語態中補充動作執行者。" }
         ],
         vocabulary: [
-          { text: "committee", meaning: "委員會", note: "集體名詞，常見於正式文章。" },
-          { text: "discussed", meaning: "討論", note: "discuss 的過去分詞，前面不加 about。" }
+          { text: "committee", meaning: "委員會", note: "也可替換為：board / panel / group / team。" },
+          { text: "discussed", meaning: "討論", note: "也可替換為：debated / reviewed / talked over。" }
         ]
       },
       {
@@ -3759,8 +3803,8 @@
           { text: "had reviewed", meaning: "已經檢查了", note: "had + p.p. 表示過去某時間點之前已完成。" }
         ],
         vocabulary: [
-          { text: "reviewed", meaning: "檢查、審閱", note: "比 check 更正式，常用於資料、文件。" },
-          { text: "data", meaning: "資料", note: "正式寫作中常見名詞，可視語境作單複數。" }
+          { text: "reviewed", meaning: "檢查、審閱", note: "也可替換為：checked / examined / went over。" },
+          { text: "data", meaning: "資料", note: "也可替換為：information / findings / materials。" }
         ]
       }
     ];
@@ -4210,6 +4254,42 @@
       return data.answerPieces.filter((piece) => pieceWordTokens(piece).length >= 3);
     }
 
+    // 進階模式：取得一個英文片段對應的中文。優先用本題固定片語的完整中文（最精準），
+    // 找不到再用片語表／全域單字表逐段拼出（只取每個字的第一個語意，避免一串分號）。
+    function pieceChinese(piece, glossary) {
+      const data = question();
+      const key = normalizeGlossKey(piece.text);
+      const exact = (data.phraseNotes || []).find((note) => normalizeGlossKey(note.text) === key);
+      if (exact && exact.meaning) return exact.meaning;
+      const firstSense = (zh) => String(zh).split(/[；、，/]/)[0];
+      const chunks = String(piece.text).split(" ");
+      const clean = chunks.map((chunk) => chunk.toLowerCase().replace(/[^a-z0-9'-]/g, ""));
+      const parts = [];
+      let i = 0;
+      while (i < chunks.length) {
+        let matched = null;
+        for (const entry of glossary) {
+          const len = entry.words.length;
+          if (i + len > chunks.length) continue;
+          let ok = true;
+          for (let j = 0; j < len; j++) {
+            if (clean[i + j] !== entry.words[j]) { ok = false; break; }
+          }
+          if (ok) { matched = { entry, len }; break; }
+        }
+        if (matched) {
+          if (matched.entry.value.zh) parts.push(firstSense(matched.entry.value.zh));
+          i += matched.len;
+          continue;
+        }
+        const word = clean[i];
+        const zh = word && !GLOSS_STOPWORDS.has(word) ? WORD_GLOSS[word] : null;
+        if (zh) parts.push(firstSense(zh));
+        i += 1;
+      }
+      return parts.join("");
+    }
+
     function isPhraseStageDone(data) {
       if (practiceMode !== "advanced") return true;
       return data.answerPieces.every(isPieceBuilt);
@@ -4281,8 +4361,10 @@
     function canRevealAnswer() {
       // 一般帳號：四個步驟（螢光筆、拆句、時態主被動、英文組句）全部做完才能看答案。
       // （拿掉「動一下就解鎖」的 hasAttempted。）特權／開發帳號不受限制；
-      // revealed 維持「揭露過就保持開啟」。
-      return DEV_ALWAYS_REVEAL || isPrivilegedUser() || revealed || completedStages() === 4;
+      // revealed 維持「揭露過就保持開啟」；wasCompleted 讓按重新作答後仍可顯示答案。
+      if (DEV_ALWAYS_REVEAL || isPrivilegedUser() || revealed || completedStages() === 4) return true;
+      const saved = readSavedProgress().questions[question().id];
+      return Boolean(saved && saved.wasCompleted);
     }
 
     function currentStageElement() {
@@ -4307,6 +4389,8 @@
     }
 
     function resetQuestion() {
+      const prevSaved = readSavedProgress().questions[question().id];
+      const wasCompleted = Boolean(prevSaved && (prevSaved.completed || prevSaved.revealed || prevSaved.wasCompleted));
       clearCurrentSavedProgress();
       stage = 1;
       highlightDone = false;
@@ -4324,6 +4408,11 @@
       hintMessage = "先找中文句子的「誰做事、做什麼、作用到誰或什麼」，再用顏色標出來。";
       els.feedback.className = "feedback";
       els.feedback.textContent = "先用螢光筆標出你看到的中文結構；這一段不評分。";
+      if (wasCompleted) {
+        const store = readSavedProgress();
+        store.questions[question().id] = { wasCompleted: true };
+        writeSavedProgress(store);
+      }
       render();
     }
 
@@ -4595,6 +4684,9 @@
       const completed = completedStages();
       const tense = tenseById(data.tense);
       const voice = voiceById(data.voice);
+
+      // 每次重繪都清掉殘留的單字中文卡，避免填入單字後中文一直卡在畫面上遮住其他句子。
+      glossTip.hide();
 
       els.progressText.textContent = `${completed} / 4`;
       els.progressFill.style.width = `${Math.round((completed / 4) * 100)}%`;
@@ -4921,6 +5013,25 @@
       const correctTenseOption = tenseById(data.tense);
       els.stageTwo.classList.toggle("locked", locked);
       setPanelInteraction(els.stageTwo, !locked);
+
+      // 完成文法決策後收合：整格縮小，只留下這題選到的時態與主被動結果。
+      if (decisionLocked) {
+        const correctVoiceOption = voiceById(data.voice);
+        els.stageTwo.innerHTML = `
+          <div class="stage-heading">
+            <div>
+              <h3>3. 時態與主被動</h3>
+            </div>
+            <span class="stage-badge">完成</span>
+          </div>
+          <div class="decision-summary">
+            <span class="summary-chip"><b>時態</b>${correctTenseOption.label}</span>
+            <span class="summary-chip"><b>主被動</b>${correctVoiceOption.label}</span>
+          </div>
+        `;
+        return;
+      }
+
       els.stageTwo.innerHTML = `
         <div class="stage-heading">
           <div>
@@ -4999,9 +5110,13 @@
       }
 
       const rows = pieces.map((piece) => {
+        // 每個要重組的片語，最上面顯示「這一小句」的中文（整句中文已在最上面的固定 Title）。
+        const zh = pieceChinese(piece, glossary);
+        const zhLine = zh ? `<p class="piece-zh">${escapeHtml(zh)}</p>` : "";
         if (isPieceBuilt(piece)) {
           return `
             <div class="answer-box">
+              ${zhLine}
               <span>片語完成</span>
               <strong>${glossifyText(piece.text, glossary)}</strong>
             </div>
@@ -5013,6 +5128,7 @@
         const scrambled = seededShuffle(tokens, `${data.id}:${piece.id}`);
         return `
           <div class="builder-box">
+            ${zhLine}
             <p class="line-label">把這 ${tokens.length} 個字排成正確片語</p>
             <div class="built-line">
               ${placed.length === 0
@@ -5034,7 +5150,6 @@
           </div>
           <span class="stage-badge">${isPhraseStageDone(data) ? "完成" : locked ? "未解鎖" : "作答中"}</span>
         </div>
-        <p class="sentence-zh"><strong>這題的中文：</strong>${data.chinese}</p>
         ${rows}
       `;
 
@@ -5050,6 +5165,9 @@
 
     function renderStageThree(data) {
       const locked = !isDecisionDone() || (practiceMode === "advanced" && !isPhraseStageDone(data));
+      // 按下「檢查句子」完成（會設定 revealed）或直接顯示答案後才鎖定，跟前三大題一樣不能再變動。
+      // 注意：不能用 isSentenceDone()，否則最後一塊一排對就立刻鎖住、來不及按「檢查句子」拿獎勵。
+      const done = revealed;
       const used = new Set(builtPieces);
       const glossary = getGlossary(data);
       const answerById = Object.fromEntries(data.answerPieces.map((piece) => [piece.id, piece]));
@@ -5064,7 +5182,6 @@
           </div>
           <span class="stage-badge">${isSentenceDone() ? "完成" : locked ? "未解鎖" : "作答中"}</span>
         </div>
-        <p class="sentence-zh"><strong>這句的中文：</strong>${data.chinese}</p>
         <div class="builder-box">
           <p class="line-label">英文組句區</p>
           <div class="built-line">
@@ -5072,6 +5189,7 @@
               <button class="token" data-built-id="${id}" type="button">${glossifyText(answerById[id].text, glossary)}</button>
             `).join("")}
           </div>
+          ${done ? "" : `
           <div class="sentence-bank">
             ${data.pieceOrder.map((id) => {
               const piece = answerById[id];
@@ -5082,6 +5200,7 @@
             <button class="btn ghost" id="clearSentenceButton" type="button">清空組句</button>
             <button class="btn primary" id="checkSentenceButton" type="button">檢查句子</button>
           </div>
+          `}
         </div>
         ${revealed ? `
           <div class="answer-box">
@@ -5093,6 +5212,8 @@
       `;
 
       if (locked) return;
+      bindGloss(els.stageThree);
+      if (done) return;   // 完成後鎖定：保留長按查單字，但不再綁定點選、清空、檢查。
       els.stageThree.querySelectorAll("[data-piece-id]").forEach((button) => {
         button.addEventListener("click", () => addPiece(button.dataset.pieceId));
       });
@@ -5101,7 +5222,6 @@
       });
       document.getElementById("clearSentenceButton").addEventListener("click", clearBuiltPieces);
       document.getElementById("checkSentenceButton").addEventListener("click", checkSentence);
-      bindGloss(els.stageThree);
     }
 
     function renderAnalysis() {
@@ -5361,29 +5481,38 @@
     window.addEventListener("scroll", () => glossTip.hide(), { passive: true });
     window.addEventListener("resize", () => glossTip.hide());
 
-    // 桌機 hover 顯示翻譯；手機長按顯示（短按仍維持 token 原本的「放進句子」動作）。
+    // 只有真正支援 hover 的滑鼠裝置才用 hover 顯示翻譯；觸控裝置（平板／手機）一律靠長按，
+    // 短按＝token 原本的「放進句子」動作。這樣可避免平板上點一下就誤觸 hover、中文卡住不消失。
+    const SUPPORTS_HOVER = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     function bindGloss(container) {
       if (!container) return;
       container.querySelectorAll(".glossable").forEach((span) => {
-        span.addEventListener("mouseenter", () => glossTip.show(span));
-        span.addEventListener("mouseleave", () => glossTip.hide());
+        if (SUPPORTS_HOVER) {
+          span.addEventListener("mouseenter", () => glossTip.show(span));
+          span.addEventListener("mouseleave", () => glossTip.hide());
+        }
         let timer = null;
         let longPress = false;
         span.addEventListener("touchstart", () => {
           longPress = false;
+          glossTip.hide();
           timer = window.setTimeout(() => {
             longPress = true;
             glossTip.show(span);
           }, 350);
         }, { passive: true });
-        span.addEventListener("touchmove", () => window.clearTimeout(timer), { passive: true });
+        span.addEventListener("touchmove", () => {
+          window.clearTimeout(timer);
+        }, { passive: true });
         span.addEventListener("touchend", (event) => {
           window.clearTimeout(timer);
           if (longPress) {
+            // 長按：只顯示解釋，攔掉後續 click，不要把單字填進句子。
             event.preventDefault();
             event.stopPropagation();
             window.setTimeout(() => glossTip.hide(), 1600);
           }
+          // 短按：不攔截，讓 click 冒泡到 token，照常填入單字（中文卡會在重繪時清掉）。
         });
       });
     }
