@@ -4161,7 +4161,7 @@
     function restoreQuestionState() {
       resetWorkingState();
       const saved = readSavedProgress().questions[question().id];
-      if (!saved) return;
+      if (!saved || saved.isRedoing) return;
 
       const tokenSlots = new Set(allStructureTokens().map((token) => token.slot));
       const tokenIds = new Set(allStructureTokens().map((token) => token.id));
@@ -4391,7 +4391,15 @@
     function resetQuestion() {
       const prevSaved = readSavedProgress().questions[question().id];
       const wasCompleted = Boolean(prevSaved && (prevSaved.completed || prevSaved.revealed || prevSaved.wasCompleted));
-      clearCurrentSavedProgress();
+      if (wasCompleted) {
+        // 保留原本的完整紀錄，加上 isRedoing 標記，讓 Firebase 不遺失舊作答資料。
+        // 等學生重做完成後，saveCurrentProgress() 才用新資料覆蓋。
+        const store = readSavedProgress();
+        store.questions[question().id] = { ...prevSaved, wasCompleted: true, isRedoing: true };
+        writeSavedProgress(store);
+      } else {
+        clearCurrentSavedProgress();
+      }
       stage = 1;
       highlightDone = false;
       selectedMarker = "subject";
@@ -4408,11 +4416,6 @@
       hintMessage = "先找中文句子的「誰做事、做什麼、作用到誰或什麼」，再用顏色標出來。";
       els.feedback.className = "feedback";
       els.feedback.textContent = "先用螢光筆標出你看到的中文結構；這一段不評分。";
-      if (wasCompleted) {
-        const store = readSavedProgress();
-        store.questions[question().id] = { wasCompleted: true };
-        writeSavedProgress(store);
-      }
       render();
     }
 
