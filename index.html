@@ -4132,6 +4132,11 @@
     function saveCurrentProgress() {
       const data = question();
       const store = readSavedProgress();
+      const previous = store.questions[data.id] || {};
+      // 重做已完成題目時，畫面會先回到空白作答狀態；保留既有完成紀錄，
+      // 才不會因 render() 的自動儲存而失去「顯示答案」的解鎖資格。
+      const wasCompleted = Boolean(previous.wasCompleted || previous.completed || previous.revealed);
+      const isCompleted = wasCompleted || isSentenceDone() || revealed;
       store.lastQuestionId = data.id;
       store.questions[data.id] = {
         stage,
@@ -4145,7 +4150,9 @@
         phraseWordBuilds,
         revealed,
         hasAttempted,
-        completed: isSentenceDone() || revealed,
+        wasCompleted,
+        isRedoing: wasCompleted && !isSentenceDone() && !revealed,
+        completed: isCompleted,
         updatedAt: Date.now()
       };
       writeSavedProgress(store);
