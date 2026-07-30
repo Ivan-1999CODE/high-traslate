@@ -1388,6 +1388,15 @@
         -webkit-backdrop-filter: none;
       }
 
+      /* iPad / iOS Safari 在 grid + flex 巢狀版面中偶爾會讓 sticky 提前失效。
+         捲過原始位置後由 JS 切成 fixed，placeholder 保留原高度，避免題目抬頭跳動。 */
+      .workspace-head.is-mobile-fixed {
+        position: fixed;
+        inset: 0 0 auto;
+        width: 100%;
+        z-index: 20;
+      }
+
       /* 手機／平板：固定區只留年份資訊與中文題目，副標收起以省空間 */
       .workspace-head .lesson-title p {
         display: none;
@@ -4365,13 +4374,18 @@
       return isDecisionDone() && builtPieces.join("|") === expected;
     }
 
+    function hasCompletedQuestion(saved = readSavedProgress().questions[question().id]) {
+      return Boolean(saved && (saved.wasCompleted || saved.completed || saved.revealed));
+    }
+
     function canRevealAnswer() {
       // 一般帳號：四個步驟（螢光筆、拆句、時態主被動、英文組句）全部做完才能看答案。
       // （拿掉「動一下就解鎖」的 hasAttempted。）特權／開發帳號不受限制；
       // revealed 維持「揭露過就保持開啟」；wasCompleted 讓按重新作答後仍可顯示答案。
       if (DEV_ALWAYS_REVEAL || isPrivilegedUser() || revealed || completedStages() === 4) return true;
       const saved = readSavedProgress().questions[question().id];
-      return Boolean(saved && saved.wasCompleted);
+      // 重作時畫面會回到空白；只要這題曾完成或揭露過，就仍可直接看答案。
+      return hasCompletedQuestion(saved);
     }
 
     function currentStageElement() {
@@ -4397,12 +4411,17 @@
 
     function resetQuestion() {
       const prevSaved = readSavedProgress().questions[question().id];
-      const wasCompleted = Boolean(prevSaved && (prevSaved.completed || prevSaved.revealed || prevSaved.wasCompleted));
+      const wasCompleted = hasCompletedQuestion(prevSaved);
       if (wasCompleted) {
         // 保留原本的完整紀錄，加上 isRedoing 標記，讓 Firebase 不遺失舊作答資料。
         // 等學生重做完成後，saveCurrentProgress() 才用新資料覆蓋。
         const store = readSavedProgress();
-        store.questions[question().id] = { ...prevSaved, wasCompleted: true, isRedoing: true };
+        store.questions[question().id] = {
+          ...prevSaved,
+          wasCompleted: true,
+          completed: true,
+          isRedoing: true
+        };
         writeSavedProgress(store);
       } else {
         clearCurrentSavedProgress();
@@ -4430,6 +4449,7 @@
       questionIndex = index;
       restoreQuestionState();
       render();
+      scheduleMobileHeadPinning();
     }
 
     function tokenById(id) {
@@ -5733,17 +5753,64 @@
         actionBar.hidden = true;
       }
     }
+
+    // 行動版固定抬頭保護：
+    // 原生 sticky 在部分 iPad / iOS Safari 情境會受父層 grid、flex 或內容底部影響而滑走。
+    // 捲過抬頭原始位置後改用 fixed，並以 placeholder 保留版面高度。
+    const workspaceHead = document.querySelector(".workspace-head");
+    const workspaceHeadPlaceholder = document.createElement("div");
+    workspaceHeadPlaceholder.className = "workspace-head-placeholder";
+    workspaceHead.before(workspaceHeadPlaceholder);
+    let mobileHeadSyncFrame = 0;
+
+    function clearMobileHeadPinning() {
+      workspaceHead.classList.remove("is-mobile-fixed");
+      workspaceHeadPlaceholder.style.height = "";
+    }
+
+    function syncMobileHeadPinning() {
+      mobileHeadSyncFrame = 0;
+      if (!layoutMq.matches) {
+        clearMobileHeadPinning();
+        return;
+      }
+
+      const anchorTop = workspaceHeadPlaceholder.getBoundingClientRect().top + window.scrollY;
+      const shouldFix = window.scrollY > anchorTop;
+
+      if (shouldFix) {
+        workspaceHeadPlaceholder.style.height = `${workspaceHead.offsetHeight}px`;
+        workspaceHead.classList.add("is-mobile-fixed");
+      } else {
+        clearMobileHeadPinning();
+      }
+    }
+
+    function scheduleMobileHeadPinning() {
+      if (mobileHeadSyncFrame) return;
+      mobileHeadSyncFrame = window.requestAnimationFrame(syncMobileHeadPinning);
+    }
+
+    window.addEventListener("scroll", scheduleMobileHeadPinning, { passive: true });
+    window.addEventListener("resize", scheduleMobileHeadPinning, { passive: true });
+    if ("ResizeObserver" in window) {
+      new ResizeObserver(scheduleMobileHeadPinning).observe(workspaceHead);
+    }
+
     layoutMq.addEventListener("change", () => {
       applyResponsiveLayout();
       render();
+      scheduleMobileHeadPinning();
     });
     applyResponsiveLayout();
+    scheduleMobileHeadPinning();
 
     // 歷屆題目清單可收合：手機／平板預設收起，省下垂直空間。
     if (els.drawerToggle) {
       const setDrawerCollapsed = (collapsed) => {
         els.questionDrawer.classList.toggle("collapsed", collapsed);
         els.drawerToggle.setAttribute("aria-expanded", String(!collapsed));
+        scheduleMobileHeadPinning();
       };
       if (window.matchMedia("(max-width: 1180px)").matches) setDrawerCollapsed(true);
       els.drawerToggle.addEventListener("click", () => {
