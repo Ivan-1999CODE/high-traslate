@@ -1022,6 +1022,26 @@
     .lesson-points { display: grid; gap: 12px; padding-left: 20px; margin: 0; }
     .lesson-points strong { display: block; margin-bottom: 4px; color: var(--ink); }
     .lesson-points li::marker { color: var(--blue); font-weight: 700; }
+    .reward-section {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow-wrap: anywhere;
+    }
+    .replacement-list { display: grid; gap: 12px; margin: 0; }
+    .replacement-item + .replacement-item { border-top: 1px solid var(--line); padding-top: 12px; }
+    .replacement-item dt { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+    .replacement-item dt strong { color: var(--ink); }
+    .replacement-item dt span { color: var(--muted); font-size: 12px; }
+    .replacement-item dd { margin: 6px 0 0; }
+    .replacement-options { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; }
+    .replacement-options > span:first-child { color: var(--muted); font-size: 12px; }
+    .replacement-option { border-radius: 4px; background: var(--blue-soft); color: var(--ink); padding: 2px 6px; }
+    .reward-content .replacement-note { margin-top: 6px; font-size: 12px; line-height: 1.6; }
 
     .analysis-box {
       border: 1px solid #dbeafe;
@@ -1667,9 +1687,9 @@
 
         <aside class="aside-stack">
           <section class="panel side-card">
-            <h3>本題重點</h3>
+            <h3>獎勵</h3>
             <div class="hint-box">
-              <div class="reward-content" id="hintText">完成組句後，查看本題的 3 個重點，也可以向 AI 小老師追問。</div>
+              <div class="reward-content" id="hintText">完成組句後，解鎖「本題的 3 個重點」與「可替換的字／詞」，也可以向 AI 小老師追問。</div>
             </div>
           </section>
         </aside>
@@ -3869,7 +3889,7 @@
 
     questions.splice(0, questions.length, ...questions.filter((item) => !/^202[1-6]-demo-01$/.test(item.id)));
 
-    // 每題只保留三個可用來理解、改寫或避錯的重點；relations 接回第二部分的原始中文要素。
+    // 每題的第一部分保留三個理解、改寫或避錯重點；relations 接回中文拆句的原始要素。
     const questionGuides = {
       "exam-115-01": {
         points: [
@@ -4205,6 +4225,195 @@
           ["形容詞與動詞兩種寫法", "success is achievable 用形容詞 achievable 作補語；也可改成 we can succeed，但要連同主詞與句型一起改。"]
         ], relations: {}
       }
+    };
+
+    // 獎勵第二部分：以本題原句為準，整段替換；不沿用 vocabulary 裡未校對的近義詞清單。
+    // 每筆依序為：原字／詞、中文意思、替換選項、必要的用法提醒。
+    const questionReplacements = {
+      "exam-115-01": [
+        ["Nowadays", "現在、如今", ["These days", "Currently"], "In recent years 指「近年來」，時間範圍不同。"],
+        ["in class", "在課堂上", ["during class"]]
+      ],
+      "exam-115-02": [
+        ["English ability", "英語能力", ["English proficiency"], "proficiency 強調語言的熟練程度。"],
+        ["conducting", "進行", ["carrying out"], "保留 -ing 形式，後面接原來的活動內容。"]
+      ],
+      "exam-114-01": [
+        ["creativity", "創意、創造力", ["inventiveness"], "inventiveness 較強調想出新方法或新事物的能力。"],
+        ["technological advancement", "科技進步", ["technological progress"]]
+      ],
+      "exam-114-02": [
+        ["magical items", "神奇物件", ["magical objects"]],
+        ["sci-fi movies", "科幻電影", ["science-fiction films"]]
+      ],
+      "exam-113-01": [
+        ["renowned", "著名的", ["famous", "well-known"], "只替換 renowned，保留後面的 temples。"],
+        ["throughout the country", "全國各地", ["across the country", "all over the country"]]
+      ],
+      "exam-113-02": [
+        ["In addition to", "除了……之外", ["Besides"], "替換後仍接 praying，不改成 pray。"],
+        ["demonstrate respect for", "展現對……的尊重", ["show respect for"], "保留 for，後面接尊重的對象。"]
+      ],
+      "exam-112-01": [
+        ["repeatedly", "一再地", ["time and again"], "可寫 History time and again proves that…，其餘句子接在後面。"],
+        ["disasters", "災難", ["catastrophes", "calamities"], "保留複數形式；這兩個選項都偏向嚴重的災難。"]
+      ],
+      "exam-112-02": [
+        ["goal", "目標", ["aim", "objective"]],
+        ["humanity", "人類", ["humankind"], "替換後是 all humankind；war 只指戰爭，範圍比 conflict 窄。"]
+      ],
+      "exam-111-01": [
+        ["Keeping a pet", "飼養寵物", ["Having a pet"], "整個動名詞片語仍當主詞，後面保留 is。"],
+        ["lifelong commitment", "終身的承諾", ["lifetime commitment"]]
+      ],
+      "exam-111-02": [
+        ["neglect", "忽略、疏於履行", ["ignore", "disregard"], "ignore / disregard 較偏向不理會，neglect 也包含疏於履行責任。"],
+        ["take care of", "照顧", ["look after"], "整段替換，後面仍接 them。"]
+      ],
+      "exam-110-01": [
+        ["worldwide", "全球各地", ["around the world", "across the globe"]],
+        ["road accidents", "道路事故", ["traffic accidents"], "car crashes 只指汽車碰撞，範圍較窄。"]
+      ],
+      "exam-110-02": [
+        ["Therefore", "因此", ["Thus", "Consequently"]],
+        ["traffic regulations", "交通規則", ["traffic rules"], "regulations 的法規語氣較正式。"]
+      ],
+      "exam-109-01": [
+        ["Sometimes", "有時候", ["At times"]],
+        ["certain things", "某些事情", ["some things"]]
+      ],
+      "exam-109-02": [
+        ["In fact", "事實上", ["Actually", "As a matter of fact"]],
+        ["uphold our principles", "堅守我們的原則", ["stick to our principles", "stand by our principles"], "整段替換；stick to 的語氣較口語。"]
+      ],
+      "exam-108-01": [
+        ["transportation options", "交通方式", ["modes of transportation"]],
+        ["Since its operation in 2007", "自 2007 年開始營運以來", ["Since it began operating in 2007"], "用完整子句交代開始營運的時間；主句仍接 has become。"]
+      ],
+      "exam-108-02": [
+        ["undoubtedly", "無疑地", ["certainly", "unquestionably"]],
+        ["business travel", "商務旅行", ["business trips"], "travel 是不可數名詞；改成 trips 時用複數，不加 a。"]
+      ],
+      "exam-107-01": [
+        ["usually", "通常", ["typically"]],
+        ["severe disasters", "嚴重災害", ["serious disasters"], "typhoons 不直接換成 tropical storms，兩者的強度分類不同。"]
+      ],
+      "exam-107-02": [
+        ["approaches", "接近", ["draws near"], "a typhoon 是單數，因此用 draws。"],
+        ["quickly", "迅速地", ["swiftly", "rapidly"]]
+      ],
+      "exam-106-01": [
+        ["summit", "山頂", ["peak", "mountaintop"]],
+        ["entire", "整個的", ["whole"], "替換後是 the whole summit。"]
+      ],
+      "exam-106-02": [
+        ["challenging", "具挑戰性的", ["demanding", "difficult"], "demanding 強調需要付出很多努力；保留前面的 most。"],
+        ["climbers", "登山者", ["mountaineers"], "mountaineers 專指登山者，適合本題攀登玉山的情境。"]
+      ],
+      "exam-105-01": [
+        ["Compared to", "與……相比", ["Compared with"]],
+        ["today's young people", "現今的年輕人", ["young people today"]]
+      ],
+      "exam-105-02": [
+        ["rapidly", "快速地", ["quickly"], "保留副詞，修飾 changing。"],
+        ["cope with", "因應、處理", ["deal with", "handle"], "若用 handle，整段 cope with 都要換掉：handle new challenges，不加 with。"]
+      ],
+      "exam-104-01": [
+        ["business", "企業", ["company", "firm"], "本句前面有 A，因此替換成單數。"],
+        ["main goal", "主要目標", ["primary goal", "main objective"], "profits 是獲利，revenue 是營收，不能直接互換。"]
+      ],
+      "exam-104-02": [
+        ["enhance", "增進", ["improve", "promote"]],
+        ["take on social responsibility", "承擔社會責任", ["assume social responsibility"], "assume 在這裡指承擔；整段替換後不保留 on。"]
+      ],
+      "exam-103-01": [
+        ["high-paying jobs", "高薪工作", ["well-paid jobs"]],
+        ["cultivate", "種植", ["grow"], "本題後面接蔬菜。organic 不直接換成 natural 或 eco-friendly，意思不同。"]
+      ],
+      "exam-103-02": [
+        ["determination", "決心", ["resolve"]],
+        ["making more profits", "獲得更多利潤", ["earning more profits"], "保留 -ing 形式，與後面的 living 並列。"]
+      ],
+      "exam-102-01": [
+        ["housing prices", "房價", ["home prices"]],
+        ["a serious impact on", "對……的嚴重影響", ["a serious effect on"], "整段替換並保留 on；urban 指都市的，不能一律改成只指市中心的 downtown。"]
+      ],
+      "exam-102-02": [
+        ["introducing", "推出", ["rolling out"], "保留 is，形成 is rolling out。"],
+        ["meet", "滿足", ["satisfy"], "在 meet people's housing needs 裡，meet 指滿足需求。"]
+      ],
+      "exam-101-01": [
+        ["films", "電影", ["movies"]],
+        ["produced", "製作的", ["made"], "made in Taiwan 同樣修飾 films；directed 只指執導，意思不同。"]
+      ],
+      "exam-101-02": [
+        ["locations", "地點", ["places", "sites"]],
+        ["filmed", "拍攝", ["shot"], "保留 are：these movies are shot；shot 是 shoot 的過去分詞。"]
+      ],
+      "exam-100-01": [
+        ["considered", "被認為", ["deemed"], "deemed 較正式；保留 have long been，後面仍接 representative of…。"],
+        ["representative of", "能代表……的", ["characteristic of"], "characteristic of 強調呈現某文化的典型特色，語意重點略有不同。"]
+      ],
+      "exam-100-02": [
+        ["attract", "吸引", ["draw", "bring in"]],
+        ["different countries", "不同國家", ["various countries"]]
+      ],
+      "exam-99-01": [
+        ["primarily", "主要地", ["mainly", "chiefly"]],
+        ["a means of transportation", "一種交通工具／方式", ["a mode of transportation"], "整段替換；a mode 是單數。"]
+      ],
+      "exam-99-02": [
+        ["cycling", "騎腳踏車", ["bicycling", "riding a bicycle"], "活動整體作主詞，後面仍用 has。"],
+        ["recreational activity", "休閒活動", ["leisure activity"]]
+      ],
+      "exam-98-01": [
+        ["accustomed to", "習慣於", ["used to"], "保留 are not，寫成 are not used to solving；不是 used to + 原形的過去習慣。"],
+        ["on their own", "靠自己", ["by themselves", "independently"]]
+      ],
+      "exam-98-02": [
+        ["cultivate", "培養", ["develop", "foster"]],
+        ["acquire", "獲取", ["gain", "obtain"]]
+      ],
+      "exam-97-01": [
+        ["hobby", "嗜好", ["pastime"], "pastime 偏向閒暇時消遣的活動。"],
+        ["for a lifetime", "一輩子", ["throughout your life", "all your life"], "整段替換；用 throughout 時不保留 for。"]
+      ],
+      "exam-97-02": [
+        ["joy", "喜悅", ["happiness", "pleasure"]],
+        ["However", "然而", ["Nevertheless"], "Nevertheless 較正式，保留後面的逗號。"]
+      ],
+      "exam-96-01": [
+        ["truly", "真正地", ["really"]],
+        ["for ourselves", "為自己", ["for our own sake"], "整段替換，保留前面的 only。"]
+      ],
+      "exam-96-02": [
+        ["start to consider", "開始考慮", ["begin to consider", "start considering"], "整段替換，後面仍接 others。"],
+        ["consider others", "為他人著想", ["think of others"], "think of others 在本題指顧及他人，保留 of。"]
+      ],
+      "exam-95-01": [
+        ["beneficial for", "對……有益", ["good for", "beneficial to"], "連同介系詞一起替換，後面仍接 children。"],
+        ["reading", "閱讀", ["reading books"], "這個寫法將閱讀內容明確限定為書籍；literacy 是讀寫能力，意思不同。"]
+      ],
+      "exam-95-02": [
+        ["borrow books", "借書", ["check out books", "take out books"], "這兩個片語用於從圖書館借書；lend 表示借出，不能直接互換。"],
+        ["encourage", "鼓勵", ["urge"], "urge 語氣較強，偏向敦促；仍用 urge students to borrow…。"]
+      ],
+      "exam-94-01": [
+        ["Humanity's", "人類的", ["Humankind's"], "保留所有格 's，後面接 knowledge。"],
+        ["fascinated", "著迷的", ["captivated", "intrigued"], "intrigued 較偏向引起好奇；這裡都可接 by it。"]
+      ],
+      "exam-94-02": [
+        ["allows", "讓……能夠", ["enables"], "保留單數動詞的 s：enables us to explore。"],
+        ["mysteries", "奧秘", ["secrets"], "secrets 在這裡指尚未被了解的事物，不是刻意隱瞞的秘密。"]
+      ],
+      "exam-93-01": [
+        ["Although", "雖然", ["Though", "Even though"], "Even though 的讓步語氣較強；後面仍不搭配 but。"],
+        ["discouraged", "氣餒的", ["disheartened"], "保留 has never been；blind 不直接換成範圍較廣的 visually impaired。"]
+      ],
+      "exam-93-02": [
+        ["strive", "努力", ["work hard", "make an effort"]],
+        ["achievable", "可達成的", ["attainable", "within reach"], "within reach 整組放在 is 後，表示成功是可以達到的。"]
+      ]
     };
 
     const slotLabels = {
@@ -5970,6 +6179,12 @@
       });
     }
 
+    function formatReplacements(entries) {
+      return entries.map(([original, meaning, alternatives, note]) =>
+        `${original}（${meaning}）→ ${alternatives.join(" / ")}${note ? `；${note}` : ""}`
+      ).join("\n");
+    }
+
     function generateAiAnswer(rawQuestion, data) {
       const query = rawQuestion.trim().toLowerCase();
       const phrases = data.phraseNotes.map((item) => `${item.text}：${item.meaning}`).join("；");
@@ -5984,12 +6199,17 @@
       const matched = points.filter(([title, text]) => terms.some((term) =>
         `${title} ${text}`.toLowerCase().split(/[^a-z']+/).includes(term)
       ));
+      if (/單字|換|替代|同義|改寫|vocab|word|synonym|replace|alternative/.test(query)) {
+        const replacements = questionReplacements[data.id] || [];
+        const relevant = terms.length ? replacements.filter(([original, , alternatives]) =>
+          terms.some((term) => [original, ...alternatives].join(" ").toLowerCase().split(/[^a-z']+/).includes(term))
+        ) : replacements;
+        const guidance = matched.map(([title, text]) => `${title}：${text}`).join("\n");
+        return [guidance, relevant.length ? `本題可替換的字／詞：\n${formatReplacements(relevant)}` : ""].filter(Boolean).join("\n")
+          || "這個換法尚未列入本題的換詞說明，請參考下方的原詞與替換選項，或指出想比較的完整片語。";
+      }
       if (matched.length) return matched.map(([title, text]) => `${title}：${text}`).join("\n");
       if (query.includes("片語") || query.includes("固定") || query.includes("phrase")) return phrases || "這題沒有額外固定片語。";
-      if (query.includes("單字") || query.includes("替換") || query.includes("改寫") || query.includes("vocab") || query.includes("word")) {
-        const alternatives = points.filter(([, text]) => /改寫|改成|可改|也可|替換|互換/.test(text));
-        return alternatives.length ? alternatives.map(([title, text]) => `${title}：${text}`).join("\n") : "本題沒有另外列出已校對的替換寫法；請指出想改的英文詞或片語。";
-      }
       if (query.includes("答案") || query.includes("英文") || query.includes("answer")) return data.answer;
       return "內建解說目前無法判斷你指的是哪個部分。請在問題裡加上英文詞或片語，或指定「時態」、「語態」、「組句順序」。";
     }
@@ -6008,6 +6228,7 @@
         `語態原因：${data.voiceReason}`,
         `組句順序原因：${data.orderReason}`,
         `本題已校對重點：${(questionGuides[data.id]?.points || []).map(([title, text]) => `${title}：${text}`).join("\n")}`,
+        `本題可替換的字／詞：${formatReplacements(questionReplacements[data.id] || [])}`,
         `學生目前的組句：${builtPieces.map((id) => data.answerPieces.find((piece) => piece.id === id)?.text || "").join(" ")}`,
         "只有在語意、搭配與句型都合適時，才能提出替換寫法；若需連同句型調整，請明確說明。"
       ].join("\n");
@@ -6031,16 +6252,34 @@
       if (!revealed) {
         els.hintText.innerHTML = hintMessage
           ? `<p>${escapeHtml(hintMessage)}</p>`
-          : `<p>完成組句後，查看本題的 3 個重點，也可以向 AI 小老師追問。</p>`;
+          : `<p>完成組句後，解鎖「本題的 3 個重點」與「可替換的字／詞」，也可以向 AI 小老師追問。</p>`;
         return;
       }
 
       const points = questionGuides[data.id]?.points || [];
+      const replacements = questionReplacements[data.id] || [];
 
       els.hintText.innerHTML = `
-        <ol class="lesson-points">
-          ${points.map(([title, text]) => `<li><strong>${escapeHtml(title)}</strong><p>${escapeHtml(text)}</p></li>`).join("")}
-        </ol>
+        <section class="reward-section" aria-labelledby="lessonPointsTitle">
+          <h4 id="lessonPointsTitle">本題的 3 個重點</h4>
+          <ol class="lesson-points">
+            ${points.map(([title, text]) => `<li><strong>${escapeHtml(title)}</strong><p>${escapeHtml(text)}</p></li>`).join("")}
+          </ol>
+        </section>
+        <section class="reward-section" aria-labelledby="replacementTitle">
+          <h4 id="replacementTitle">可替換的字／詞</h4>
+          <p>把原字／詞整段換成下列選項，並留意各項用法提醒。</p>
+          <dl class="replacement-list">
+            ${replacements.map(([original, meaning, alternatives, note]) => `
+              <div class="replacement-item">
+                <dt><strong lang="en">${escapeHtml(original)}</strong><span>${escapeHtml(meaning)}</span></dt>
+                <dd>
+                  <div class="replacement-options"><span>可換成</span>${alternatives.map((text) => `<span class="replacement-option" lang="en">${escapeHtml(text)}</span>`).join("")}</div>
+                  ${note ? `<p class="replacement-note">${escapeHtml(note)}</p>` : ""}
+                </dd>
+              </div>`).join("")}
+          </dl>
+        </section>
         <div class="ai-box">
           <h4>AI 小老師</h4>
           <div class="ai-row">

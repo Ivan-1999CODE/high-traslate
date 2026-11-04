@@ -66,6 +66,25 @@ test('all 46 questions have three distinct points and explicit links for every d
   }
 });
 
+test('every question has reviewed replacement options for words or phrases in its own answer', () => {
+  const { run } = harness();
+  const { questions, questionReplacements } = JSON.parse(run('JSON.stringify({ questions, questionReplacements })'));
+  assert.deepEqual(Object.keys(questionReplacements).sort(), questions.map(q => q.id).sort());
+  for (const q of questions) {
+    const entries = questionReplacements[q.id];
+    assert.ok(entries.length > 0, q.id);
+    assert.equal(new Set(entries.map(([original]) => original)).size, entries.length, q.id);
+    for (const [original, meaning, alternatives, note] of entries) {
+      const escaped = original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      assert.match(q.answer, new RegExp(`\\b${escaped}\\b`), `${q.id}: ${original}`);
+      assert.ok(meaning && alternatives.length > 0, q.id);
+      assert.equal(new Set(alternatives).size, alternatives.length, q.id);
+      for (const option of alternatives) assert.ok(option.trim() && option !== original, q.id);
+      if (note !== undefined) assert.equal(typeof note, 'string');
+    }
+  }
+});
+
 test('recap preserves every placed element, clause, connector order and original role in all questions', () => {
   const { run, choose } = harness();
   for (let i = 0; i < 46; i++) {
@@ -126,11 +145,80 @@ test('completed stage has one continuous answer and no repeated token answer or 
     assert.ok(!sentence.includes('data-built-id'));
     assert.ok(!sentence.includes('checkSentenceButton'));
     assert.equal((reward.match(/<li>/g) || []).length, 3);
-    assert.ok(!reward.includes('可替換單字'));
+    assert.equal((reward.match(/class="reward-section"/g) || []).length, 2);
+    assert.match(reward, /本題的 3 個重點/);
+    assert.match(reward, /可替換的字／詞/);
+    assert.ok(reward.indexOf('replacementTitle') > reward.indexOf('</ol>'));
+    assert.ok(reward.indexOf('class="ai-box"') > reward.indexOf('</dl>'));
+    const entries = JSON.parse(run('JSON.stringify(questionReplacements[question().id])'));
+    assert.equal((reward.match(/class="replacement-item"/g) || []).length, entries.length);
+    for (const [original, meaning, alternatives, note] of entries) {
+      for (const value of [original, meaning, ...alternatives, note].filter(Boolean)) {
+        assert.ok(reward.includes(run(`escapeHtml(${JSON.stringify(value)})`)), value);
+      }
+    }
     assert.ok(!reward.includes('key-grid'));
     assert.equal(elements.get('feedback').textContent, '組句完成，可以查看本題重點。');
     assert.equal(elements.get('analysisBox').hidden, true);
   }
+});
+
+test('replacements unlock on completion in both modes and reset when moving to an unanswered question', () => {
+  const { run, choose, elements } = harness();
+  for (const mode of ['simple', 'advanced']) {
+    choose(0);
+    run(`practiceMode = ${JSON.stringify(mode)}; renderRewardPanel(question())`);
+    assert.ok(!elements.get('hintText').innerHTML.includes('replacement-list'));
+    run('builtPieces = question().answerPieces.map(p => p.id); checkSentence()');
+    assert.ok(elements.get('hintText').innerHTML.includes('replacement-list'));
+    choose(1);
+    run('renderRewardPanel(question())');
+    assert.ok(!elements.get('hintText').innerHTML.includes('replacement-list'));
+    assert.ok(!elements.get('hintText').innerHTML.includes('Nowadays'));
+  }
+});
+
+test('replacement text is escaped before rendering', () => {
+  const { run, choose, elements } = harness();
+  choose(0);
+  run(`questionReplacements[question().id] = [['<script>original</script>', '<b>meaning</b>', ['<img src=x onerror=alert(1)>'], '<i>note</i>']]; revealed = true; renderRewardPanel(question())`);
+  const reward = elements.get('hintText').innerHTML;
+  assert.ok(!reward.includes('<script>original'));
+  assert.ok(!reward.includes('<img src=x'));
+  for (const tag of ['script', 'b', 'img', 'i']) assert.ok(reward.includes(`&lt;${tag}`));
+});
+
+test('offline replacement questions use the same reviewed options and preserve usage cautions', () => {
+  const { run, choose } = harness();
+  for (let i = 0; i < 46; i++) {
+    choose(i);
+    const entries = JSON.parse(run('JSON.stringify(questionReplacements[question().id])'));
+    const response = run('generateAiAnswer("有哪些可替換的字詞？", question())');
+    for (const [original, , alternatives, note] of entries) {
+      assert.ok(response.includes(original));
+      for (const option of alternatives) assert.ok(response.includes(option));
+      if (note) assert.ok(response.includes(note));
+    }
+  }
+  choose(run('questions.findIndex(q => q.id === "exam-105-02")'));
+  assert.match(run('generateAiAnswer("cope with 可以換成 handle 嗎？", question())'), /不加 with/);
+  choose(run('questions.findIndex(q => q.id === "exam-104-01")'));
+  assert.match(run('generateAiAnswer("profits 可以換 revenue 嗎？", question())'), /營收/);
+  assert.match(run('generateAiAnswer("business 有什麼同義詞？", question())'), /單數/);
+});
+
+test('online tutor context includes the reviewed replacement options', async () => {
+  const { run, choose } = harness();
+  choose(run('questions.findIndex(q => q.id === "exam-105-02")'));
+  run(`globalThis.requestBody = null; globalThis.fetch = async (url, options) => {
+    requestBody = JSON.parse(options.body);
+    return { ok: true, json: async () => ({ answer: '測試回答' }) };
+  }`);
+  assert.equal(await run('askAiTutor("有哪些換詞？", question())'), '測試回答');
+  const body = JSON.parse(run('JSON.stringify(requestBody)'));
+  assert.match(body.context, /本題已校對重點/);
+  assert.match(body.context, /本題可替換的字／詞/);
+  assert.match(body.context, /handle new challenges，不加 with/);
 });
 
 test('offline why questions use relevant guidance and never blindly return tense notes', () => {
