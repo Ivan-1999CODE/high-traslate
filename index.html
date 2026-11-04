@@ -805,24 +805,28 @@
       pointer-events: none;
     }
 
+    .structure-chip.subject,
     .token.subject,
     .slot.subject.filled {
       background: var(--blue-soft);
       border-color: var(--blue);
     }
 
+    .structure-chip.verb,
     .token.verb,
     .slot.verb.filled {
       background: var(--red-soft);
       border-color: var(--red);
     }
 
+    .structure-chip.object,
     .token.object,
     .slot.object.filled {
       background: var(--green-soft);
       border-color: var(--green);
     }
 
+    .structure-chip.detail,
     .token.detail,
     .slot.detail.filled {
       background: var(--amber-soft);
@@ -830,6 +834,7 @@
     }
 
     /* 句首導入 / 全句框架：用橘色，和補充細節的琥珀色區隔 */
+    .structure-chip.lead,
     .token.lead,
     .slot.lead.filled,
     .lead-lane .slot.filled {
@@ -838,6 +843,7 @@
     }
 
     /* 子句連接（連接詞）：用紫色，放在子句之間 */
+    .structure-chip.connector,
     .token.connector,
     .slot.connector.filled,
     .connector-lane .slot.filled {
@@ -973,6 +979,49 @@
       font-size: 18px;
       color: #075e3d;
     }
+
+    .structure-recap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8fafc;
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .structure-recap h4,
+    .structure-recap p {
+      margin: 0;
+    }
+
+    .structure-recap h4 { font-size: 15px; }
+    .recap-label { font-size: 12px; color: var(--muted); font-weight: 700; }
+    .recap-group { display: grid; gap: 6px; min-width: 0; }
+    .recap-core { display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch; }
+    .structure-chip {
+      display: inline-grid;
+      gap: 3px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 6px 9px;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.5;
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+    .structure-chip small { font-size: 11px; color: #475467; }
+    .recap-relation { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 8px; }
+    .recap-relation .structure-chip { display: inline-flex; align-items: baseline; gap: 6px; }
+    .recap-relation .structure-chip small { flex-shrink: 0; }
+    .recap-relation > span:last-child { color: #475467; font-size: 12px; overflow-wrap: anywhere; }
+    .recap-clause { min-width: 0; min-height: 0; padding: 9px; overflow-wrap: anywhere; }
+    .recap-clause p { font-size: 13px; color: #475467; }
+    .recap-voice { border-left: 3px solid var(--violet); padding-left: 9px; font-size: 13px; color: #475467; }
+    .lesson-points { display: grid; gap: 12px; padding-left: 20px; margin: 0; }
+    .lesson-points strong { display: block; margin-bottom: 4px; color: var(--ink); }
+    .lesson-points li::marker { color: var(--blue); font-weight: 700; }
 
     .analysis-box {
       border: 1px solid #dbeafe;
@@ -1618,9 +1667,9 @@
 
         <aside class="aside-stack">
           <section class="panel side-card">
-            <h3>獎勵</h3>
+            <h3>本題重點</h3>
             <div class="hint-box">
-              <div class="reward-content" id="hintText">答題完成後解鎖本題關鍵、固定片語、可替換單字與 AI 小老師問答。</div>
+              <div class="reward-content" id="hintText">完成組句後，查看本題的 3 個重點，也可以向 AI 小老師追問。</div>
             </div>
           </section>
         </aside>
@@ -3820,6 +3869,344 @@
 
     questions.splice(0, questions.length, ...questions.filter((item) => !/^202[1-6]-demo-01$/.test(item.id)));
 
+    // 每題只保留三個可用來理解、改寫或避錯的重點；relations 接回第二部分的原始中文要素。
+    const questionGuides = {
+      "exam-115-01": {
+        points: [
+          ["先把主詞看完整", "more and more 修飾複數名詞 teachers；senior high school English 也都在說明是哪一種老師。整組之後才接 have increased。"],
+          ["已形成的改變", "本句用 have increased 強調截至現在已增加的比例。Nowadays 指如今，In recent years 指近年來，時間範圍不同，不宜當成完全相同的替換。"],
+          ["課堂上修飾哪件事", "in class 說明使用英文的情境；讀句子時要把它連回 using English，不能把它當成另一個動作。"]
+        ],
+        relations: { "現在": "交代全句的時間背景", "在課堂上": "說明「使用英文」的情境" }
+      },
+      "exam-115-02": {
+        points: [
+          ["把誰分成什麼", "divide A into B：A 是被分組的 students，B 是分組結果 different groups。into 不能省略。"],
+          ["依據是學生的能力", "based on their English ability 說明分組依據；這裡 their 指學生，不能只看最近的主詞就判斷代名詞。"],
+          ["誰進行活動", "conducting 的動作主詞與主句相同，都是 They（老師）。也可用 and conduct 接續主句動詞，改成兩個並列動作。"]
+        ],
+        relations: { "不同組別": "「分成」的結果", "依英語能力": "「分成」的依據", "進行多樣的聽、說活動": "補充「他們」進行的活動" }
+      },
+      "exam-114-01": {
+        points: [
+          ["兩個名詞共用動詞", "imagination and creativity 是並列主詞，本句用複數動詞 are；不要只看靠近動詞的 creativity。"],
+          ["是什麼，而非做什麼", "driving forces 是說明主詞身分的補語。這是 SVC 結構，are 後面的名詞不是承受動作的受詞。"],
+          ["力量推動了什麼", "behind technological advancement 接在 driving forces 後，說明這股力量推動的是科技進步。technological progress 也能表達科技進步。"]
+        ],
+        relations: { "科技進步": "補充「驅動力」所推動的事物" }
+      },
+      "exam-114-02": {
+        points: [
+          ["主詞中藏著一個子句", "that once appeared in sci-fi movies 修飾 magical items。整段主詞結束後，才接主句動詞 are becoming。"],
+          ["兩個時間，各管一個動詞", "appeared 說明過去曾出現；are now becoming 說明現在正在成真。主句與修飾子句不需要使用同一個時態。"],
+          ["成真與逐一分開看", "become a reality 表示成真，one by one 補充逐一發生的方式；不能把 one by one 當成 reality 的形容詞。"]
+        ],
+        relations: { "過去": "子句中「出現」的時間", "在科幻電影中": "子句中「出現」的地方" }
+      },
+      "exam-113-01": {
+        points: [
+          ["看到誰做什麼", "see politicians visiting… 是 see + 受詞 + V-ing。造訪廟宇的是 politicians，visiting 補充受詞正在做的事。"],
+          ["不要和主詞的分詞片語混淆", "這裡 visiting 緊接 politicians，並不是說 people 去造訪。分詞的動作對象要從句型判斷。"],
+          ["習慣發生的事", "every election season 配合 always，表示選舉季常見的現象，所以本句用 see。throughout the country 補充遍及各地的範圍。"]
+        ],
+        relations: { "每逢選舉季節": "全句反覆發生的時間", "各地": "補充廟宇所在的範圍", "造訪著名廟宇": "補充「政治人物」的動作" }
+      },
+      "exam-113-02": {
+        points: [
+          ["這個 to 後面接 V-ing", "in addition to 的 to 是介系詞，因此用 praying。它與 hope to demonstrate 裡的不定詞 to 用法不同。"],
+          ["希望做什麼", "hope 後接 to + 原形動詞：hope to demonstrate。不能寫成 hope demonstrating 來表達這個意思。"],
+          ["尊重誰或什麼", "respect for 後接尊重的對象 local culture and customs。demonstrate respect for 可改寫為 show respect for，介系詞 for 保留。"]
+        ],
+        relations: { "除了祈求好的選舉結果": "補充「他們」另一個行動", "在地文化與習俗": "「展現尊重」的對象" }
+      },
+      "exam-112-01": {
+        points: [
+          ["證明的是一整件事", "that war causes extremely dreadful disasters 整段是 proves 的受詞；that 後面還有自己的主詞 war 和動詞 causes。"],
+          ["兩個動詞都要照顧主詞", "History 與 war 在各自的子句中都是單數，因此用 proves 與 causes，不能只檢查主句動詞。"],
+          ["兩個副詞修飾不同對象", "repeatedly 修飾 proves，表示一再證明；extremely 修飾 dreadful，表示災難可怕的程度。"]
+        ], relations: {}
+      },
+      "exam-112-02": {
+        points: [
+          ["把動作變成主詞", "Avoiding conflict 與 ensuring world peace 都是動名詞片語，用 and 並列；要維持 avoiding / ensuring 的形式一致。"],
+          ["情態助動詞後用原形", "should 後接 be，不用 is 或 are；the goal 是說明這些行動應成為什麼的補語。"],
+          ["目標屬於誰", "of all humanity 修飾 the goal，表示所有人類的目標；humanity 在這裡是整體概念，不加複數 s。"]
+        ], relations: {}
+      },
+      "exam-111-01": {
+        points: [
+          ["不是 A，而是 B", "not…but… 連接 a short-term life experience 與 a lifelong commitment，兩邊都是名詞片語，結構要平行。"],
+          ["整件事當主詞", "Keeping a pet 表示飼養寵物這件事，作單數主詞，所以後面用 is。"],
+          ["承諾的對象", "commitment to animals 中的 to 是介系詞，接承諾的對象。short-term 與 lifelong 分別修飾 experience 和 commitment，形成時間上的對比。"]
+        ],
+        relations: { "而是": "連接兩個對比的補語", "一個終生承諾": "與「短暫的人生體驗」對比", "對動物": "「終生承諾」的對象" }
+      },
+      "exam-111-02": {
+        points: [
+          ["享受歡樂的是誰", "While enjoying… 的動作主詞是主句的 we，可還原成 While we are enjoying…。省略後，兩邊的主詞仍須一致。"],
+          ["歡樂是哪一種歡樂", "that pets bring 修飾 joy；子句裡 pets 是主詞，bring 是動詞，joy 是牠們帶來的事物。"],
+          ["責任的內容", "to take care of them 說明 responsibility 的內容；them 指 pets。should not neglect 表達不該忽略，not 放在 should 後面。"]
+        ], relations: { "在享受寵物帶來的歡樂時": "交代「我們」同時處於的情境" }
+      },
+      "exam-110-01": {
+        points: [
+          ["來源和主句分開", "According to news reports 只交代資訊來源；主句從 over a million people 開始，不能把 reports 當成 lose 的主詞。"],
+          ["每年發生，使用現在式", "every year 表示反覆發生，主詞 people 是複數，所以用 lose。lose their lives 中 lives 是 life 的複數。"],
+          ["範圍與情境不同", "worldwide 說明人口的全球範圍；in road accidents 說明喪生的情境。不要把兩個中文地點提示當成同一個英文片語。"]
+        ],
+        relations: { "根據新聞報導": "全句的資訊來源", "全球、道路事故中": "全球：人的範圍；道路事故中：喪生情境", "每年": "「喪失性命」發生的頻率" }
+      },
+      "exam-110-02": {
+        points: [
+          ["把執行對象放到句首", "中文拆句先想誰執行法規；英文選 traffic regulations 當主詞，法規是被執行的對象，因此用被動。"],
+          ["必須被執行", "must be enforced = must + be + 過去分詞。strictly 修飾 enforced，放在 be 與 enforced 之間。"],
+          ["執行的目的", "to ensure the safety… 說明嚴格執行的目的；of all road users 修飾 safety，說明要保障誰的安全。"]
+        ],
+        relations: { "因此": "承接前句，帶出結果", "確保所有用路人的安全": "「執行交通法規」的目的" },
+        voiceBridge: "英文改用「交通法規」當主詞：交通法規 → 必須被嚴格執行。原本的執行者可省略。"
+      },
+      "exam-109-01": {
+        points: [
+          ["違背的是自己的意願", "go against our own will 是主幹搭配；against 後接意願，own 加強「自己的」，will 在此是名詞。"],
+          ["兩個 to 分別補什麼", "to do certain things 補充所做的行為；just to please friends 點出目的。讀到第二個 to 時，要接回整個行動的動機。"],
+          ["please 在這裡是動詞", "please friends 表示取悅朋友，friends 是受詞；不是請求時用的禮貌語 please。"]
+        ],
+        relations: { "有時": "「違背意願」的頻率", "去做某些事情": "補充違背意願所做的行為", "取悅朋友": "做這些事情的目的" }
+      },
+      "exam-109-02": {
+        points: [
+          ["面對壓力的人是我們", "when facing peer pressure 可還原成 when we face peer pressure；省略後的動作主詞仍是主句的 we。"],
+          ["學會做什麼", "should learn to uphold：should 後用 learn 原形，learn 後用 to uphold 說明要學會的行動。"],
+          ["不要把 face 多加介系詞", "face peer pressure 的 face 可直接接受詞，不需要 with；若用 be faced with，則是另一種完整結構。"]
+        ], relations: { "其實": "全句的語氣", "面對同儕壓力時": "「我們」採取行動的情境" }
+      },
+      "exam-108-01": {
+        points: [
+          ["從起點連到現在", "since 引出 2007 年這個起點；has become 表示截至現在已形成的改變。since 接起點，for 才接一段時間。"],
+          ["one of 後接複數", "one of the…transportation options 表示多個選項中的一個，所以 options 必須是複數；主句動詞仍依主詞高鐵用 has。"],
+          ["兩個最高級共用名詞", "most convenient 與 fastest 並列修飾 transportation options；in Taiwan 補充比較的範圍。"]
+        ], relations: { "自 2007 年營運以來": "全句的時間起點", "在臺灣": "「交通工具之一」的比較範圍" }
+      },
+      "exam-108-02": {
+        points: [
+          ["先說明對誰而言", "For those who… 是句首框架，who emphasize workplace efficiency 修飾 those；高鐵才是主句的主詞。"],
+          ["不要找錯動詞的主詞", "emphasize 的主詞是 who，指那些人，因此不加 s；is 的主詞則是 the High-Speed Rail。"],
+          ["兩個 for 功能不同", "For those… 表示對哪些人而言；for business travel 修飾 choice，說明這個選擇適用的用途。"]
+        ], relations: { "強調職場效率的人": "全句適用的對象；其中「強調職場效率」修飾「人」", "商務旅行": "「首選」的用途" }
+      },
+      "exam-107-01": {
+        points: [
+          ["有某事物的句型", "there have been 表示某事物已出現或存在。there 是引導詞，後面的 super typhoons 為複數，因此用 have。"],
+          ["近年累積的現象", "In recent years 搭配現在完成式，表達從近年延續至今的變化；不只是描述某一次過去的颱風。"],
+          ["造成災害的是颱風", "causing severe disasters 補充颱風造成的結果；usually 修飾 causing，沒有另外開啟一個獨立主句。"]
+        ], relations: { "近年來": "全句的時間範圍" }
+      },
+      "exam-107-02": {
+        points: [
+          ["時間子句與建議分開", "When a typhoon approaches 交代時間；we should prepare… 才是主要建議。描述未來情境時，這裡的 when 子句仍用現在式。"],
+          ["兩個動作共用 should", "prepare enough food 和 stay indoors 用 and 並列，共用 should。indoors 是副詞，前面不加 in。"],
+          ["分號後還有一個完整主句", "if necessary 是補充條件，後面仍有 we should move…。quickly 修飾 move，to a safe place 表示移動目的地。"]
+        ], relations: { "颱風來襲時": "A 句建議的時間情境", "若有必要": "B 句移動建議的條件" }
+      },
+      "exam-106-01": {
+        points: [
+          ["被雪覆蓋的狀態", "Jade Mountain 是被覆蓋的對象，用 is covered with snow；often 修飾這個狀態，with 後接覆蓋物。"],
+          ["後半句補充結果", "making… 補充前面積雪覆蓋帶來的結果，不是另一個獨立主句；要連回前面的整個情況理解。"],
+          ["使役動詞後用原形", "make + 受詞 + 原形動詞：making the entire summit shimmer。不要把 shimmer 改成 to shimmer；like jade 補充比喻。"]
+        ], relations: { "在冬天": "「覆蓋積雪」的時間", "使整個山頂閃耀如玉": "前面積雪覆蓋所帶來的結果" },
+        voiceBridge: "英文以「玉山」為被覆蓋的對象，用被動結構；「積雪」接在 with 後說明覆蓋物。"
+      },
+      "exam-106-02": {
+        points: [
+          ["征服玉山這件事", "Conquering Jade Mountain 整段作單數主詞，因此用 has been。always 放在 has 與 been 之間，表示一直如此。"],
+          ["眾多挑戰之一", "one of the most challenging goals 中，goals 用複數；challenging 是形容挑戰很有難度，不是說登山者感到受挑戰。"],
+          ["對誰而言", "for climbers 表示面對這項挑戰的人。國內外的登山者也可寫成 climbers from Taiwan and abroad，避免只背單字替換。"]
+        ], relations: { "登山者": "「最困難的挑戰之一」所針對的人", "國內外": "說明「登山者」的範圍" }
+      },
+      "exam-105-01": {
+        points: [
+          ["先交代比較基準", "Compared to their parents' generation 設定比較背景；主句從 today's young people 開始，不要把 generation 當作 enjoy 的主詞。"],
+          ["比較的對象要讀清楚", "這裡比較現在年輕人與父母世代享有的生活條件。generation 指世代，era 指時代，不是任何句子都能直接互換。"],
+          ["兩個受詞並列", "freedom and prosperity 都是 enjoy 的受詞，more 表示較多；這裡兩個抽象名詞通常不加複數 s。"]
+        ], relations: { "相較於父母世代": "全句的比較基準" }
+      },
+      "exam-105-02": {
+        points: [
+          ["學習的內容", "how to effectively cope with new challenges 整段接在 learn 後，表示學習如何做。它沒有自己的主詞與限定動詞，不是完整子句。"],
+          ["兩個副詞分別修飾誰", "rapidly 修飾 changing，整組再修飾 world；effectively 修飾 cope，表示因應的方法有效。"],
+          ["固定搭配保留 with", "cope with challenges 表示因應挑戰，with 不能省略。若改用 handle challenges，就要連同句型調整，不能保留 with。"]
+        ], relations: { "但是": "與前文轉折", "快速改變的世界中": "全句的環境；「快速」修飾「改變」" }
+      },
+      "exam-104-01": {
+        points: [
+          ["不應該的位置", "should not prioritize 中，not 放在 should 後，prioritize 維持原形；不能加 does not 再接 should。"],
+          ["把什麼當作目標", "profits 是 prioritize 的受詞，as the main goal 補充它被當作什麼。也可整句改寫為 should not make profits its main goal。"],
+          ["獲利與營收不同", "profits 是扣除成本後的獲利，revenue 是營收。這題不宜把兩者當成無條件可替換的單字。"]
+        ], relations: { "最主要的目標": "「獲利」被當作的定位" }
+      },
+      "exam-104-02": {
+        points: [
+          ["承擔責任的搭配", "take on social responsibility 表示負起社會責任；on 屬於 take on，不能移到 responsibility 後面。"],
+          ["目的放在行動之後", "to enhance… 說明承擔責任的目的；should 後接 take 原形，目的片語裡的 to 後接 enhance 原形。"],
+          ["誰的福祉", "of the public 修飾 well-being，表示大眾的福祉；public 在這裡是名詞用法，前面有 the。"]
+        ], relations: { "增進大眾福祉": "「負起社會責任」的目的" }
+      },
+      "exam-103-01": {
+        points: [
+          ["先看辭掉什麼", "quit 的受詞是 high-paying jobs，in the city 修飾這些工作所在的位置；high-paying 整組是形容詞。"],
+          ["兩個動作共用 to", "to return to their hometowns and cultivate organic vegetables 中，return 與 cultivate 並列，共用第一個 to。"],
+          ["兩個 to 的用法不同", "to return 的 to 是不定詞標記；return to their hometowns 的 to 是表示目的地的介系詞。home 單獨作副詞時則說 return home。"]
+        ], relations: { "都市裡": "修飾「高薪工作」的位置", "返回家鄉種植有機蔬菜": "「辭掉工作」後要進行的行動與目的" }
+      },
+      "exam-103-02": {
+        points: [
+          ["成功不需要受詞", "many have succeeded 的 many 指許多人，succeed 在這裡是不及物動詞，後面不必補一個受詞。"],
+          ["兩個成果保持平行", "not only making… but also living… 並列兩個 V-ing 片語，補充成功的成果，不能一邊用 making、另一邊用 live。"],
+          ["生活的固定搭配", "live a healthier life 表示過更健康的生活；a 修飾單數 life，healthier 是 healthy 的比較級。"]
+        ], relations: { "藉由決心與努力": "「成功」的方法", "不但獲利更多": "「成功」的第一個成果", "還過著更健康的生活": "與「獲利更多」並列的成果" }
+      },
+      "exam-102-01": {
+        points: [
+          ["地點要接回房價", "in urban areas 修飾 housing prices，說明哪裡的房價。完整主詞結束後才接 have had；urban 是都市的，downtown 偏指市中心。"],
+          ["兩個 have 並不重複", "have had 中，have 是完成式助動詞，had 是主要動詞 have 的過去分詞；表示影響截至現在已形成。"],
+          ["影響誰的搭配", "have an impact on + 對象；a serious impact on society 中，on 連接受影響的 society，serious 修飾 impact。"]
+        ], relations: { "都會地區": "修飾「高房價」的位置", "對社會": "「嚴重的影響」作用的對象" }
+      },
+      "exam-102-02": {
+        points: [
+          ["正在推出政策", "is introducing 表示目前進行中的措施；introduce 在這裡是推出或引入，不是介紹某個人。"],
+          ["為了滿足需求", "to meet… 是推出政策的目的，meet needs 是滿足需求的搭配；meet 在此不是見面的意思。"],
+          ["需求屬於誰", "people's 修飾 housing needs。people 已是複數，所有格寫 people's，不是 peoples'。"]
+        ], relations: { "滿足住房需求": "「推出新政策」的目的", "人們": "說明「住房需求」屬於誰" }
+      },
+      "exam-101-01": {
+        points: [
+          ["中文的受到，不一定用被動", "本句選 gain recognition 表示獲得重視；films 是 gain 的主詞，所以 have gained 是主動結構。"],
+          ["製作地點藏在主詞裡", "produced in Taiwan 修飾 films，可還原成 films that were produced in Taiwan；不要把 produced 誤認成主句動詞。"],
+          ["近年到現在的成果", "In recent years 搭配 have gained，強調近年累積的成果；international 修飾 recognition，說明認可的範圍。"]
+        ], relations: { "近年來": "「受到國際重視」的時間範圍" }
+      },
+      "exam-101-02": {
+        points: [
+          ["地點後接 where 子句", "where these movies are filmed 修飾 locations。where 表示拍攝發生的地點，子句裡的主詞則是 these movies。"],
+          ["子句被動，主句不必被動", "movies are filmed 表示電影被拍攝；locations have become 表示地點已成為景點，兩個動詞的語態分開判斷。"],
+          ["主詞和補語都是複數", "locations 對應 have become；tourist attractions 說明這些地點成為什麼，因此 attractions 也用複數。"]
+        ], relations: {}
+      },
+      "exam-100-01": {
+        points: [
+          ["完成式加上被動", "have been considered = have + been + 過去分詞；夜市是被人們認為具有代表性的對象。不要漏掉 been。"],
+          ["代表性的完整搭配", "representative of our local culture 中，representative 是形容詞，of 接被代表的文化；不是另加動詞 represent。"],
+          ["早已的位置", "long 在這裡表示這個看法已持續很久，放在 have 與 been 之間；不是修飾夜市長度的形容詞。"]
+        ], relations: {}
+      },
+      "exam-100-02": {
+        points: [
+          ["每年發生的動作", "Every year 表示規律發生，即使中文有「了」，本句仍用現在簡單式 attract；they 指前句的夜市。"],
+          ["概數和確切數字不同", "thousands of tourists 表示成千上萬；若寫確切數量則是 three thousand tourists，不加 s，也不用 of。"],
+          ["來源修飾觀光客", "from different countries 修飾 tourists，說明觀光客來自哪裡；不是說夜市位在不同國家。"]
+        ], relations: { "每年": "「吸引」發生的頻率", "來自不同國家": "修飾「觀光客」的來源" }
+      },
+      "exam-99-01": {
+        points: [
+          ["過去被使用的工具", "In the past 表示過去，bicycles 是被使用的對象，因此用 were used；複數主詞搭配 were。"],
+          ["不要混淆三種 used", "be used as 表示被當作；used to + 原形表示過去習慣；be used to + V-ing 表示習慣於。這題是第一種。"],
+          ["means 的單數也有 s", "a means of transportation 表示一種交通方式；means 的單複數同形，前面有 a 仍保留 s。"]
+        ], relations: { "在過去": "「被使用」的時間", "作為主要交通工具": "「腳踏車被使用」的用途" }
+      },
+      "exam-99-02": {
+        points: [
+          ["活動整體當主詞", "cycling 指騎車這項活動，視為單數，所以用 has become；不要因為騎車的人很多就用 have。"],
+          ["現在已形成的轉變", "has now become 強調從以前到現在的改變；now 放在 has 與 become 之間。"],
+          ["轉折與補語", "However 承接前句的交通用途，轉向休閒用途。a popular recreational activity 是主詞補語，單數 activity 前保留 a。"]
+        ], relations: { "然而": "與前句的交通用途形成轉折" }
+      },
+      "exam-98-01": {
+        points: [
+          ["習慣於後接 V-ing", "be accustomed to 的 to 是介系詞，因此接 solving；on their own 修飾 solving，表示獨力解決。"],
+          ["期待誰做什麼", "expect teachers to provide… 是 expect + 受詞 + to V。提供答案的是 teachers，而不是主詞 students。"],
+          ["兩個主句需要連接", "前後都有主詞與限定動詞，本版本用分號連接；不能只用一個逗號把兩個獨立主句接起來。"]
+        ], relations: { "靠自己": "修飾 A 句「解決問題」的方式" }
+      },
+      "exam-98-02": {
+        points: [
+          ["兩個 to 用法不同", "in addition to studying 的 to 是介系詞；to acquire knowledge 的 to 引出讀書的目的，所以後接原形 acquire。"],
+          ["能力的內容", "the ability to think independently 中，to think… 修飾 ability，說明是哪一種能力；independently 修飾 think。"],
+          ["除了之外還要做什麼", "句首先說 studying，主句再用 should also cultivate 補上另一項要求。should 後的 cultivate 不加 s。"]
+        ], relations: { "除了用功讀書獲取知識外": "在主句要求之外補充另一項學習活動" }
+      },
+      "exam-97-01": {
+        points: [
+          ["整個活動作單數主詞", "Listening to music 是動名詞片語，主句用 is；to 屬於 listen to，後面接音樂。"],
+          ["省略的關係代名詞", "a hobby you can enjoy 可還原成 a hobby that you can enjoy。that 在子句中當 enjoy 的受詞，所以可以省略。"],
+          ["終生修飾享受的時間", "for a lifetime 表示可以享受多久，連回 enjoy；不要把 lifetime 誤認為主句的另一個受詞。"]
+        ], relations: {}
+      },
+      "exam-97-02": {
+        points: [
+          ["能夠做某事，整體作主詞", "being able to play a musical instrument 整段作主詞；being 把 be able to… 變成可以當主詞的形式。"],
+          ["帶給誰什麼", "bring you more joy 是雙受詞結構：you 是間接受詞，joy 是直接受詞。也可改成 bring more joy to you。"],
+          ["加強比較級", "even 修飾 more，強調更多。這裡不能用 very more joy；joy 表示喜悅的概念，通常不加 s。"]
+        ], relations: { "但": "承接前句，轉向彈奏樂器帶來的喜悅" }
+      },
+      "exam-96-01": {
+        points: [
+          ["條件與結果分別判斷", "If we live… 是條件，we will not feel… 是結果。這類未來條件句的 if 子句用現在式，不跟著主句加 will。"],
+          ["感到快樂是 SVC", "feel 在這裡是連綴動詞，後接形容詞 happy 作補語；不能改用副詞 happily 表達相同結構。"],
+          ["只與真正修飾不同部分", "only for ourselves 限定為誰而活；truly 修飾 feel。翻譯時要保留這兩個語意限制。"]
+        ], relations: { "如果": "引出 A 句條件，B 句表結果", "只為自己": "修飾 A 句「活著」的目的" }
+      },
+      "exam-96-02": {
+        points: [
+          ["時間子句用現在式", "When we start… 交代未來情境的時間，仍用 start；主句 the door…will open 才用 will 表達結果。"],
+          ["開始做什麼", "start to consider others 中，consider 直接接 others，不需要 for。這裡也可用 start considering others。"],
+          ["通往幸福的門", "to happiness 修飾 door，這個 to 是介系詞；naturally 修飾 open，表示自然開啟。open 在此不需要受詞。"]
+        ], relations: { "當": "引出 A 句的時間情境", "為他人著想": "A 句「開始」做的事" }
+      },
+      "exam-95-01": {
+        points: [
+          ["知道的是一整件事", "that reading is beneficial for children 是 know 的受詞。主句主詞是 people，子句主詞則是 reading。"],
+          ["閱讀這件事用單數", "reading 作動名詞主詞，搭配 is；beneficial 是形容詞補語，不需要再加一個 be 或動詞。"],
+          ["對誰有益", "for children 補充 beneficial 的對象，屬於 that 子句內的內容，不能把 children 當成 know 的直接受詞。"]
+        ], relations: { "對孩子": "子句內「有益」的對象" }
+      },
+      "exam-95-02": {
+        points: [
+          ["鼓勵誰去做什麼", "encourage students to borrow… 是 encourage + 受詞 + to V；借書的是 students，不能省略 students 後只接 borrow。"],
+          ["借入與借出不同", "borrow books from the library 表示從圖書館借入；lend books to someone 是把書借給別人，介系詞也不同。"],
+          ["多的範圍要清楚", "本版本句尾 more 偏向多借書；若要明確強調老師更常鼓勵，可寫 Teachers should more often encourage students to borrow books from the library. 並說明語意重點的差別。"]
+        ], relations: { "到圖書館借書": "「學生」被鼓勵去做的事", "多": "補充頻率或程度；英文位置會影響修飾範圍" }
+      },
+      "exam-94-01": {
+        points: [
+          ["兩個主句各自判斷", "knowledge is limited 描述現況；we have been fascinated 描述長久以來的感受。不能用一個時態標籤套住整句。"],
+          ["哪一個是主詞的中心", "Humanity's knowledge of outer space 的中心是 knowledge，所以用 is；of outer space 修飾 knowledge，說明知識的範圍。"],
+          ["代名詞與持續時間", "by it 中的 it 指 outer space；for a long time 表示一段持續時間，與 since + 時間起點的用法不同。"]
+        ], relations: { "但": "連接 A 句所知有限與 B 句長久感興趣的轉折", "長久以來": "B 句「感興趣」持續的時間" }
+      },
+      "exam-94-02": {
+        points: [
+          ["主詞中心是 development", "of space technology 修飾 development，rapid 也修飾 development。中心名詞是單數，因此用 allows。"],
+          ["讓誰能做什麼", "allow us to explore… 是 allow + 受詞 + to V；不要套用 make us explore 的形式，把 to 刪掉。"],
+          ["it 與 its 回指外太空", "its mysteries 指前句外太空的奧秘；its 是所有格，不加撇號。it's 則是 it is 或 it has 的縮寫。"]
+        ], relations: { "探索它的奧秘": "「我們」得以進行的動作" }
+      },
+      "exam-93-01": {
+        points: [
+          ["Although 不再搭配 but", "Although 已引出讓步子句，後面直接接主句 she…。中文的「雖然…但是…」不逐字翻成 although…but…。"],
+          ["出生與至今分別判斷", "was born 指過去出生時的狀態；has never been discouraged 表示截至現在從未氣餒，兩個部分使用不同時態。"],
+          ["描述出生時的狀態", "blind and deaf 是並列形容詞，補充 Lily 出生時的狀態；never 放在 has 後，表示從未。"]
+        ], relations: { "雖然": "引出 A 句讓步背景，B 句說明仍不氣餒" }
+      },
+      "exam-93-02": {
+        points: [
+          ["證明的內容包在 that 裡", "that 後面整段是 proves 的受詞；其中還包含 as long as we strive 這個條件，不能讀到 strive 就以為受詞結束。"],
+          ["只要，不是和…一樣長", "as long as 在這裡引出條件，表示只要；條件後的 success is achievable 才是所要表達的結果。"],
+          ["形容詞與動詞兩種寫法", "success is achievable 用形容詞 achievable 作補語；也可改成 we can succeed，但要連同主詞與句型一起改。"]
+        ], relations: {}
+      }
+    };
+
     const slotLabels = {
       subject: "主詞",
       verb: "動詞",
@@ -4217,7 +4604,11 @@
       if (isHighlightDone()) stage = Math.max(stage, 2);
       if (isStageOneDone()) stage = Math.max(stage, 3);
       if (isDecisionDone()) stage = Math.max(stage, 4);
-      if (revealed) stage = 4;
+      if (revealed) {
+        stage = 4;
+        els.feedback.className = "feedback correct";
+        els.feedback.textContent = "組句已完成，可以查看本題重點。";
+      }
     }
 
     function tenseById(id) {
@@ -4645,12 +5036,8 @@
       if (isSentenceDone()) {
         revealed = true;
         els.feedback.className = "feedback correct";
-        els.feedback.textContent = `完成。${question().summary}`;
-        analysisMessage = {
-          type: "correct",
-          title: "句子組裝正確",
-          text: "固定片語與比較難的單字已解鎖，請在下方完成吸收。"
-        };
+        els.feedback.textContent = "組句完成，可以查看本題重點。";
+        analysisMessage = null;
       } else {
         els.feedback.className = "feedback error";
         els.feedback.textContent = "英文片段順序還需要調整。請先看底下解析。";
@@ -4697,15 +5084,9 @@
       });
       stage = 4;
       revealed = true;
-      analysisMessage = {
-        type: "correct",
-        title: "解答已揭露",
-        text: revealAllPhrases
-          ? "固定片語與比較難的單字已解鎖。"
-          : "英文整句已顯示；進階模式的片語要自己正確做過一次才會出現。"
-      };
+      analysisMessage = null;
       els.feedback.className = "feedback correct";
-      els.feedback.textContent = `英文答案已顯示。${data.summary}`;
+      els.feedback.textContent = "英文答案已顯示，可以查看本題重點。";
       render();
     }
 
@@ -4899,7 +5280,7 @@
                   <div class="clause-meta">
                     ${[
                       clause.marker ? `引導詞：${clause.marker}` : "",
-                      clause.target ? `修飾對象：${clause.target}` : "",
+                      clause.target ? `${clause.role === "當受詞" ? "承接動詞" : "修飾對象"}：${clause.target}` : "",
                       clause.core ? `子句主幹：${clause.core}` : "",
                       clause.note || ""
                     ].filter(Boolean).join("<br>")}
@@ -5193,6 +5574,47 @@
       bindGloss(els.stagePhrase);
     }
 
+    function renderStructureRecap(data) {
+      if (!isStageOneDone()) return "";
+      const guide = questionGuides[data.id];
+      const tokens = [...data.core, ...data.details];
+      const leadSlots = new Set(detailGroupSlots(data, "lead"));
+      const chip = (slot) => {
+        const token = tokens.find((item) => item.id === placements[slot] && item.slot === slot);
+        if (!token) return "";
+        const role = token.role || slot;
+        return `<span class="structure-chip ${role}${leadSlots.has(slot) ? " lead" : ""}" data-recap-slot="${escapeHtml(slot)}"><small>${escapeHtml(token.label)}</small><span>${escapeHtml(token.text)}</span></span>`;
+      };
+      const details = (slots, label) => slots.length ? `
+        <div class="recap-group"><p class="recap-label">${label}</p>
+          ${slots.map((slot) => {
+            const token = tokens.find((item) => item.slot === slot);
+            const relation = guide?.relations[token.text];
+            return `<div class="recap-relation">${chip(slot)}${relation ? `<span>↳ ${escapeHtml(relation)}</span>` : ""}</div>`;
+          }).join("")}
+        </div>` : "";
+      const clauses = (position) => (data.subclauses || [])
+        .filter((clause) => (clause.position || "after-core") === position)
+        .map((clause) => `<div class="clause-card recap-clause">
+          <strong>${escapeHtml(clause.type)}｜${escapeHtml(clause.role || "子句")}${clause.target ? ` → ${escapeHtml(clause.target)}` : ""}</strong>
+          <p>${escapeHtml(clause.text)}</p>
+        </div>`).join("");
+      const groups = data.coreGroups || [{ id: "main", label: "主幹", slots: data.core.map((token) => token.slot) }];
+      return `<section class="structure-recap" aria-label="第二部分的中文結構摘要">
+        <h4>剛才的中文結構</h4>
+        ${details([...leadSlots], hasMultipleCoreGroups(data) ? "句首導入 / 句間連接" : "句首導入 / 全句框架")}
+        ${clauses("before-core")}
+        ${groups.map((group) => `
+          ${details(data.details.filter((token) => token.group === "connector" && token.beforeClause === group.id).map((token) => token.slot), "子句連接")}
+          <div class="recap-group"><p class="recap-label">${escapeHtml(group.label)}</p><div class="recap-core">${group.slots.map(chip).join("")}</div></div>
+        `).join("")}
+        ${clauses("after-core")}
+        ${details(detailGroupSlots(data, "bound"), "黏著修飾")}
+        ${details(detailGroupSlots(data, "supplemental"), "補充細節")}
+        ${guide?.voiceBridge ? `<p class="recap-voice">${escapeHtml(guide.voiceBridge)}</p>` : ""}
+      </section>`;
+    }
+
     function renderStageThree(data) {
       const locked = !isDecisionDone() || (practiceMode === "advanced" && !isPhraseStageDone(data));
       // 按下「檢查句子」完成（會設定 revealed）或直接顯示答案後才鎖定，跟前三大題一樣不能再變動。
@@ -5208,10 +5630,16 @@
         <div class="stage-heading">
           <div>
             <h3>${practiceMode === "advanced" ? "5" : "4"}. 英文組句</h3>
-            <p>${practiceMode === "advanced" ? "每個片語都組好後，再把片語排成完整句子。" : "時態與主被動都正確後，才開始排列英文片段。"}</p>
+            <p>${done ? "對照中文結構，讀一次完整的英文句子。" : "對照剛才拆出的中文結構，把英文片段排成完整句子。"}</p>
           </div>
           <span class="stage-badge">${isSentenceDone() ? "完成" : locked ? "未解鎖" : "作答中"}</span>
         </div>
+        ${done ? `
+          <div class="answer-box">
+            <span>完整句子</span>
+            <strong>${glossifyText(data.answer, glossary)}</strong>
+          </div>
+        ` : `
         <div class="builder-box">
           <p class="line-label">英文組句區</p>
           <div class="built-line">
@@ -5219,7 +5647,6 @@
               <button class="token" data-built-id="${id}" type="button">${glossifyText(answerById[id].text, glossary)}</button>
             `).join("")}
           </div>
-          ${done ? "" : `
           <div class="sentence-bank">
             ${data.pieceOrder.map((id) => {
               const piece = answerById[id];
@@ -5230,15 +5657,9 @@
             <button class="btn ghost" id="clearSentenceButton" type="button">清空組句</button>
             <button class="btn primary" id="checkSentenceButton" type="button">檢查句子</button>
           </div>
-          `}
         </div>
-        ${revealed ? `
-          <div class="answer-box">
-            <span>英文答案</span>
-            <strong>${glossifyText(data.answer, glossary)}</strong>
-            <span>${data.summary}</span>
-          </div>
-        ` : ""}
+        `}
+        ${renderStructureRecap(data)}
       `;
 
       if (locked) return;
@@ -5255,7 +5676,8 @@
     }
 
     function renderAnalysis() {
-      if (!analysisMessage) {
+      // 成功狀態已由階段標記與 feedback 呈現；這個框只保留需要修正的解析。
+      if (!analysisMessage || analysisMessage.type === "correct") {
         els.analysisBox.hidden = true;
         els.analysisBox.innerHTML = "";
         els.analysisBox.className = "analysis-box";
@@ -5421,7 +5843,8 @@
         map.set(key, { en: entry.text, zh: entry.meaning || "", note: entry.note || "" });
       };
       (data.phraseNotes || []).forEach(add);
-      (data.vocabulary || []).forEach(add);
+      // 查字保留中文詞義；舊版未區分語意差異的替換清單不再從浮動提示露出。
+      (data.vocabulary || []).forEach(({ text, meaning }) => add({ text, meaning }));
       const entries = [...map.entries()]
         .map(([key, value]) => ({ words: key.split(" "), value }))
         .sort((a, b) => b.words.length - a.words.length);
@@ -5550,16 +5973,25 @@
     function generateAiAnswer(rawQuestion, data) {
       const query = rawQuestion.trim().toLowerCase();
       const phrases = data.phraseNotes.map((item) => `${item.text}：${item.meaning}`).join("；");
-      const vocab = data.vocabulary.map((item) => `${item.text}：${item.meaning}`).join("；");
+      const points = questionGuides[data.id]?.points || [];
 
-      if (!query) return "可以問：為什麼用這個時態？這句怎麼排序？有哪些固定片語？有哪些可替換單字？";
-      if (query.includes("時態") || query.includes("tense") || query.includes("為什麼")) return data.tenseReason;
+      if (!query) return points.map(([title, text]) => `${title}：${text}`).join("\n");
+      if (query.includes("時態") || query.includes("tense")) return data.tenseReason;
       if (query.includes("主被動") || query.includes("被動") || query.includes("語態") || query.includes("voice")) return data.voiceReason;
       if (query.includes("順序") || query.includes("排序") || query.includes("組句") || query.includes("order")) return data.orderReason;
+      // 先比對問題中的英文詞，避免「為什麼用 conducting」被誤判成時態問題。
+      const terms = query.match(/[a-z]+(?:'[a-z]+)?/g) || [];
+      const matched = points.filter(([title, text]) => terms.some((term) =>
+        `${title} ${text}`.toLowerCase().split(/[^a-z']+/).includes(term)
+      ));
+      if (matched.length) return matched.map(([title, text]) => `${title}：${text}`).join("\n");
       if (query.includes("片語") || query.includes("固定") || query.includes("phrase")) return phrases || "這題沒有額外固定片語。";
-      if (query.includes("單字") || query.includes("替換") || query.includes("vocab") || query.includes("word")) return vocab || "這題沒有額外列出可替換單字。";
+      if (query.includes("單字") || query.includes("替換") || query.includes("改寫") || query.includes("vocab") || query.includes("word")) {
+        const alternatives = points.filter(([, text]) => /改寫|改成|可改|也可|替換|互換/.test(text));
+        return alternatives.length ? alternatives.map(([title, text]) => `${title}：${text}`).join("\n") : "本題沒有另外列出已校對的替換寫法；請指出想改的英文詞或片語。";
+      }
       if (query.includes("答案") || query.includes("英文") || query.includes("answer")) return data.answer;
-      return `${data.summary} 你也可以問我「時態」、「主被動」、「組句順序」、「固定片語」或「可替換單字」。`;
+      return "內建解說目前無法判斷你指的是哪個部分。請在問題裡加上英文詞或片語，或指定「時態」、「語態」、「組句順序」。";
     }
 
     function aiTutorEnabled() {
@@ -5575,8 +6007,9 @@
         `時態原因：${data.tenseReason}`,
         `語態原因：${data.voiceReason}`,
         `組句順序原因：${data.orderReason}`,
-        `固定片語：${data.phraseNotes.map((p) => `${p.text}（${p.meaning}）`).join("、") || "無"}`,
-        `可替換單字：${data.vocabulary.map((v) => `${v.text}（${v.meaning}）`).join("、") || "無"}`
+        `本題已校對重點：${(questionGuides[data.id]?.points || []).map(([title, text]) => `${title}：${text}`).join("\n")}`,
+        `學生目前的組句：${builtPieces.map((id) => data.answerPieces.find((piece) => piece.id === id)?.text || "").join(" ")}`,
+        "只有在語意、搭配與句型都合適時，才能提出替換寫法；若需連同句型調整，請明確說明。"
       ].join("\n");
 
       const res = await fetch(AI_TUTOR_CONFIG.endpoint, {
@@ -5598,42 +6031,23 @@
       if (!revealed) {
         els.hintText.innerHTML = hintMessage
           ? `<p>${escapeHtml(hintMessage)}</p>`
-          : `<p>答題完成後，這裡會解鎖本題關鍵、固定片語、可替換單字與 AI 小老師問答。</p>`;
+          : `<p>完成組句後，查看本題的 3 個重點，也可以向 AI 小老師追問。</p>`;
         return;
       }
 
-      const phraseItems = data.phraseNotes.length
-        ? data.phraseNotes.map((item) => `<li><strong>${item.text}</strong>：${item.meaning}。${item.note}</li>`).join("")
-        : "<li>這題沒有額外固定片語。</li>";
-      const vocabItems = data.vocabulary.length
-        ? data.vocabulary.map((item) => `<li><strong>${item.text}</strong>：${item.meaning}。${item.note}</li>`).join("")
-        : "<li>這題沒有額外可替換單字。</li>";
+      const points = questionGuides[data.id]?.points || [];
 
       els.hintText.innerHTML = `
-        <div class="reward-key">
-          <h4>本題關鍵</h4>
-          <p class="reward-summary">${data.summary}</p>
-          <div class="key-grid">
-            <div class="key-item"><span class="key-tag">時態</span><p>${data.tenseReason}</p></div>
-            <div class="key-item"><span class="key-tag">主被動</span><p>${data.voiceReason}</p></div>
-            <div class="key-item"><span class="key-tag">組句順序</span><p>${data.orderReason}</p></div>
-          </div>
-        </div>
-        <div class="learning-card">
-          <h4>固定片語</h4>
-          <ul>${phraseItems}</ul>
-        </div>
-        <div class="learning-card">
-          <h4>可替換單字</h4>
-          <ul>${vocabItems}</ul>
-        </div>
+        <ol class="lesson-points">
+          ${points.map(([title, text]) => `<li><strong>${escapeHtml(title)}</strong><p>${escapeHtml(text)}</p></li>`).join("")}
+        </ol>
         <div class="ai-box">
           <h4>AI 小老師</h4>
           <div class="ai-row">
-            <input class="ai-input" id="aiQuestionInput" type="text" placeholder="問：為什麼用這個時態？">
+            <input class="ai-input" id="aiQuestionInput" type="text" aria-label="向 AI 小老師提問" placeholder="輸入不懂的英文片語或問題">
             <button class="btn primary" id="aiAskButton" type="button">送出</button>
           </div>
-          <div class="ai-answer" id="aiAnswer">可以問本題的時態、主被動、組句順序、固定片語或可替換單字。</div>
+          <div class="ai-answer" id="aiAnswer">指出不懂的英文片語，可以追問用法或比較另一種寫法。</div>
         </div>
       `;
       bindRewardAiEvents(data);
