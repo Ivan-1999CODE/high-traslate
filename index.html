@@ -1364,6 +1364,13 @@
       line-height: 1.5;
     }
 
+    .piece-context { display: grid; gap: 4px; margin-bottom: 8px; }
+    .piece-context .piece-zh { margin: 0; }
+    .piece-role { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .token.sentence-piece { display: inline-grid; gap: 3px; text-align: left; max-width: 100%; overflow-wrap: anywhere; }
+    .sentence-piece .piece-role { color: inherit; opacity: .8; font-size: 11px; }
+    .token.subclause { border-color: #fdba74; background: #fff7ed; color: #7c2d12; }
+
     .ai-box {
       border-top: 1px solid #e5eaf2;
       padding-top: 10px;
@@ -1547,31 +1554,37 @@
       }
     }
 
-    /* 單字／片語翻譯小幫手（僅第三、四階段）：桌機 hover、手機長按 */
+    /* 只限制可查字的互動文字；一般內文仍可選取，頁面可正常捲動與縮放。 */
     .glossable {
       cursor: help;
       text-decoration: underline dotted rgba(37, 99, 235, .55);
       text-underline-offset: 3px;
       text-decoration-thickness: 1.5px;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
     }
 
     .answer-box .glossable {
       text-decoration-color: rgba(2, 122, 72, .5);
     }
 
+    .gloss-help { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+
     .gloss-tip {
       position: absolute;
       z-index: 60;
-      max-width: 260px;
+      max-width: min(260px, calc(100vw - 16px));
       padding: 9px 11px;
       border-radius: 8px;
       border: 1px solid #c7d2fe;
-      background: #fff;
+      background: var(--panel);
       color: var(--ink);
       box-shadow: 0 8px 22px rgba(15, 23, 42, .16);
       display: grid;
       gap: 3px;
-      pointer-events: none;
+      pointer-events: auto;
+      overflow-wrap: anywhere;
       font-size: 13px;
       line-height: 1.45;
     }
@@ -1906,8 +1919,8 @@
             }));
           })
         : [
-            { id: "s", slot: "subject", label: "主詞", text: data.core[0], role: "subject" },
-            { id: "v", slot: "verb", label: "動詞", text: data.core[1], role: "verb" },
+            { id: "s", slot: "subject", label: data.coreLabels?.[0] || "主詞", text: data.core[0], role: "subject" },
+            { id: "v", slot: "verb", label: data.coreLabels?.[1] || "動詞", text: data.core[1], role: "verb" },
             ...(hasIndirect
               ? [
                   { id: "io", slot: "object-indirect", label: "間接受詞", text: data.core[2], role: "object" },
@@ -1925,7 +1938,7 @@
       const allTokenIds = data.clauses
         ? [...detailTokens.map((detail) => detail.id), ...core.map((token) => token.id)]
         : [...(hasIndirect ? ["o", "io"] : isObjectComplement ? ["o", "oc"] : hasObject ? ["o"] : []), ...detailTokens.map((detail) => detail.id), "s", "v"];
-      const answerPieces = data.pieces.map((text, index) => ({ id: `p${index + 1}`, text }));
+      const answerPieces = data.pieces.map((piece, index) => ({ id: `p${index + 1}`, ...piece }));
       const pieceOrder = data.pieceOrder || answerPieces.map((piece) => piece.id).slice().reverse();
       return {
         id: data.id,
@@ -1969,11 +1982,11 @@
           { label: "地點", text: "在課堂上" }
         ],
         pieces: [
-          "Nowadays,",
-          "more and more senior high school English teachers",
-          "have increased",
-          "the percentage of using English",
-          "in class."
+          { text: "Nowadays,", source: "detail-1" },
+          { text: "more and more senior high school English teachers", source: "subject" },
+          { text: "have increased", source: "verb" },
+          { text: "the percentage of using English", source: "object" },
+          { text: "in class.", source: "detail-2" }
         ],
         pieceOrder: ["p4", "p2", "p5", "p1", "p3"],
         tenseReason: "中文的「已經增加」表示到現在已形成的改變，英文用 have increased，所以選現在完成式。",
@@ -2007,12 +2020,12 @@
           { label: "活動", text: "進行多樣的聽、說活動" }
         ],
         pieces: [
-          "They",
-          "divide",
-          "students",
-          "into different groups",
-          "based on their English ability,",
-          "conducting a variety of listening and speaking activities."
+          { text: "They", source: "subject" },
+          { text: "divide", source: "verb" },
+          { text: "students", source: "object" },
+          { text: "into different groups", source: "detail-1" },
+          { text: "based on their English ability,", source: "detail-2" },
+          { text: "conducting a variety of listening and speaking activities.", source: "detail-3" }
         ],
         pieceOrder: ["p5", "p3", "p1", "p6", "p2", "p4"],
         tenseReason: "這句描述老師進行分組與活動的做法，英文用 divide，所以選現在簡單式。",
@@ -2045,10 +2058,10 @@
           { label: "補充細節", text: "科技進步" }
         ],
         pieces: [
-          "Human imagination and creativity",
-          "are",
-          "the greatest driving forces",
-          "behind technological advancement."
+          { text: "Human imagination and creativity", source: "subject" },
+          { text: "are", source: "verb" },
+          { text: "the greatest driving forces", source: "object" },
+          { text: "behind technological advancement.", source: "detail-1" }
         ],
         pieceOrder: ["p3", "p1", "p4", "p2"],
         tenseReason: "這句是在說明一般事實與定義，英文用 are，所以選現在簡單式。",
@@ -2075,10 +2088,9 @@
         tenseLabel: "現在進行式",
         voice: "active",
         coreLabel: "補語",
-        core: ["神奇物件", "正逐一成為", "現實"],
+        core: ["神奇物件", "現在正成為", "現實"],
         details: [
-          { label: "時間", text: "過去" },
-          { label: "地點", text: "在科幻電影中" }
+          { label: "方式", text: "逐一" }
         ],
         subclauses: [
           {
@@ -2088,16 +2100,20 @@
             text: "that once appeared in sci-fi movies",
             target: "magical items",
             core: "items / appeared",
-            note: "整個 that 子句貼在 magical items 後面，先把主詞說完整。"
+            note: "整個 that 子句貼在 magical items 後面，先把主詞說完整。",
+            id: "subclause-1",
+            chinese: "過去在科幻電影中出現的",
+            parentSlot: "subject"
           }
         ],
         pieces: [
-          "The magical items that once appeared in sci-fi movies",
-          "are now becoming",
-          "a reality",
-          "one by one."
+          { text: "The magical items", source: "subject" },
+          { text: "that once appeared in sci-fi movies", source: "subclause-1" },
+          { text: "are now becoming", source: "verb" },
+          { text: "a reality", source: "object" },
+          { text: "one by one.", source: "detail-1" }
         ],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieceOrder: ["p3", "p4", "p2", "p5", "p1"],
         tenseReason: "中文的「現在正」表示正在發生中的變化，英文用 are now becoming，所以選現在進行式。",
         voiceReason: "英文主詞是 The magical items，描述這些物件正在成為現實，不是被動語態。",
         orderReason: "英文先放被 that 子句修飾的主詞，再放 are now becoming，接著放 a reality，最後補 one by one。",
@@ -2114,28 +2130,29 @@
       }),
       makeExamQuestion({
         id: "exam-113-01",
+        objectComplement: true,
         year: 113,
         no: 1,
         chinese: "每逢選舉季節，總會看到政治人物造訪各地著名廟宇。",
         answer: "During every election season, people always see politicians visiting renowned temples throughout the country.",
-        pattern: "SVO",
+        pattern: "SVOC",
         tense: "present-simple",
         tenseLabel: "現在簡單式",
         voice: "active",
-        core: ["人們", "看到", "政治人物"],
+        core: ["人們", "總會看到", "政治人物", "造訪著名廟宇"],
         details: [
           { label: "時間", text: "每逢選舉季節" },
-          { label: "地點", text: "各地" },
-          { label: "行為", text: "造訪著名廟宇" }
+          { label: "地點", text: "各地" }
         ],
         pieces: [
-          "During every election season,",
-          "people always see",
-          "politicians",
-          "visiting renowned temples",
-          "throughout the country."
+          { text: "During every election season,", source: "detail-1" },
+          { text: "people", source: "subject" },
+          { text: "always see", source: "verb" },
+          { text: "politicians", source: "object" },
+          { text: "visiting renowned temples", source: "object-complement" },
+          { text: "throughout the country.", source: "detail-2" }
         ],
-        pieceOrder: ["p4", "p1", "p5", "p2", "p3"],
+        pieceOrder: ["p2", "p3", "p4", "p5", "p6", "p1"],
         tenseReason: "這句描述選舉季節常見的現象，英文用 people always see，所以選現在簡單式。",
         voiceReason: "英文主詞是 people，主動看到這個現象，所以是主動語態。",
         orderReason: "英文先放 During every election season 交代時間，再放主句 people always see，接著放受詞 politicians 與受詞補語 visiting renowned temples，最後補 throughout the country。",
@@ -2160,18 +2177,19 @@
         tense: "present-simple",
         tenseLabel: "現在簡單式",
         voice: "active",
-        core: ["他們", "希望", "展現尊重"],
+        core: ["他們", "也希望", "展現尊重"],
         details: [
           { label: "附加", text: "除了祈求好的選舉結果" },
           { label: "對象", text: "在地文化與習俗" }
         ],
         pieces: [
-          "In addition to praying for favorable election results,",
-          "they also hope",
-          "to demonstrate respect for",
-          "local culture and customs."
+          { text: "In addition to praying for favorable election results,", source: "detail-1" },
+          { text: "they", source: "subject" },
+          { text: "also hope", source: "verb" },
+          { text: "to demonstrate respect for", source: "object" },
+          { text: "local culture and customs.", source: "detail-2" }
         ],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieceOrder: ["p5", "p3", "p4", "p1", "p2"],
         tenseReason: "這句描述政治人物在選舉季節的目的與期待，英文用 they also hope，所以選現在簡單式。",
         voiceReason: "英文主詞是 they，表示他們主動希望展現尊重，所以使用主動語態。",
         orderReason: "英文先放 In addition to... 交代除了祈求結果之外，再放 they also hope to demonstrate respect，最後補尊重的對象。",
@@ -2198,8 +2216,12 @@
         coreLabel: "補語",
         core: ["避免衝突並確保世界和平", "應該是", "所有人類的目標"],
         details: [],
-        pieces: ["Avoiding conflict and ensuring world peace", "should be", "the goal", "of all humanity."],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieces: [
+          { text: "Avoiding conflict and ensuring world peace", source: "subject" },
+          { text: "should be", source: "verb" },
+          { text: "the goal of all humanity.", source: "object" }
+        ],
+        pieceOrder: ["p3", "p1", "p2"],
         tenseReason: "中文有「應該」，英文答案用 should be，所以要選情態助動詞。",
         voiceReason: "英文句首是動名詞片語，描述它應該成為目標，不是被動結構。",
         orderReason: "英文先放動名詞主詞 Avoiding...and ensuring...，再放 should be，最後補 the goal of all humanity。",
@@ -2215,6 +2237,21 @@
       }),
       makeExamQuestion({
         id: "exam-111-02",
+        subclauses: [
+          {
+            id: "subclause-1",
+            type: "形容詞子句",
+            role: "修飾句首名詞",
+            marker: "that",
+            text: "that pets bring",
+            chinese: "寵物帶來的",
+            target: "joy",
+            parentSlot: "detail-1",
+            position: "before-core",
+            core: "pets / bring / joy（由 that 代替）",
+            note: "that pets bring 修飾 joy；整段子句接在 joy 後面，再接主句 we should not neglect。"
+          }
+        ],
         year: 111,
         no: 2,
         chinese: "在享受寵物所帶來的歡樂時，我們不該忽略要善盡照顧牠們的責任。",
@@ -2225,10 +2262,16 @@
         voice: "active",
         core: ["我們", "不該忽略", "照顧牠們的責任"],
         details: [
-          { label: "時間", text: "在享受寵物帶來的歡樂時", role: "lead" }
+          { label: "時間", text: "在享受歡樂時" }
         ],
-        pieces: ["While enjoying the joy that pets bring,", "we should not neglect", "the responsibility", "to take care of them."],
-        pieceOrder: ["p2", "p4", "p1", "p3"],
+        pieces: [
+          { text: "While enjoying the joy", source: "detail-1" },
+          { text: "that pets bring,", source: "subclause-1" },
+          { text: "we", source: "subject" },
+          { text: "should not neglect", source: "verb" },
+          { text: "the responsibility to take care of them.", source: "object" }
+        ],
+        pieceOrder: ["p5", "p4", "p2", "p1", "p3"],
         tenseReason: "中文有「不該」，英文答案用 should not，所以要選情態助動詞。",
         voiceReason: "英文句首主句是 we，表示我們主動不要忽略責任。",
         orderReason: "英文先放 while 子句交代情境，再放 we should not neglect，接著放責任與照顧內容。",
@@ -2248,21 +2291,26 @@
         no: 2,
         chinese: "因此，交通法規必須嚴格執行，以確保所有用路人的安全。",
         answer: "Therefore, traffic regulations must be strictly enforced to ensure the safety of all road users.",
-        pattern: "被動語態",
+        pattern: "SV",
         tense: "modal-simple",
         tenseLabel: "情態助動詞",
         voice: "passive",
-        core: ["主管機關", "嚴格地執行", "交通法規"],
+        core: ["交通法規", "必須被嚴格執行"],
         details: [
           { label: "轉折", text: "因此" },
           { label: "目的", text: "確保所有用路人的安全" }
         ],
-        pieces: ["Therefore,", "traffic regulations", "must be strictly enforced", "to ensure the safety of all road users."],
+        pieces: [
+          { text: "Therefore,", source: "detail-1" },
+          { text: "traffic regulations", source: "subject" },
+          { text: "must be strictly enforced", source: "verb" },
+          { text: "to ensure the safety of all road users.", source: "detail-2" }
+        ],
         pieceOrder: ["p4", "p2", "p1", "p3"],
         tenseReason: "中文有「必須」，英文答案用 must be enforced，所以要選情態助動詞。",
-        voiceReason: "英文把 traffic regulations 放句首，法規是被執行的對象，所以是被動語態。",
+        voiceReason: "英文主詞是 traffic regulations，法規承受執行的動作，因此用 must be strictly enforced 表示被動。",
         orderReason: "英文先放 Therefore，再放被動句 traffic regulations must be strictly enforced，最後用 to ensure 說明目的。",
-        summary: "must be + p.p. 是情態助動詞被動結構。",
+        summary: "主幹是 traffic regulations / must be strictly enforced；to ensure... 補充嚴格執行的目的。",
         phrases: [
           ["must be strictly enforced", "必須嚴格執行", "must + be + p.p. 是被動結構。"],
           ["road users", "用路人", "道路使用者的自然說法。"]
@@ -2287,8 +2335,14 @@
           { label: "語氣", text: "其實" },
           { label: "情境", text: "面對同儕壓力時" }
         ],
-        pieces: ["In fact,", "when facing peer pressure,", "we should learn", "to uphold our principles."],
-        pieceOrder: ["p4", "p1", "p3", "p2"],
+        pieces: [
+          { text: "In fact,", source: "detail-1" },
+          { text: "when facing peer pressure,", source: "detail-2" },
+          { text: "we", source: "subject" },
+          { text: "should learn", source: "verb" },
+          { text: "to uphold our principles.", source: "object" }
+        ],
+        pieceOrder: ["p2", "p5", "p3", "p1", "p4"],
         tenseReason: "中文有「應該」，英文答案用 should learn，所以要選情態助動詞。",
         voiceReason: "英文主句是 we should learn，表示我們主動學習。",
         orderReason: "英文先放 In fact 和 when 情境，再放主句 we should learn to uphold our principles。",
@@ -2315,7 +2369,7 @@
         coreLabel: "補語",
         core: ["高鐵", "當然是", "首選"],
         details: [
-          { label: "對象", text: "強調職場效率的人" },
+          { label: "對象", text: "對那些人而言" },
           { label: "用途", text: "商務旅行" }
         ],
         subclauses: [
@@ -2327,11 +2381,21 @@
             target: "those",
             core: "who / emphasize / efficiency",
             note: "who 子句修飾 those，限定是哪一種人（強調職場效率的人）。",
-            position: "before-core"
+            position: "before-core",
+            id: "subclause-1",
+            chinese: "強調職場效率的",
+            parentSlot: "detail-1"
           }
         ],
-        pieces: ["For those who emphasize workplace efficiency,", "the High-Speed Rail", "is undoubtedly", "the preferred choice for business travel."],
-        pieceOrder: ["p4", "p2", "p1", "p3"],
+        pieces: [
+          { text: "For those", source: "detail-1" },
+          { text: "who emphasize workplace efficiency,", source: "subclause-1" },
+          { text: "the High-Speed Rail", source: "subject" },
+          { text: "is undoubtedly", source: "verb" },
+          { text: "the preferred choice", source: "object" },
+          { text: "for business travel.", source: "detail-2" }
+        ],
+        pieceOrder: ["p2", "p6", "p4", "p1", "p5", "p3"],
         tenseReason: "這句描述一般判斷，英文用 is，所以是現在簡單式。",
         voiceReason: "英文句首放 the High-Speed Rail，描述它是首選，不是被動。",
         orderReason: "英文先放 For those... 限定對象，再放高鐵是首選的主句。",
@@ -2347,24 +2411,31 @@
       }),
       makeExamQuestion({
         id: "exam-107-01",
+        coreLabels: ["真正主詞", "存在句型"],
         year: 107,
         no: 1,
         chinese: "近年來，有越來越多超級颱風，通常造成嚴重災害。",
         answer: "In recent years, there have been increasingly more super typhoons, usually causing severe disasters.",
-        pattern: "存在句",
+        pattern: "There be",
         tense: "present-perfect",
         tenseLabel: "現在完成式",
         voice: "active",
-        core: ["越來越多的超級颱風", "通常出現", "嚴重災害"],
+        core: ["越來越多的超級颱風", "有"],
         details: [
-          { label: "時間", text: "近年來" }
+          { label: "時間", text: "近年來" },
+          { label: "結果", text: "通常造成嚴重災害" }
         ],
-        pieces: ["In recent years,", "there have been increasingly more super typhoons,", "usually causing", "severe disasters."],
-        pieceOrder: ["p2", "p4", "p1", "p3"],
+        pieces: [
+          { text: "In recent years,", source: "detail-1" },
+          { text: "there have been", source: "verb" },
+          { text: "increasingly more super typhoons,", source: "subject" },
+          { text: "usually causing severe disasters.", source: "detail-2" }
+        ],
+        pieceOrder: ["p3", "p4", "p2", "p1"],
         tenseReason: "中文的「近年來」表示到現在累積的趨勢，英文用 there have been。",
         voiceReason: "後半用 causing 表示颱風造成災害，是主動語意。",
         orderReason: "英文先放時間，再用 there have been 表示存在與增加，最後用 causing 補結果。",
-        summary: "there have been 表示近年累積出現；causing severe disasters 補結果。",
+        summary: "there have been 是表示「有」的存在句型，後接真正主詞 increasingly more super typhoons；usually causing severe disasters 補充颱風造成的結果。",
         phrases: [
           ["in recent years", "近年來", "常和現在完成式搭配。"],
           ["severe disasters", "嚴重災害", "severe 表示嚴重的。"]
@@ -2388,25 +2459,36 @@
           {
             id: "clause-a",
             label: "A 句主幹",
-            core: ["我們", "應準備並待在", "食物和室內"]
+            core: ["我們", "應準備", "足夠的食物"]
           },
           {
             id: "clause-b",
             label: "B 句主幹",
-            core: ["我們", "應迅速移動至", "安全的地方"],
-            coreLabel: "方向"
+            core: ["我們", "應迅速移動"]
           }
         ],
         details: [
           { label: "時間", text: "颱風來襲時" },
-          { label: "條件", text: "若有必要", role: "connector", group: "connector", beforeClause: "clause-b" }
+          { label: "條件", text: "若有必要", role: "connector", group: "connector", beforeClause: "clause-b" },
+          { label: "並列動作", text: "並待在室內" },
+          { label: "方向", text: "至安全的地方" }
         ],
-        pieces: ["When a typhoon approaches,", "we should prepare enough food and stay indoors;", "if necessary,", "we should quickly move to a safe place."],
-        pieceOrder: ["p4", "p2", "p1", "p3"],
+        pieces: [
+          { text: "When a typhoon approaches,", source: "detail-1" },
+          { text: "we", source: "clause-a-subject" },
+          { text: "should prepare", source: "clause-a-verb" },
+          { text: "enough food", source: "clause-a-object" },
+          { text: "and stay indoors;", source: "detail-3" },
+          { text: "if necessary,", source: "detail-2" },
+          { text: "we", source: "clause-b-subject" },
+          { text: "should quickly move", source: "clause-b-verb" },
+          { text: "to a safe place.", source: "detail-4" }
+        ],
+        pieceOrder: ["p6", "p4", "p5", "p8", "p2", "p3", "p7", "p9", "p1"],
         tenseReason: "中文有「應」，英文答案用 should，所以要選情態助動詞。",
         voiceReason: "英文主詞是 we，表示我們主動準備、待在室內、移動。",
         orderReason: "英文先放 When 時間子句，再放 should 的主句；分號後用 if necessary 補第二個建議。",
-        summary: "這句由時間條件、主要建議和必要時的補充建議組成。",
+        summary: "A 句先說 we should prepare enough food，再以 and stay indoors 接並列動作；B 句是 we should quickly move，to a safe place 補充目的地。",
         phrases: [
           ["stay indoors", "待在室內", "indoors 是副詞。"],
           ["if necessary", "若有必要", "常放在分句前補充條件。"]
@@ -2430,8 +2512,13 @@
         details: [
           { label: "比較", text: "相較於父母世代", group: "lead" }
         ],
-        pieces: ["Compared to their parents' generation,", "today's young people", "enjoy more freedom", "and prosperity."],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieces: [
+          { text: "Compared to their parents' generation,", source: "detail-1" },
+          { text: "today's young people", source: "subject" },
+          { text: "enjoy", source: "verb" },
+          { text: "more freedom and prosperity.", source: "object" }
+        ],
+        pieceOrder: ["p2", "p4", "p3", "p1"],
         tenseReason: "這句描述現在的一般狀態，英文用 enjoy，所以是現在簡單式。",
         voiceReason: "英文句首放 today's young people，表示年輕人主動享有自由與繁榮。",
         orderReason: "英文先放 Compared to... 作比較，再放主詞、動詞和受詞。",
@@ -2455,7 +2542,7 @@
         tense: "modal-simple",
         tenseLabel: "情態助動詞",
         voice: "active",
-        core: ["他們", "必須學習", "有效地因應新的挑戰"],
+        core: ["他們", "必須學習", "如何有效地因應新的挑戰"],
         details: [
           { label: "轉折", text: "但是" },
           { label: "環境", text: "快速改變的世界中" }
@@ -2468,11 +2555,20 @@
             text: "how to effectively cope with new challenges",
             target: "learn",
             core: "how to / cope with / challenges",
-            note: "learn 後面接「how + to V」當受詞，是名詞性質；它由名詞子句 how they should cope... 簡化而來，但沒有自己的主詞與限定動詞，所以不算完整名詞子句。"
+            note: "learn 後面接「how + to V」當受詞，是名詞性質；它由名詞子句 how they should cope... 簡化而來，但沒有自己的主詞與限定動詞，所以不算完整名詞子句。",
+            id: "subclause-1",
+            chinese: "如何有效地因應新的挑戰",
+            parentSlot: "object"
           }
         ],
-        pieces: ["However,", "in this rapidly changing world,", "they must learn", "how to effectively cope with new challenges."],
-        pieceOrder: ["p4", "p1", "p3", "p2"],
+        pieces: [
+          { text: "However,", source: "detail-1" },
+          { text: "in this rapidly changing world,", source: "detail-2" },
+          { text: "they", source: "subject" },
+          { text: "must learn", source: "verb" },
+          { text: "how to effectively cope with new challenges.", source: "object" }
+        ],
+        pieceOrder: ["p5", "p4", "p2", "p1", "p3"],
         tenseReason: "中文有「必須」，英文答案用 must learn，所以要選情態助動詞。",
         voiceReason: "英文主詞是 they，表示他們主動學習因應挑戰。",
         orderReason: "英文先放轉折與環境，再放 they must learn，最後接 how to... 的內容。",
@@ -2500,7 +2596,12 @@
         details: [
           { label: "目標", text: "最主要的目標" }
         ],
-        pieces: ["A successful business", "should not prioritize", "profits", "as the main goal."],
+        pieces: [
+          { text: "A successful business", source: "subject" },
+          { text: "should not prioritize", source: "verb" },
+          { text: "profits", source: "object" },
+          { text: "as the main goal.", source: "detail-1" }
+        ],
         pieceOrder: ["p3", "p1", "p4", "p2"],
         tenseReason: "中文有「不應該」，英文答案用 should not，所以要選情態助動詞。",
         voiceReason: "英文句首放 A successful business，表示企業主動不該優先考量獲利。",
@@ -2529,8 +2630,13 @@
         details: [
           { label: "目的", text: "增進大眾福祉" }
         ],
-        pieces: ["It", "should take on", "social responsibility", "to enhance", "the well-being of the public."],
-        pieceOrder: ["p5", "p3", "p1", "p4", "p2"],
+        pieces: [
+          { text: "It", source: "subject" },
+          { text: "should take on", source: "verb" },
+          { text: "social responsibility", source: "object" },
+          { text: "to enhance the well-being of the public.", source: "detail-1" }
+        ],
+        pieceOrder: ["p2", "p3", "p4", "p1"],
         tenseReason: "中文有「應該」，英文答案用 should take on，所以要選情態助動詞。",
         voiceReason: "英文句首放 It，表示企業主動負起責任。",
         orderReason: "英文先放 It should take on social responsibility，再用 to enhance 補目的，最後放 the well-being of the public 說明要增進的對象。",
@@ -2559,8 +2665,14 @@
           { label: "地點", text: "都市裡" },
           { label: "目的", text: "返回家鄉種植有機蔬菜" }
         ],
-        pieces: ["Some young people", "quit high-paying jobs", "in the city", "to return to their hometowns and cultivate organic vegetables."],
-        pieceOrder: ["p4", "p1", "p3", "p2"],
+        pieces: [
+          { text: "Some young people", source: "subject" },
+          { text: "quit", source: "verb" },
+          { text: "high-paying jobs", source: "object" },
+          { text: "in the city", source: "detail-1" },
+          { text: "to return to their hometowns and cultivate organic vegetables.", source: "detail-2" }
+        ],
+        pieceOrder: ["p5", "p4", "p3", "p1", "p2"],
         tenseReason: "英文答案用 quit 作一般描述，表示某些年輕人的行為模式，所以選現在簡單式。",
         voiceReason: "英文句首放 Some young people，表示年輕人主動辭掉工作。",
         orderReason: "英文先放主詞和動詞受詞，再放地點 in the city，最後用 to return... 補目的。",
@@ -2590,8 +2702,14 @@
           { label: "結果", text: "不但獲利更多" },
           { label: "結果", text: "還過著更健康的生活" }
         ],
-        pieces: ["Through determination and effort,", "many have succeeded,", "not only making more profits", "but also living a healthier life."],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieces: [
+          { text: "Through determination and effort,", source: "detail-1" },
+          { text: "many", source: "subject" },
+          { text: "have succeeded,", source: "verb" },
+          { text: "not only making more profits", source: "detail-2" },
+          { text: "but also living a healthier life.", source: "detail-3" }
+        ],
+        pieceOrder: ["p5", "p4", "p3", "p1", "p2"],
         tenseReason: "英文答案用 many have succeeded，表示成果已經出現，所以選現在完成式。",
         voiceReason: "英文主詞 many 表示很多人主動成功並過生活。",
         orderReason: "英文先放 Through... 說明方式，再放 many have succeeded，最後用 not only...but also... 補結果。",
@@ -2616,7 +2734,7 @@
         tenseLabel: "現在完成式",
         voice: "active",
         coreLabel: "補語",
-        core: ["這些電影的拍攝地點", "也成為", "熱門的觀光景點"],
+        core: ["地點", "也成為", "熱門的觀光景點"],
         details: [],
         subclauses: [
           {
@@ -2626,11 +2744,19 @@
             text: "where these movies are filmed",
             target: "locations",
             core: "movies / are filmed",
-            note: "where 帶出拍攝地點的補充說明，整段用來形容 locations。"
+            note: "where 帶出拍攝地點的補充說明，整段用來形容 locations。",
+            id: "subclause-1",
+            chinese: "拍攝這些電影的",
+            parentSlot: "subject"
           }
         ],
-        pieces: ["The locations where these movies are filmed", "have also become", "popular tourist attractions."],
-        pieceOrder: ["p3", "p1", "p2"],
+        pieces: [
+          { text: "The locations", source: "subject" },
+          { text: "where these movies are filmed", source: "subclause-1" },
+          { text: "have also become", source: "verb" },
+          { text: "popular tourist attractions.", source: "object" }
+        ],
+        pieceOrder: ["p2", "p3", "p4", "p1"],
         tenseReason: "英文用 have also become，表示到現在已形成的結果，所以選現在完成式。",
         voiceReason: "英文句首放 locations，描述地點成為景點，不是被動主句。",
         orderReason: "英文先放被 where 子句修飾的主詞，再放 have also become，最後放補語。",
@@ -2669,8 +2795,16 @@
         details: [
           { label: "方式", text: "靠自己", group: "supplemental" }
         ],
-        pieces: ["Most students", "are not accustomed to solving problems", "on their own;", "they always expect teachers to provide standard answers."],
-        pieceOrder: ["p4", "p1", "p3", "p2"],
+        pieces: [
+          { text: "Most students", source: "clause-a-subject" },
+          { text: "are not accustomed to", source: "clause-a-verb" },
+          { text: "solving problems", source: "clause-a-object" },
+          { text: "on their own;", source: "detail-1" },
+          { text: "they", source: "clause-b-subject" },
+          { text: "always expect", source: "clause-b-verb" },
+          { text: "teachers to provide standard answers.", source: "clause-b-object" }
+        ],
+        pieceOrder: ["p5", "p4", "p2", "p6", "p7", "p1", "p3"],
         tenseReason: "這句描述學生的一般習慣，英文用 are not accustomed 和 expect，所以選現在簡單式。",
         voiceReason: "英文主詞是 Most students 和 they，表示學生主動期待答案。",
         orderReason: "英文先放不習慣解題的主句，再用分號接期待老師提供答案。",
@@ -2694,12 +2828,17 @@
         tense: "modal-simple",
         tenseLabel: "情態助動詞",
         voice: "active",
-        core: ["學生", "應該培養", "獨立思考的能力"],
+        core: ["學生", "也應該培養", "獨立思考的能力"],
         details: [
           { label: "附加", text: "除了用功讀書獲取知識外" }
         ],
-        pieces: ["In addition to studying hard to acquire knowledge,", "students should also cultivate", "the ability", "to think independently."],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieces: [
+          { text: "In addition to studying hard to acquire knowledge,", source: "detail-1" },
+          { text: "students", source: "subject" },
+          { text: "should also cultivate", source: "verb" },
+          { text: "the ability to think independently.", source: "object" }
+        ],
+        pieceOrder: ["p2", "p4", "p3", "p1"],
         tenseReason: "中文有「應該」，英文答案用 should cultivate，所以要選情態助動詞。",
         voiceReason: "英文句首主句是 students，表示學生主動培養能力。",
         orderReason: "英文先放 In addition to...，再放 students should cultivate the ability，最後接 to think independently。",
@@ -2724,11 +2863,29 @@
         tenseLabel: "現在簡單式",
         voice: "active",
         coreLabel: "補語",
-        core: ["聽音樂", "是", "你可以終生享受的嗜好"],
+        core: ["聽音樂", "是", "一個嗜好"],
         details: [],
-        subclauses: [],
-        pieces: ["Listening to music", "is a hobby", "you can enjoy", "for a lifetime."],
-        pieceOrder: ["p2", "p4", "p1", "p3"],
+        subclauses: [
+          {
+            id: "subclause-1",
+            type: "形容詞子句",
+            role: "修飾補語",
+            marker: "省略 that / which",
+            text: "you can enjoy for a lifetime",
+            chinese: "你可以終生享受的",
+            target: "hobby",
+            parentSlot: "object",
+            core: "you / can enjoy / hobby（省略的關係代名詞代替）",
+            note: "這是省略受格關係代名詞的形容詞子句；for a lifetime 也在子句內，說明享受這個嗜好的時間。"
+          }
+        ],
+        pieces: [
+          { text: "Listening to music", source: "subject" },
+          { text: "is", source: "verb" },
+          { text: "a hobby", source: "object" },
+          { text: "you can enjoy for a lifetime.", source: "subclause-1" }
+        ],
+        pieceOrder: ["p3", "p4", "p2", "p1"],
         tenseReason: "這句在定義一種嗜好，英文用 is，所以是現在簡單式。",
         voiceReason: "英文句首是動名詞 Listening to music，描述它是嗜好，不是被動。",
         orderReason: "英文先放動名詞主詞，再放 is a hobby，最後用 you can enjoy 和 for a lifetime 修飾 hobby。",
@@ -2756,8 +2913,14 @@
         details: [
           { label: "轉折", text: "但" }
         ],
-        pieces: ["However,", "being able to play a musical instrument", "can bring you", "even more joy."],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieces: [
+          { text: "However,", source: "detail-1" },
+          { text: "being able to play a musical instrument", source: "subject" },
+          { text: "can bring", source: "verb" },
+          { text: "you", source: "object-indirect" },
+          { text: "even more joy.", source: "object" }
+        ],
+        pieceOrder: ["p2", "p4", "p3", "p5", "p1"],
         tenseReason: "英文答案用 can bring，所以要選情態助動詞。",
         voiceReason: "英文句首是 being able to play...，表示這件事主動帶來喜悅。",
         orderReason: "英文先放 However，再放動名詞主詞，接著放 can bring you 和受詞。",
@@ -2798,8 +2961,16 @@
           { label: "連接", text: "如果", role: "connector", group: "connector", beforeClause: "clause-a" },
           { label: "方式", text: "只為自己", group: "supplemental" }
         ],
-        pieces: ["If we live only for ourselves,", "we will not truly feel", "happy."],
-        pieceOrder: ["p2", "p1", "p3"],
+        pieces: [
+          { text: "If", source: "detail-1" },
+          { text: "we", source: "clause-a-subject" },
+          { text: "live", source: "clause-a-verb" },
+          { text: "only for ourselves,", source: "detail-2" },
+          { text: "we", source: "clause-b-subject" },
+          { text: "will not truly feel", source: "clause-b-verb" },
+          { text: "happy.", source: "clause-b-object" }
+        ],
+        pieceOrder: ["p2", "p7", "p4", "p6", "p3", "p1", "p5"],
         tenseReason: "條件句中 if 子句用現在簡單式，主句用 will not feel，所以選未來簡單式。",
         voiceReason: "英文主詞是 we，表示我們主動感受，不是被動。",
         orderReason: "英文先放 If 條件子句，再放 we will not truly feel happy。",
@@ -2837,10 +3008,17 @@
         ],
         details: [
           { label: "連接", text: "當", role: "connector", group: "connector", beforeClause: "clause-a" },
-          { label: "對象", text: "為他人著想", group: "supplemental" }
+          { label: "動作內容", text: "為他人著想", group: "supplemental" }
         ],
-        pieces: ["When we start to consider others,", "the door to happiness", "will naturally open."],
-        pieceOrder: ["p3", "p1", "p2"],
+        pieces: [
+          { text: "When", source: "detail-1" },
+          { text: "we", source: "clause-a-subject" },
+          { text: "start", source: "clause-a-verb" },
+          { text: "to consider others,", source: "detail-2" },
+          { text: "the door to happiness", source: "clause-b-subject" },
+          { text: "will naturally open.", source: "clause-b-verb" }
+        ],
+        pieceOrder: ["p2", "p4", "p3", "p1", "p6", "p5"],
         tenseReason: "中文有「會開啟」，英文答案用 will naturally open，所以選未來簡單式。",
         voiceReason: "英文主詞 the door to happiness 自然開啟，沒有被動結構。",
         orderReason: "英文先放 When 時間子句，再放主詞 the door to happiness 和 will open。",
@@ -2864,10 +3042,8 @@
         tense: "present-simple",
         tenseLabel: "現在簡單式",
         voice: "active",
-        core: ["一般人", "知道", "閱讀有益"],
-        details: [
-          { label: "對象", text: "對孩子" }
-        ],
+        core: ["一般人", "知道", "閱讀對孩子有益"],
+        details: [],
         subclauses: [
           {
             type: "名詞子句",
@@ -2876,11 +3052,18 @@
             text: "that reading is beneficial for children",
             target: "know",
             core: "reading / is / beneficial",
-            note: "that 後面是一個完整句子，整段當 know 的受詞內容。"
+            note: "that 後面是一個完整句子，整段當 know 的受詞內容。",
+            id: "subclause-1",
+            chinese: "閱讀對孩子有益",
+            parentSlot: "object"
           }
         ],
-        pieces: ["Most people", "know", "that reading is beneficial for", "children."],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieces: [
+          { text: "Most people", source: "subject" },
+          { text: "know", source: "verb" },
+          { text: "that reading is beneficial for children.", source: "object" }
+        ],
+        pieceOrder: ["p3", "p1", "p2"],
         tenseReason: "這句是一般事實，英文用 know，所以是現在簡單式。",
         voiceReason: "英文句首放 Most people，表示人們主動知道某件事。",
         orderReason: "英文先放 Most people know，再用 that 子句說明知道的內容。",
@@ -2909,8 +3092,14 @@
           { label: "行為", text: "到圖書館借書" },
           { label: "程度", text: "多" }
         ],
-        pieces: ["Teachers", "should encourage students", "to borrow books", "from the library more."],
-        pieceOrder: ["p2", "p4", "p1", "p3"],
+        pieces: [
+          { text: "Teachers", source: "subject" },
+          { text: "should encourage", source: "verb" },
+          { text: "students", source: "object" },
+          { text: "to borrow books from the library", source: "detail-1" },
+          { text: "more.", source: "detail-2" }
+        ],
+        pieceOrder: ["p5", "p4", "p3", "p1", "p2"],
         tenseReason: "中文有「應該」，英文答案用 should encourage，所以要選情態助動詞。",
         voiceReason: "英文主詞 Teachers 表示老師主動鼓勵學生。",
         orderReason: "英文先放 Teachers should encourage students，再接 to borrow books，最後放地點與程度。",
@@ -2944,15 +3133,23 @@
           {
             id: "clause-b",
             label: "B 句主幹",
-            core: ["我們", "很感興趣"]
+            core: ["我們", "對它很感興趣"]
           }
         ],
         details: [
           { label: "轉折", text: "但", role: "connector", group: "connector", beforeClause: "clause-b" },
           { label: "時間", text: "長久以來", group: "supplemental" }
         ],
-        pieces: ["Humanity's knowledge of outer space is very limited,", "but we have been fascinated by it", "for a long time."],
-        pieceOrder: ["p2", "p1", "p3"],
+        pieces: [
+          { text: "Humanity's knowledge of outer space", source: "clause-a-subject" },
+          { text: "is", source: "clause-a-verb" },
+          { text: "very limited,", source: "clause-a-object" },
+          { text: "but", source: "detail-1" },
+          { text: "we", source: "clause-b-subject" },
+          { text: "have been fascinated by it", source: "clause-b-verb" },
+          { text: "for a long time.", source: "detail-2" }
+        ],
+        pieceOrder: ["p6", "p4", "p2", "p1", "p5", "p3", "p7"],
         tenseReason: "後半句的「長久以來」對應 have been fascinated，所以選現在完成式。",
         voiceReason: "英文用 have been fascinated by it，是 be + p.p. 的被動形式。",
         orderReason: "英文先說所知有限，再用 but 轉折到長久以來深受吸引。",
@@ -2992,8 +3189,15 @@
         details: [
           { label: "讓步", text: "雖然", role: "connector", group: "connector", beforeClause: "clause-a" }
         ],
-        pieces: ["Although Lily was born blind and deaf,", "she has never been", "discouraged."],
-        pieceOrder: ["p3", "p1", "p2"],
+        pieces: [
+          { text: "Although", source: "detail-1" },
+          { text: "Lily", source: "clause-a-subject" },
+          { text: "was born", source: "clause-a-verb" },
+          { text: "blind and deaf,", source: "clause-a-object" },
+          { text: "she", source: "clause-b-subject" },
+          { text: "has never been discouraged.", source: "clause-b-verb" }
+        ],
+        pieceOrder: ["p2", "p5", "p6", "p1", "p4", "p3"],
         tenseReason: "中文的「從來不」對應 has never been，表示到現在都沒有，所以選現在完成式。",
         voiceReason: "英文使用 has never been discouraged，是 be + p.p. 的被動形式。",
         orderReason: "英文先放 Although 讓步子句，再放主句 she has never been discouraged。",
@@ -3037,17 +3241,19 @@
             text: "that war causes extremely dreadful disasters",
             target: "proves",
             core: "war / causes / disasters",
-            note: "that 子句說明歷史證明的內容，整段接在 proves 後。"
+            note: "that 子句說明歷史證明的內容，整段接在 proves 後。",
+            id: "subclause-1",
+            chinese: "戰爭會造成極為可怕的災難",
+            parentSlot: "object"
           }
         ],
         bankOrder: ["o", "s", "v"],
         answerPieces: [
-          { id: "p1", text: "History" },
-          { id: "p2", text: "repeatedly proves" },
-          { id: "p3", text: "that war causes" },
-          { id: "p4", text: "extremely dreadful disasters." }
+          { id: "p1", text: "History", source: "subject" },
+          { id: "p2", text: "repeatedly proves", source: "verb" },
+          { id: "p3", text: "that war causes extremely dreadful disasters.", source: "object" }
         ],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieceOrder: ["p2", "p3", "p1"],
         summary: "這句的核心是 History proves that...，that 子句承接被證明的內容。",
         phraseNotes: [
           { text: "repeatedly proves", meaning: "一再證明", note: "repeatedly 放在動詞前，表示反覆發生。" },
@@ -3081,11 +3287,11 @@
         ],
         bankOrder: ["d-time", "o", "s", "d-place", "v"],
         answerPieces: [
-          { id: "p1", text: "Since its operation in 2007," },
-          { id: "p2", text: "the High-Speed Rail" },
-          { id: "p3", text: "has become" },
-          { id: "p4", text: "one of the most convenient and fastest transportation options" },
-          { id: "p5", text: "in Taiwan." }
+          { id: "p1", text: "Since its operation in 2007,", source: "detail-time" },
+          { id: "p2", text: "the High-Speed Rail", source: "subject" },
+          { id: "p3", text: "has become", source: "verb" },
+          { id: "p4", text: "one of the most convenient and fastest transportation options", source: "object" },
+          { id: "p5", text: "in Taiwan.", source: "detail-place" }
         ],
         pieceOrder: ["p4", "p2", "p1", "p5", "p3"],
         summary: "since 帶出從過去到現在的時間範圍，因此主句使用 has become。",
@@ -3120,10 +3326,10 @@
         ],
         bankOrder: ["s", "d-time", "o", "v"],
         answerPieces: [
-          { id: "p1", text: "In recent years," },
-          { id: "p2", text: "many films produced in Taiwan" },
-          { id: "p3", text: "have gained" },
-          { id: "p4", text: "international recognition." }
+          { id: "p1", text: "In recent years,", source: "detail-time" },
+          { id: "p2", text: "many films produced in Taiwan", source: "subject" },
+          { id: "p3", text: "have gained", source: "verb" },
+          { id: "p4", text: "international recognition.", source: "object" }
         ],
         pieceOrder: ["p2", "p4", "p1", "p3"],
         summary: "中文的『受到重視』可以用英文主動寫成 have gained recognition。",
@@ -3159,11 +3365,11 @@
         ],
         bankOrder: ["s", "d-time", "o", "v", "d-source"],
         answerPieces: [
-          { id: "p1", text: "Every year," },
-          { id: "p2", text: "they" },
-          { id: "p3", text: "attract" },
-          { id: "p4", text: "thousands of tourists" },
-          { id: "p5", text: "from different countries." }
+          { id: "p1", text: "Every year,", source: "detail-time" },
+          { id: "p2", text: "they", source: "subject" },
+          { id: "p3", text: "attract", source: "verb" },
+          { id: "p4", text: "thousands of tourists", source: "object" },
+          { id: "p5", text: "from different countries.", source: "detail-source" }
         ],
         pieceOrder: ["p4", "p2", "p5", "p1", "p3"],
         summary: "Every year 表示規律發生的事，主句使用現在簡單式。",
@@ -3190,19 +3396,19 @@
         answer: "In the past, bicycles were primarily used as a means of transportation.",
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "腳踏車", role: "subject" },
-          { id: "v", slot: "verb", label: "動詞", text: "被使用", role: "verb" }
+          { id: "v", slot: "verb", label: "動詞", text: "主要被使用", role: "verb" }
         ],
         coreGroups: [{ id: "main", label: "主幹", slots: ["subject", "verb"] }],
         details: [
           { id: "d-time", slot: "detail-time", label: "時間", text: "在過去", role: "detail" },
-          { id: "d-purpose", slot: "detail-purpose", label: "用途", text: "作為主要交通工具", role: "detail" }
+          { id: "d-purpose", slot: "detail-purpose", label: "用途", text: "作為一種交通工具", role: "detail" }
         ],
         bankOrder: ["d-time", "s", "d-purpose", "v"],
         answerPieces: [
-          { id: "p1", text: "In the past," },
-          { id: "p2", text: "bicycles" },
-          { id: "p3", text: "were primarily used" },
-          { id: "p4", text: "as a means of transportation." }
+          { id: "p1", text: "In the past,", source: "detail-time" },
+          { id: "p2", text: "bicycles", source: "subject" },
+          { id: "p3", text: "were primarily used", source: "verb" },
+          { id: "p4", text: "as a means of transportation.", source: "detail-purpose" }
         ],
         pieceOrder: ["p4", "p2", "p1", "p3"],
         summary: "中文可先拆成『人們使用腳踏車』，英文改用 bicycles 當句首，所以要轉成被動。",
@@ -3241,17 +3447,19 @@
             text: "that as long as we strive, success is achievable",
             target: "proves",
             core: "success / is / achievable",
-            note: "that 子句是被證明的整件事；as long as we strive 是子句內的條件。"
+            note: "that 子句是被證明的整件事；as long as we strive 是子句內的條件。",
+            id: "subclause-1",
+            chinese: "只要我們努力，就必能成功",
+            parentSlot: "object"
           }
         ],
         bankOrder: ["o", "s", "v"],
         answerPieces: [
-          { id: "p1", text: "Her story" },
-          { id: "p2", text: "proves" },
-          { id: "p3", text: "that as long as we strive," },
-          { id: "p4", text: "success is achievable." }
+          { id: "p1", text: "Her story", source: "subject" },
+          { id: "p2", text: "proves", source: "verb" },
+          { id: "p3", text: "that as long as we strive, success is achievable.", source: "object" }
         ],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieceOrder: ["p2", "p1", "p3"],
         summary: "as long as 表示條件，後面接努力這件事；主句說成功是可達成的。",
         phraseNotes: [
           { text: "as long as", meaning: "只要", note: "表示條件，是翻譯題常見片語。" },
@@ -3286,12 +3494,14 @@
         ],
         bankOrder: ["d-but", "s", "o", "v", "d-commitment", "d-target"],
         answerPieces: [
-          { id: "p1", text: "Keeping a pet" },
-          { id: "p2", text: "is not a short-term life experience" },
-          { id: "p3", text: "but a lifelong commitment to" },
-          { id: "p4", text: "animals." }
+          { id: "p1", text: "Keeping a pet", source: "subject" },
+          { id: "p2", text: "is not", source: "verb" },
+          { id: "p3", text: "a short-term life experience", source: "object" },
+          { id: "p4", text: "but", source: "detail-but" },
+          { id: "p5", text: "a lifelong commitment to", source: "detail-commitment" },
+          { id: "p6", text: "animals.", source: "detail-target" }
         ],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieceOrder: ["p6", "p3", "p4", "p1", "p2", "p5"],
         summary: "not...but... 是這句的核心，前面否定短暫體驗，後面強調終生承諾。",
         phraseNotes: [
           { text: "not...but...", meaning: "不是……而是……", note: "用來做強烈對比。" },
@@ -3321,18 +3531,21 @@
         ],
         details: [
           { id: "d-source", slot: "detail-source", label: "來源", text: "根據新聞報導", role: "detail", group: "lead" },
-          { id: "d-place", slot: "detail-place", label: "地點", text: "全球、道路事故中", role: "detail", group: "supplemental" },
-          { id: "d-time", slot: "detail-time", label: "時間", text: "每年", role: "detail", group: "supplemental" }
+          { id: "d-place", slot: "detail-place", label: "地點", text: "在道路事故中", role: "detail", group: "supplemental" },
+          { id: "d-time", slot: "detail-time", label: "時間", text: "每年", role: "detail", group: "supplemental" },
+          { id: "d-scope", slot: "detail-scope", label: "範圍", text: "全球", role: "detail" }
         ],
-        bankOrder: ["d-source", "o", "s", "d-place", "v", "d-time"],
+        bankOrder: ["d-source", "o", "s", "d-place", "v", "d-time", "d-scope"],
         answerPieces: [
-          { id: "p1", text: "According to news reports," },
-          { id: "p2", text: "over a million people worldwide" },
-          { id: "p3", text: "lose their lives" },
-          { id: "p4", text: "in road accidents" },
-          { id: "p5", text: "every year." }
+          { id: "p1", text: "According to news reports,", source: "detail-source" },
+          { id: "p2", text: "over a million people", source: "subject" },
+          { id: "p3", text: "worldwide", source: "detail-scope" },
+          { id: "p4", text: "lose", source: "verb" },
+          { id: "p5", text: "their lives", source: "object" },
+          { id: "p6", text: "in road accidents", source: "detail-place" },
+          { id: "p7", text: "every year.", source: "detail-time" }
         ],
-        pieceOrder: ["p4", "p1", "p5", "p2", "p3"],
+        pieceOrder: ["p7", "p4", "p3", "p6", "p1", "p5", "p2"],
         summary: "這句英文先交代資訊來源，再寫主幹；地點 in road accidents 放在時間 every year 前。",
         phraseNotes: [
           { text: "according to news reports", meaning: "根據新聞報導", note: "常放在句首交代資訊來源。" },
@@ -3367,12 +3580,14 @@
         ],
         bankOrder: ["d-purpose", "s", "o", "d-frequency", "v", "d-action"],
         answerPieces: [
-          { id: "p1", text: "Sometimes," },
-          { id: "p2", text: "we go against our own will" },
-          { id: "p3", text: "to do certain things" },
-          { id: "p4", text: "just to please friends." }
+          { id: "p1", text: "Sometimes,", source: "detail-frequency" },
+          { id: "p2", text: "we", source: "subject" },
+          { id: "p3", text: "go against", source: "verb" },
+          { id: "p4", text: "our own will", source: "object" },
+          { id: "p5", text: "to do certain things", source: "detail-action" },
+          { id: "p6", text: "just to please friends.", source: "detail-purpose" }
         ],
-        pieceOrder: ["p2", "p4", "p1", "p3"],
+        pieceOrder: ["p5", "p4", "p6", "p1", "p2", "p3"],
         summary: "go against our own will 是主幹，後面兩個 to 分別補行為與目的。",
         phraseNotes: [
           { text: "go against our own will", meaning: "違背自己的意願", note: "go against 表示違背、反對。" },
@@ -3388,7 +3603,12 @@
         year: 106,
         title: "學測翻譯第 1 句",
         chinese: "玉山在冬天常常覆蓋著厚厚的積雪，使整個山頂閃耀如玉。",
-        tags: ["學測", "被動語態", "現在簡單式", "地點時間"],
+        tags: [
+          "學測",
+          "被動語態",
+          "現在簡單式",
+          "地點時間"
+        ],
         tense: "present-simple",
         voice: "passive",
         tenseReason: "這句描述玉山冬天常見狀態，英文用 is often covered，所以是現在簡單式。",
@@ -3397,22 +3617,23 @@
         answer: "Jade Mountain is often covered with thick snow in winter, making the entire summit shimmer like jade.",
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "玉山", role: "subject" },
-          { id: "v", slot: "verb", label: "動詞", text: "常常覆蓋著", role: "verb" },
-          { id: "o", slot: "object", label: "受詞", text: "厚厚的積雪", role: "object" }
+          { id: "v", slot: "verb", label: "動詞", text: "常常被覆蓋", role: "verb" }
         ],
         details: [
+          { id: "d-material", slot: "detail-material", label: "覆蓋物", text: "厚厚的積雪", role: "detail" },
           { id: "d-time", slot: "detail-time", label: "時間", text: "在冬天", role: "detail" },
           { id: "d-result", slot: "detail-result", label: "結果", text: "使整個山頂閃耀如玉", role: "detail" }
         ],
-        bankOrder: ["o", "s", "d-result", "v", "d-time"],
+        bankOrder: ["s", "d-result", "v", "d-time", "d-material"],
         answerPieces: [
-          { id: "p1", text: "Jade Mountain" },
-          { id: "p2", text: "is often covered with thick snow" },
-          { id: "p3", text: "in winter," },
-          { id: "p4", text: "making the entire summit shimmer like jade." }
+          { id: "p1", text: "Jade Mountain", source: "subject" },
+          { id: "p2", text: "is often covered", source: "verb" },
+          { id: "p3", text: "with thick snow", source: "detail-material" },
+          { id: "p4", text: "in winter,", source: "detail-time" },
+          { id: "p5", text: "making the entire summit shimmer like jade.", source: "detail-result" }
         ],
-        pieceOrder: ["p4", "p2", "p1", "p3"],
-        summary: "covered with 是被動結構；in winter 是時間，放在被覆蓋的狀態之後。",
+        pieceOrder: ["p5", "p4", "p2", "p1", "p3"],
+        summary: "玉山是被覆蓋的對象，主幹是 Jade Mountain / is often covered；with thick snow 說明覆蓋物，making... 補充積雪帶來的結果。",
         phraseNotes: [
           { text: "covered with", meaning: "被……覆蓋", note: "常用於描述表面覆蓋物。" },
           { text: "shimmer like jade", meaning: "閃耀如玉", note: "like jade 用來做比喻。" }
@@ -3445,11 +3666,11 @@
         ],
         bankOrder: ["d-target", "s", "o", "d-scope", "v"],
         answerPieces: [
-          { id: "p1", text: "Conquering Jade Mountain" },
-          { id: "p2", text: "has always been" },
-          { id: "p3", text: "one of the most challenging goals" },
-          { id: "p4", text: "for climbers" },
-          { id: "p5", text: "both domestically and internationally." }
+          { id: "p1", text: "Conquering Jade Mountain", source: "subject" },
+          { id: "p2", text: "has always been", source: "verb" },
+          { id: "p3", text: "one of the most challenging goals", source: "object" },
+          { id: "p4", text: "for climbers", source: "detail-target" },
+          { id: "p5", text: "both domestically and internationally.", source: "detail-scope" }
         ],
         pieceOrder: ["p3", "p1", "p5", "p2", "p4"],
         summary: "動名詞片語可以當主詞；has always been 表示長期持續到現在的狀態。",
@@ -3485,11 +3706,11 @@
         ],
         bankOrder: ["d-place", "o", "s", "d-target", "v"],
         answerPieces: [
-          { id: "p1", text: "The high housing prices" },
-          { id: "p2", text: "in urban areas" },
-          { id: "p3", text: "have had" },
-          { id: "p4", text: "a serious impact on" },
-          { id: "p5", text: "society." }
+          { id: "p1", text: "The high housing prices", source: "subject" },
+          { id: "p2", text: "in urban areas", source: "detail-place" },
+          { id: "p3", text: "have had", source: "verb" },
+          { id: "p4", text: "a serious impact on", source: "object" },
+          { id: "p5", text: "society.", source: "detail-target" }
         ],
         pieceOrder: ["p2", "p4", "p1", "p5", "p3"],
         summary: "have had an impact on 是固定搭配，on 後面接受到影響的對象。",
@@ -3520,15 +3741,14 @@
           { id: "o", slot: "object", label: "受詞", text: "新的政策", role: "object" }
         ],
         details: [
-          { id: "d-purpose", slot: "detail-purpose", label: "目的", text: "滿足住房需求", role: "detail" },
-          { id: "d-target", slot: "detail-target", label: "對象", text: "人們", role: "detail" }
+          { id: "d-purpose", slot: "detail-purpose", label: "目的", text: "滿足人們的住房需求", role: "detail" }
         ],
-        bankOrder: ["o", "d-purpose", "s", "v", "d-target"],
+        bankOrder: ["o", "d-purpose", "s", "v"],
         answerPieces: [
-          { id: "p1", text: "The government" },
-          { id: "p2", text: "is introducing" },
-          { id: "p3", text: "new policies" },
-          { id: "p4", text: "to meet people's housing needs." }
+          { id: "p1", text: "The government", source: "subject" },
+          { id: "p2", text: "is introducing", source: "verb" },
+          { id: "p3", text: "new policies", source: "object" },
+          { id: "p4", text: "to meet people's housing needs.", source: "detail-purpose" }
         ],
         pieceOrder: ["p3", "p1", "p4", "p2"],
         summary: "is introducing 表示正在推動；to meet... 說明推出政策的目的。",
@@ -3546,7 +3766,12 @@
         year: 100,
         title: "學測翻譯第 1 句",
         chinese: "臺灣的夜市早已被認為足以代表我們的在地文化。",
-        tags: ["學測", "被動語態", "現在完成式", "文化"],
+        tags: [
+          "學測",
+          "被動語態",
+          "現在完成式",
+          "文化"
+        ],
         tense: "present-perfect",
         voice: "passive",
         tenseReason: "中文的「早已被認為」表示到現在已形成的看法，英文用 have long been considered。",
@@ -3556,17 +3781,16 @@
         core: [
           { id: "s", slot: "subject", label: "主詞", text: "臺灣的夜市", role: "subject" },
           { id: "v", slot: "verb", label: "動詞", text: "早已被認為", role: "verb" },
-          { id: "o", slot: "object", label: "受詞", text: "代表在地文化", role: "object" }
+          { id: "o", slot: "object", label: "補語", text: "足以代表我們的在地文化", role: "object" }
         ],
         details: [],
         bankOrder: ["o", "s", "v"],
         answerPieces: [
-          { id: "p1", text: "Taiwan's night markets" },
-          { id: "p2", text: "have long been considered" },
-          { id: "p3", text: "representative" },
-          { id: "p4", text: "of our local culture." }
+          { id: "p1", text: "Taiwan's night markets", source: "subject" },
+          { id: "p2", text: "have long been considered", source: "verb" },
+          { id: "p3", text: "representative of our local culture.", source: "object" }
         ],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieceOrder: ["p2", "p3", "p1"],
         summary: "中文語意可拆成人們認為夜市有代表性；英文把夜市放句首，所以轉成完成式被動。",
         phraseNotes: [
           { text: "have long been considered", meaning: "早已被認為", note: "long 表示這個看法已持續很久。" },
@@ -3599,10 +3823,10 @@
         ],
         bankOrder: ["d-transition", "o", "s", "v"],
         answerPieces: [
-          { id: "p1", text: "However," },
-          { id: "p2", text: "cycling" },
-          { id: "p3", text: "has now become" },
-          { id: "p4", text: "a popular recreational activity." }
+          { id: "p1", text: "However,", source: "detail-transition" },
+          { id: "p2", text: "cycling", source: "subject" },
+          { id: "p3", text: "has now become", source: "verb" },
+          { id: "p4", text: "a popular recreational activity.", source: "object" }
         ],
         pieceOrder: ["p4", "p1", "p3", "p2"],
         summary: "cycling 是動名詞主詞；has now become 表示現在已形成的狀態。",
@@ -3637,12 +3861,12 @@
         ],
         bankOrder: ["o", "s", "v", "d-explore"],
         answerPieces: [
-          { id: "p1", text: "The rapid development" },
-          { id: "p2", text: "of space technology" },
-          { id: "p3", text: "allows us" },
-          { id: "p4", text: "to explore its mysteries." }
+          { id: "p1", text: "The rapid development of space technology", source: "subject" },
+          { id: "p2", text: "allows", source: "verb" },
+          { id: "p3", text: "us", source: "object" },
+          { id: "p4", text: "to explore its mysteries.", source: "detail-explore" }
         ],
-        pieceOrder: ["p3", "p1", "p4", "p2"],
+        pieceOrder: ["p2", "p4", "p3", "p1"],
         summary: "allow + 受詞 + to V 是本句核心，用來表示『使某人得以做某事』。",
         phraseNotes: [
           { text: "allows us to", meaning: "使我們得以", note: "allow 後接受詞，再接 to V。" },
@@ -3921,7 +4145,7 @@
           ["兩個時間，各管一個動詞", "appeared 說明過去曾出現；are now becoming 說明現在正在成真。主句與修飾子句不需要使用同一個時態。"],
           ["成真與逐一分開看", "become a reality 表示成真，one by one 補充逐一發生的方式；不能把 one by one 當成 reality 的形容詞。"]
         ],
-        relations: { "過去": "子句中「出現」的時間", "在科幻電影中": "子句中「出現」的地方" }
+        relations: { "逐一": "補充「成為現實」逐一發生的方式" }
       },
       "exam-113-01": {
         points: [
@@ -3929,7 +4153,7 @@
           ["不要和主詞的分詞片語混淆", "這裡 visiting 緊接 politicians，並不是說 people 去造訪。分詞的動作對象要從句型判斷。"],
           ["習慣發生的事", "every election season 配合 always，表示選舉季常見的現象，所以本句用 see。throughout the country 補充遍及各地的範圍。"]
         ],
-        relations: { "每逢選舉季節": "全句反覆發生的時間", "各地": "補充廟宇所在的範圍", "造訪著名廟宇": "補充「政治人物」的動作" }
+        relations: { "每逢選舉季節": "全句反覆發生的時間", "各地": "補充廟宇所在的範圍" }
       },
       "exam-113-02": {
         points: [
@@ -3944,14 +4168,16 @@
           ["證明的是一整件事", "that war causes extremely dreadful disasters 整段是 proves 的受詞；that 後面還有自己的主詞 war 和動詞 causes。"],
           ["兩個動詞都要照顧主詞", "History 與 war 在各自的子句中都是單數，因此用 proves 與 causes，不能只檢查主句動詞。"],
           ["兩個副詞修飾不同對象", "repeatedly 修飾 proves，表示一再證明；extremely 修飾 dreadful，表示災難可怕的程度。"]
-        ], relations: {}
+        ],
+        relations: {  }
       },
       "exam-112-02": {
         points: [
           ["把動作變成主詞", "Avoiding conflict 與 ensuring world peace 都是動名詞片語，用 and 並列；要維持 avoiding / ensuring 的形式一致。"],
           ["情態助動詞後用原形", "should 後接 be，不用 is 或 are；the goal 是說明這些行動應成為什麼的補語。"],
           ["目標屬於誰", "of all humanity 修飾 the goal，表示所有人類的目標；humanity 在這裡是整體概念，不加複數 s。"]
-        ], relations: {}
+        ],
+        relations: {  }
       },
       "exam-111-01": {
         points: [
@@ -3966,7 +4192,8 @@
           ["享受歡樂的是誰", "While enjoying… 的動作主詞是主句的 we，可還原成 While we are enjoying…。省略後，兩邊的主詞仍須一致。"],
           ["歡樂是哪一種歡樂", "that pets bring 修飾 joy；子句裡 pets 是主詞，bring 是動詞，joy 是牠們帶來的事物。"],
           ["責任的內容", "to take care of them 說明 responsibility 的內容；them 指 pets。should not neglect 表達不該忽略，not 放在 should 後面。"]
-        ], relations: { "在享受寵物帶來的歡樂時": "交代「我們」同時處於的情境" }
+        ],
+        relations: { "在享受歡樂時": "交代「我們」同時處於的情境；joy 另由形容詞子句修飾" }
       },
       "exam-110-01": {
         points: [
@@ -3974,16 +4201,16 @@
           ["每年發生，使用現在式", "every year 表示反覆發生，主詞 people 是複數，所以用 lose。lose their lives 中 lives 是 life 的複數。"],
           ["範圍與情境不同", "worldwide 說明人口的全球範圍；in road accidents 說明喪生的情境。不要把兩個中文地點提示當成同一個英文片語。"]
         ],
-        relations: { "根據新聞報導": "全句的資訊來源", "全球、道路事故中": "全球：人的範圍；道路事故中：喪生情境", "每年": "「喪失性命」發生的頻率" }
+        relations: { "根據新聞報導": "全句的資訊來源", "在道路事故中": "「喪失性命」發生的情境", "每年": "「喪失性命」發生的頻率", "全球": "「超過百萬人」的範圍" }
       },
       "exam-110-02": {
         points: [
-          ["把執行對象放到句首", "中文拆句先想誰執行法規；英文選 traffic regulations 當主詞，法規是被執行的對象，因此用被動。"],
+          ["法規是被執行的對象", "中文主幹與英文一致：交通法規 / 必須被嚴格執行。traffic regulations 承受執行的動作，因此用被動。"],
           ["必須被執行", "must be enforced = must + be + 過去分詞。strictly 修飾 enforced，放在 be 與 enforced 之間。"],
           ["執行的目的", "to ensure the safety… 說明嚴格執行的目的；of all road users 修飾 safety，說明要保障誰的安全。"]
         ],
         relations: { "因此": "承接前句，帶出結果", "確保所有用路人的安全": "「執行交通法規」的目的" },
-        voiceBridge: "英文改用「交通法規」當主詞：交通法規 → 必須被嚴格執行。原本的執行者可省略。"
+        voiceBridge: "交通法規對應英文主詞 traffic regulations；must be strictly enforced 表示必須被嚴格執行，執行者不必另外寫出。"
       },
       "exam-109-01": {
         points: [
@@ -3998,42 +4225,48 @@
           ["面對壓力的人是我們", "when facing peer pressure 可還原成 when we face peer pressure；省略後的動作主詞仍是主句的 we。"],
           ["學會做什麼", "should learn to uphold：should 後用 learn 原形，learn 後用 to uphold 說明要學會的行動。"],
           ["不要把 face 多加介系詞", "face peer pressure 的 face 可直接接受詞，不需要 with；若用 be faced with，則是另一種完整結構。"]
-        ], relations: { "其實": "全句的語氣", "面對同儕壓力時": "「我們」採取行動的情境" }
+        ],
+        relations: { "其實": "全句的語氣", "面對同儕壓力時": "「我們」採取行動的情境" }
       },
       "exam-108-01": {
         points: [
           ["從起點連到現在", "since 引出 2007 年這個起點；has become 表示截至現在已形成的改變。since 接起點，for 才接一段時間。"],
           ["one of 後接複數", "one of the…transportation options 表示多個選項中的一個，所以 options 必須是複數；主句動詞仍依主詞高鐵用 has。"],
           ["兩個最高級共用名詞", "most convenient 與 fastest 並列修飾 transportation options；in Taiwan 補充比較的範圍。"]
-        ], relations: { "自 2007 年營運以來": "全句的時間起點", "在臺灣": "「交通工具之一」的比較範圍" }
+        ],
+        relations: { "自 2007 年營運以來": "全句的時間起點", "在臺灣": "「交通工具之一」的比較範圍" }
       },
       "exam-108-02": {
         points: [
           ["先說明對誰而言", "For those who… 是句首框架，who emphasize workplace efficiency 修飾 those；高鐵才是主句的主詞。"],
           ["不要找錯動詞的主詞", "emphasize 的主詞是 who，指那些人，因此不加 s；is 的主詞則是 the High-Speed Rail。"],
           ["兩個 for 功能不同", "For those… 表示對哪些人而言；for business travel 修飾 choice，說明這個選擇適用的用途。"]
-        ], relations: { "強調職場效率的人": "全句適用的對象；其中「強調職場效率」修飾「人」", "商務旅行": "「首選」的用途" }
+        ],
+        relations: { "對那些人而言": "全句適用的對象；those 另由形容詞子句修飾", "商務旅行": "「首選」的用途" }
       },
       "exam-107-01": {
         points: [
-          ["有某事物的句型", "there have been 表示某事物已出現或存在。there 是引導詞，後面的 super typhoons 為複數，因此用 have。"],
+          ["有某事物的句型", "there have been 整組是存在句型，表示「有」；there 是形式主詞，後面的 super typhoons 才是真正主詞，為複數所以用 have。"],
           ["近年累積的現象", "In recent years 搭配現在完成式，表達從近年延續至今的變化；不只是描述某一次過去的颱風。"],
           ["造成災害的是颱風", "causing severe disasters 補充颱風造成的結果；usually 修飾 causing，沒有另外開啟一個獨立主句。"]
-        ], relations: { "近年來": "全句的時間範圍" }
+        ],
+        relations: { "近年來": "全句的時間範圍", "通常造成嚴重災害": "補充「超級颱風」通常造成的結果" }
       },
       "exam-107-02": {
         points: [
           ["時間子句與建議分開", "When a typhoon approaches 交代時間；we should prepare… 才是主要建議。描述未來情境時，這裡的 when 子句仍用現在式。"],
           ["兩個動作共用 should", "prepare enough food 和 stay indoors 用 and 並列，共用 should。indoors 是副詞，前面不加 in。"],
           ["分號後還有一個完整主句", "if necessary 是補充條件，後面仍有 we should move…。quickly 修飾 move，to a safe place 表示移動目的地。"]
-        ], relations: { "颱風來襲時": "A 句建議的時間情境", "若有必要": "B 句移動建議的條件" }
+        ],
+        relations: { "颱風來襲時": "A 句建議的時間情境", "若有必要": "B 句移動建議的條件", "並待在室內": "與「準備足夠的食物」並列，共用 should", "至安全的地方": "B 句「移動」的目的地" }
       },
       "exam-106-01": {
         points: [
           ["被雪覆蓋的狀態", "Jade Mountain 是被覆蓋的對象，用 is covered with snow；often 修飾這個狀態，with 後接覆蓋物。"],
           ["後半句補充結果", "making… 補充前面積雪覆蓋帶來的結果，不是另一個獨立主句；要連回前面的整個情況理解。"],
           ["使役動詞後用原形", "make + 受詞 + 原形動詞：making the entire summit shimmer。不要把 shimmer 改成 to shimmer；like jade 補充比喻。"]
-        ], relations: { "在冬天": "「覆蓋積雪」的時間", "使整個山頂閃耀如玉": "前面積雪覆蓋所帶來的結果" },
+        ],
+        relations: { "厚厚的積雪": "with 後的覆蓋物，不是主句動詞的直接受詞", "在冬天": "「覆蓋積雪」的時間", "使整個山頂閃耀如玉": "前面積雪覆蓋所帶來的結果" },
         voiceBridge: "英文以「玉山」為被覆蓋的對象，用被動結構；「積雪」接在 with 後說明覆蓋物。"
       },
       "exam-106-02": {
@@ -4041,191 +4274,217 @@
           ["征服玉山這件事", "Conquering Jade Mountain 整段作單數主詞，因此用 has been。always 放在 has 與 been 之間，表示一直如此。"],
           ["眾多挑戰之一", "one of the most challenging goals 中，goals 用複數；challenging 是形容挑戰很有難度，不是說登山者感到受挑戰。"],
           ["對誰而言", "for climbers 表示面對這項挑戰的人。國內外的登山者也可寫成 climbers from Taiwan and abroad，避免只背單字替換。"]
-        ], relations: { "登山者": "「最困難的挑戰之一」所針對的人", "國內外": "說明「登山者」的範圍" }
+        ],
+        relations: { "登山者": "「最困難的挑戰之一」所針對的人", "國內外": "說明「登山者」的範圍" }
       },
       "exam-105-01": {
         points: [
           ["先交代比較基準", "Compared to their parents' generation 設定比較背景；主句從 today's young people 開始，不要把 generation 當作 enjoy 的主詞。"],
           ["比較的對象要讀清楚", "這裡比較現在年輕人與父母世代享有的生活條件。generation 指世代，era 指時代，不是任何句子都能直接互換。"],
           ["兩個受詞並列", "freedom and prosperity 都是 enjoy 的受詞，more 表示較多；這裡兩個抽象名詞通常不加複數 s。"]
-        ], relations: { "相較於父母世代": "全句的比較基準" }
+        ],
+        relations: { "相較於父母世代": "全句的比較基準" }
       },
       "exam-105-02": {
         points: [
           ["學習的內容", "how to effectively cope with new challenges 整段接在 learn 後，表示學習如何做。它沒有自己的主詞與限定動詞，不是完整子句。"],
           ["兩個副詞分別修飾誰", "rapidly 修飾 changing，整組再修飾 world；effectively 修飾 cope，表示因應的方法有效。"],
           ["固定搭配保留 with", "cope with challenges 表示因應挑戰，with 不能省略。若改用 handle challenges，就要連同句型調整，不能保留 with。"]
-        ], relations: { "但是": "與前文轉折", "快速改變的世界中": "全句的環境；「快速」修飾「改變」" }
+        ],
+        relations: { "但是": "與前文轉折", "快速改變的世界中": "全句的環境；「快速」修飾「改變」" }
       },
       "exam-104-01": {
         points: [
           ["不應該的位置", "should not prioritize 中，not 放在 should 後，prioritize 維持原形；不能加 does not 再接 should。"],
           ["把什麼當作目標", "profits 是 prioritize 的受詞，as the main goal 補充它被當作什麼。也可整句改寫為 should not make profits its main goal。"],
           ["獲利與營收不同", "profits 是扣除成本後的獲利，revenue 是營收。這題不宜把兩者當成無條件可替換的單字。"]
-        ], relations: { "最主要的目標": "「獲利」被當作的定位" }
+        ],
+        relations: { "最主要的目標": "「獲利」被當作的定位" }
       },
       "exam-104-02": {
         points: [
           ["承擔責任的搭配", "take on social responsibility 表示負起社會責任；on 屬於 take on，不能移到 responsibility 後面。"],
           ["目的放在行動之後", "to enhance… 說明承擔責任的目的；should 後接 take 原形，目的片語裡的 to 後接 enhance 原形。"],
           ["誰的福祉", "of the public 修飾 well-being，表示大眾的福祉；public 在這裡是名詞用法，前面有 the。"]
-        ], relations: { "增進大眾福祉": "「負起社會責任」的目的" }
+        ],
+        relations: { "增進大眾福祉": "「負起社會責任」的目的" }
       },
       "exam-103-01": {
         points: [
           ["先看辭掉什麼", "quit 的受詞是 high-paying jobs，in the city 修飾這些工作所在的位置；high-paying 整組是形容詞。"],
           ["兩個動作共用 to", "to return to their hometowns and cultivate organic vegetables 中，return 與 cultivate 並列，共用第一個 to。"],
           ["兩個 to 的用法不同", "to return 的 to 是不定詞標記；return to their hometowns 的 to 是表示目的地的介系詞。home 單獨作副詞時則說 return home。"]
-        ], relations: { "都市裡": "修飾「高薪工作」的位置", "返回家鄉種植有機蔬菜": "「辭掉工作」後要進行的行動與目的" }
+        ],
+        relations: { "都市裡": "修飾「高薪工作」的位置", "返回家鄉種植有機蔬菜": "「辭掉工作」後要進行的行動與目的" }
       },
       "exam-103-02": {
         points: [
           ["成功不需要受詞", "many have succeeded 的 many 指許多人，succeed 在這裡是不及物動詞，後面不必補一個受詞。"],
           ["兩個成果保持平行", "not only making… but also living… 並列兩個 V-ing 片語，補充成功的成果，不能一邊用 making、另一邊用 live。"],
           ["生活的固定搭配", "live a healthier life 表示過更健康的生活；a 修飾單數 life，healthier 是 healthy 的比較級。"]
-        ], relations: { "藉由決心與努力": "「成功」的方法", "不但獲利更多": "「成功」的第一個成果", "還過著更健康的生活": "與「獲利更多」並列的成果" }
+        ],
+        relations: { "藉由決心與努力": "「成功」的方法", "不但獲利更多": "「成功」的第一個成果", "還過著更健康的生活": "與「獲利更多」並列的成果" }
       },
       "exam-102-01": {
         points: [
           ["地點要接回房價", "in urban areas 修飾 housing prices，說明哪裡的房價。完整主詞結束後才接 have had；urban 是都市的，downtown 偏指市中心。"],
           ["兩個 have 並不重複", "have had 中，have 是完成式助動詞，had 是主要動詞 have 的過去分詞；表示影響截至現在已形成。"],
           ["影響誰的搭配", "have an impact on + 對象；a serious impact on society 中，on 連接受影響的 society，serious 修飾 impact。"]
-        ], relations: { "都會地區": "修飾「高房價」的位置", "對社會": "「嚴重的影響」作用的對象" }
+        ],
+        relations: { "都會地區": "修飾「高房價」的位置", "對社會": "「嚴重的影響」作用的對象" }
       },
       "exam-102-02": {
         points: [
           ["正在推出政策", "is introducing 表示目前進行中的措施；introduce 在這裡是推出或引入，不是介紹某個人。"],
           ["為了滿足需求", "to meet… 是推出政策的目的，meet needs 是滿足需求的搭配；meet 在此不是見面的意思。"],
           ["需求屬於誰", "people's 修飾 housing needs。people 已是複數，所有格寫 people's，不是 peoples'。"]
-        ], relations: { "滿足住房需求": "「推出新政策」的目的", "人們": "說明「住房需求」屬於誰" }
+        ],
+        relations: { "滿足人們的住房需求": "「推出新政策」的目的；people’s 說明住房需求屬於誰" }
       },
       "exam-101-01": {
         points: [
           ["中文的受到，不一定用被動", "本句選 gain recognition 表示獲得重視；films 是 gain 的主詞，所以 have gained 是主動結構。"],
           ["製作地點藏在主詞裡", "produced in Taiwan 修飾 films，可還原成 films that were produced in Taiwan；不要把 produced 誤認成主句動詞。"],
           ["近年到現在的成果", "In recent years 搭配 have gained，強調近年累積的成果；international 修飾 recognition，說明認可的範圍。"]
-        ], relations: { "近年來": "「受到國際重視」的時間範圍" }
+        ],
+        relations: { "近年來": "「受到國際重視」的時間範圍" }
       },
       "exam-101-02": {
         points: [
           ["地點後接 where 子句", "where these movies are filmed 修飾 locations。where 表示拍攝發生的地點，子句裡的主詞則是 these movies。"],
           ["子句被動，主句不必被動", "movies are filmed 表示電影被拍攝；locations have become 表示地點已成為景點，兩個動詞的語態分開判斷。"],
           ["主詞和補語都是複數", "locations 對應 have become；tourist attractions 說明這些地點成為什麼，因此 attractions 也用複數。"]
-        ], relations: {}
+        ],
+        relations: {  }
       },
       "exam-100-01": {
         points: [
           ["完成式加上被動", "have been considered = have + been + 過去分詞；夜市是被人們認為具有代表性的對象。不要漏掉 been。"],
           ["代表性的完整搭配", "representative of our local culture 中，representative 是形容詞，of 接被代表的文化；不是另加動詞 represent。"],
           ["早已的位置", "long 在這裡表示這個看法已持續很久，放在 have 與 been 之間；不是修飾夜市長度的形容詞。"]
-        ], relations: {}
+        ],
+        relations: {  }
       },
       "exam-100-02": {
         points: [
           ["每年發生的動作", "Every year 表示規律發生，即使中文有「了」，本句仍用現在簡單式 attract；they 指前句的夜市。"],
           ["概數和確切數字不同", "thousands of tourists 表示成千上萬；若寫確切數量則是 three thousand tourists，不加 s，也不用 of。"],
           ["來源修飾觀光客", "from different countries 修飾 tourists，說明觀光客來自哪裡；不是說夜市位在不同國家。"]
-        ], relations: { "每年": "「吸引」發生的頻率", "來自不同國家": "修飾「觀光客」的來源" }
+        ],
+        relations: { "每年": "「吸引」發生的頻率", "來自不同國家": "修飾「觀光客」的來源" }
       },
       "exam-99-01": {
         points: [
           ["過去被使用的工具", "In the past 表示過去，bicycles 是被使用的對象，因此用 were used；複數主詞搭配 were。"],
           ["不要混淆三種 used", "be used as 表示被當作；used to + 原形表示過去習慣；be used to + V-ing 表示習慣於。這題是第一種。"],
           ["means 的單數也有 s", "a means of transportation 表示一種交通方式；means 的單複數同形，前面有 a 仍保留 s。"]
-        ], relations: { "在過去": "「被使用」的時間", "作為主要交通工具": "「腳踏車被使用」的用途" }
+        ],
+        relations: { "在過去": "「被使用」的時間", "作為一種交通工具": "「腳踏車被使用」的用途" }
       },
       "exam-99-02": {
         points: [
           ["活動整體當主詞", "cycling 指騎車這項活動，視為單數，所以用 has become；不要因為騎車的人很多就用 have。"],
           ["現在已形成的轉變", "has now become 強調從以前到現在的改變；now 放在 has 與 become 之間。"],
           ["轉折與補語", "However 承接前句的交通用途，轉向休閒用途。a popular recreational activity 是主詞補語，單數 activity 前保留 a。"]
-        ], relations: { "然而": "與前句的交通用途形成轉折" }
+        ],
+        relations: { "然而": "與前句的交通用途形成轉折" }
       },
       "exam-98-01": {
         points: [
           ["習慣於後接 V-ing", "be accustomed to 的 to 是介系詞，因此接 solving；on their own 修飾 solving，表示獨力解決。"],
           ["期待誰做什麼", "expect teachers to provide… 是 expect + 受詞 + to V。提供答案的是 teachers，而不是主詞 students。"],
           ["兩個主句需要連接", "前後都有主詞與限定動詞，本版本用分號連接；不能只用一個逗號把兩個獨立主句接起來。"]
-        ], relations: { "靠自己": "修飾 A 句「解決問題」的方式" }
+        ],
+        relations: { "靠自己": "修飾 A 句「解決問題」的方式" }
       },
       "exam-98-02": {
         points: [
           ["兩個 to 用法不同", "in addition to studying 的 to 是介系詞；to acquire knowledge 的 to 引出讀書的目的，所以後接原形 acquire。"],
           ["能力的內容", "the ability to think independently 中，to think… 修飾 ability，說明是哪一種能力；independently 修飾 think。"],
           ["除了之外還要做什麼", "句首先說 studying，主句再用 should also cultivate 補上另一項要求。should 後的 cultivate 不加 s。"]
-        ], relations: { "除了用功讀書獲取知識外": "在主句要求之外補充另一項學習活動" }
+        ],
+        relations: { "除了用功讀書獲取知識外": "在主句要求之外補充另一項學習活動" }
       },
       "exam-97-01": {
         points: [
           ["整個活動作單數主詞", "Listening to music 是動名詞片語，主句用 is；to 屬於 listen to，後面接音樂。"],
           ["省略的關係代名詞", "a hobby you can enjoy 可還原成 a hobby that you can enjoy。that 在子句中當 enjoy 的受詞，所以可以省略。"],
           ["終生修飾享受的時間", "for a lifetime 表示可以享受多久，連回 enjoy；不要把 lifetime 誤認為主句的另一個受詞。"]
-        ], relations: {}
+        ],
+        relations: {  }
       },
       "exam-97-02": {
         points: [
           ["能夠做某事，整體作主詞", "being able to play a musical instrument 整段作主詞；being 把 be able to… 變成可以當主詞的形式。"],
           ["帶給誰什麼", "bring you more joy 是雙受詞結構：you 是間接受詞，joy 是直接受詞。也可改成 bring more joy to you。"],
           ["加強比較級", "even 修飾 more，強調更多。這裡不能用 very more joy；joy 表示喜悅的概念，通常不加 s。"]
-        ], relations: { "但": "承接前句，轉向彈奏樂器帶來的喜悅" }
+        ],
+        relations: { "但": "承接前句，轉向彈奏樂器帶來的喜悅" }
       },
       "exam-96-01": {
         points: [
           ["條件與結果分別判斷", "If we live… 是條件，we will not feel… 是結果。這類未來條件句的 if 子句用現在式，不跟著主句加 will。"],
           ["感到快樂是 SVC", "feel 在這裡是連綴動詞，後接形容詞 happy 作補語；不能改用副詞 happily 表達相同結構。"],
           ["只與真正修飾不同部分", "only for ourselves 限定為誰而活；truly 修飾 feel。翻譯時要保留這兩個語意限制。"]
-        ], relations: { "如果": "引出 A 句條件，B 句表結果", "只為自己": "修飾 A 句「活著」的目的" }
+        ],
+        relations: { "如果": "引出 A 句條件，B 句表結果", "只為自己": "修飾 A 句「活著」的目的" }
       },
       "exam-96-02": {
         points: [
           ["時間子句用現在式", "When we start… 交代未來情境的時間，仍用 start；主句 the door…will open 才用 will 表達結果。"],
           ["開始做什麼", "start to consider others 中，consider 直接接 others，不需要 for。這裡也可用 start considering others。"],
           ["通往幸福的門", "to happiness 修飾 door，這個 to 是介系詞；naturally 修飾 open，表示自然開啟。open 在此不需要受詞。"]
-        ], relations: { "當": "引出 A 句的時間情境", "為他人著想": "A 句「開始」做的事" }
+        ],
+        relations: { "當": "引出 A 句的時間情境", "為他人著想": "A 句「開始」做的事" }
       },
       "exam-95-01": {
         points: [
           ["知道的是一整件事", "that reading is beneficial for children 是 know 的受詞。主句主詞是 people，子句主詞則是 reading。"],
           ["閱讀這件事用單數", "reading 作動名詞主詞，搭配 is；beneficial 是形容詞補語，不需要再加一個 be 或動詞。"],
           ["對誰有益", "for children 補充 beneficial 的對象，屬於 that 子句內的內容，不能把 children 當成 know 的直接受詞。"]
-        ], relations: { "對孩子": "子句內「有益」的對象" }
+        ],
+        relations: {  }
       },
       "exam-95-02": {
         points: [
           ["鼓勵誰去做什麼", "encourage students to borrow… 是 encourage + 受詞 + to V；借書的是 students，不能省略 students 後只接 borrow。"],
           ["借入與借出不同", "borrow books from the library 表示從圖書館借入；lend books to someone 是把書借給別人，介系詞也不同。"],
           ["多的範圍要清楚", "本版本句尾 more 偏向多借書；若要明確強調老師更常鼓勵，可寫 Teachers should more often encourage students to borrow books from the library. 並說明語意重點的差別。"]
-        ], relations: { "到圖書館借書": "「學生」被鼓勵去做的事", "多": "補充頻率或程度；英文位置會影響修飾範圍" }
+        ],
+        relations: { "到圖書館借書": "「學生」被鼓勵去做的事", "多": "補充頻率或程度；英文位置會影響修飾範圍" }
       },
       "exam-94-01": {
         points: [
           ["兩個主句各自判斷", "knowledge is limited 描述現況；we have been fascinated 描述長久以來的感受。不能用一個時態標籤套住整句。"],
           ["哪一個是主詞的中心", "Humanity's knowledge of outer space 的中心是 knowledge，所以用 is；of outer space 修飾 knowledge，說明知識的範圍。"],
           ["代名詞與持續時間", "by it 中的 it 指 outer space；for a long time 表示一段持續時間，與 since + 時間起點的用法不同。"]
-        ], relations: { "但": "連接 A 句所知有限與 B 句長久感興趣的轉折", "長久以來": "B 句「感興趣」持續的時間" }
+        ],
+        relations: { "但": "連接 A 句所知有限與 B 句長久感興趣的轉折", "長久以來": "B 句「感興趣」持續的時間" }
       },
       "exam-94-02": {
         points: [
           ["主詞中心是 development", "of space technology 修飾 development，rapid 也修飾 development。中心名詞是單數，因此用 allows。"],
           ["讓誰能做什麼", "allow us to explore… 是 allow + 受詞 + to V；不要套用 make us explore 的形式，把 to 刪掉。"],
           ["it 與 its 回指外太空", "its mysteries 指前句外太空的奧秘；its 是所有格，不加撇號。it's 則是 it is 或 it has 的縮寫。"]
-        ], relations: { "探索它的奧秘": "「我們」得以進行的動作" }
+        ],
+        relations: { "探索它的奧秘": "「我們」得以進行的動作" }
       },
       "exam-93-01": {
         points: [
           ["Although 不再搭配 but", "Although 已引出讓步子句，後面直接接主句 she…。中文的「雖然…但是…」不逐字翻成 although…but…。"],
           ["出生與至今分別判斷", "was born 指過去出生時的狀態；has never been discouraged 表示截至現在從未氣餒，兩個部分使用不同時態。"],
           ["描述出生時的狀態", "blind and deaf 是並列形容詞，補充 Lily 出生時的狀態；never 放在 has 後，表示從未。"]
-        ], relations: { "雖然": "引出 A 句讓步背景，B 句說明仍不氣餒" }
+        ],
+        relations: { "雖然": "引出 A 句讓步背景，B 句說明仍不氣餒" }
       },
       "exam-93-02": {
         points: [
           ["證明的內容包在 that 裡", "that 後面整段是 proves 的受詞；其中還包含 as long as we strive 這個條件，不能讀到 strive 就以為受詞結束。"],
           ["只要，不是和…一樣長", "as long as 在這裡引出條件，表示只要；條件後的 success is achievable 才是所要表達的結果。"],
           ["形容詞與動詞兩種寫法", "success is achievable 用形容詞 achievable 作補語；也可改成 we can succeed，但要連同主詞與句型一起改。"]
-        ], relations: {}
-      }
-    };
+        ],
+        relations: {  }
+      }};
 
     // 獎勵第二部分：以本題原句為準，整段替換；不沿用 vocabulary 裡未校對的近義詞清單。
     // 每筆依序為：原字／詞、中文意思、替換選項、必要的用法提醒。
@@ -4734,6 +4993,14 @@
       els.feedback.textContent = "先用螢光筆標出你看到的中文結構；這一段不評分。";
     }
 
+    function questionStructureSignature(data) {
+      return JSON.stringify([...data.core, ...data.details].map(({ slot, id, text, label, role }) => [slot, id, text, label, role]));
+    }
+
+    function questionPieceSignature(data) {
+      return JSON.stringify(data.answerPieces.map(({ id, text, source }) => [id, text, source]));
+    }
+
     function saveCurrentProgress() {
       const data = question();
       const store = readSavedProgress();
@@ -4744,6 +5011,8 @@
       const isCompleted = wasCompleted || isSentenceDone() || revealed;
       store.lastQuestionId = data.id;
       store.questions[data.id] = {
+        structureSignature: questionStructureSignature(data),
+        pieceSignature: questionPieceSignature(data),
         stage,
         highlightDone,
         selectedMarker,
@@ -4772,33 +5041,44 @@
 
     function restoreQuestionState() {
       resetWorkingState();
-      const saved = readSavedProgress().questions[question().id];
+      const data = question();
+      const saved = readSavedProgress().questions[data.id];
       if (!saved || saved.isRedoing) return;
 
-      const tokenSlots = new Set(allStructureTokens().map((token) => token.slot));
-      const tokenIds = new Set(allStructureTokens().map((token) => token.id));
-      const pieceIds = new Set(question().answerPieces.map((piece) => piece.id));
+      const sameStructure = saved.structureSignature === questionStructureSignature(data);
+      const samePieces = saved.pieceSignature === questionPieceSignature(data);
+      const completed = Boolean(saved.revealed || saved.completed);
+      const tokens = allStructureTokens();
+      const pieceIds = new Set(data.answerPieces.map((piece) => piece.id));
 
       highlightDone = Boolean(saved.highlightDone || saved.revealed || saved.completed || Object.keys(saved.placements || {}).length);
       selectedMarker = markerOptions.some((marker) => marker.id === saved.selectedMarker) ? saved.selectedMarker : "subject";
       highlightMarks = saved.highlightMarks && typeof saved.highlightMarks === "object" ? saved.highlightMarks : {};
-      placements = Object.fromEntries(
-        Object.entries(saved.placements || {}).filter(([slot, tokenId]) => tokenSlots.has(slot) && tokenIds.has(tokenId))
-      );
-      selectedTense = tenseById(saved.selectedTense) ? saved.selectedTense : null;
-      selectedVoice = voiceById(saved.selectedVoice) ? saved.selectedVoice : null;
-      builtPieces = Array.isArray(saved.builtPieces) ? saved.builtPieces.filter((id) => pieceIds.has(id)) : [];
+      placements = sameStructure ? Object.fromEntries(
+        Object.entries(saved.placements || {}).filter(([slot, tokenId]) => tokens.some((token) => token.slot === slot && token.id === tokenId))
+      ) : {};
+      selectedTense = sameStructure && tenseById(saved.selectedTense) ? saved.selectedTense : null;
+      selectedVoice = sameStructure && voiceById(saved.selectedVoice) ? saved.selectedVoice : null;
+      builtPieces = samePieces && sameStructure && Array.isArray(saved.builtPieces)
+        ? [...new Set(saved.builtPieces.filter((id) => pieceIds.has(id)))] : [];
       phraseWordBuilds = {};
-      if (saved.phraseWordBuilds && typeof saved.phraseWordBuilds === "object") {
-        const validWordIds = new Set();
-        question().answerPieces.forEach((piece) => pieceWordTokens(piece).forEach((token) => validWordIds.add(token.id)));
-        Object.entries(saved.phraseWordBuilds).forEach(([pieceId, ids]) => {
+      if (samePieces && saved.phraseWordBuilds && typeof saved.phraseWordBuilds === "object") {
+        data.answerPieces.forEach((piece) => {
+          const ids = saved.phraseWordBuilds[piece.id];
           if (!Array.isArray(ids)) return;
-          const filtered = ids.filter((id) => validWordIds.has(id));
-          if (filtered.length) phraseWordBuilds[pieceId] = filtered;
+          const validWordIds = new Set(pieceWordTokens(piece).map((token) => token.id));
+          const filtered = [...new Set(ids.filter((id) => validWordIds.has(id)))];
+          if (filtered.length) phraseWordBuilds[piece.id] = filtered;
         });
       }
-      revealed = Boolean(saved.revealed || saved.completed);
+      revealed = completed;
+      // 完成資格保留；已改版的 p1 / w0 不能代表原本的文字，不能沿用組字進度。
+      if (completed) {
+        placements = Object.fromEntries(tokens.map((token) => [token.slot, token.id]));
+        selectedTense = data.tense;
+        selectedVoice = data.voice;
+        builtPieces = data.answerPieces.map((piece) => piece.id);
+      }
       hasAttempted = Boolean(
         saved.hasAttempted
         || saved.revealed
@@ -4807,16 +5087,13 @@
         || saved.selectedVoice
         || Object.keys(saved.placements || {}).length
       );
-      stage = Math.min(Math.max(Number(saved.stage) || 1, 1), 4);
-
-      if (!isHighlightDone()) stage = 1;
-      if (isHighlightDone()) stage = Math.max(stage, 2);
-      if (isStageOneDone()) stage = Math.max(stage, 3);
-      if (isDecisionDone()) stage = Math.max(stage, 4);
+      stage = !isHighlightDone() ? 1 : !isStageOneDone() ? 2 : !isDecisionDone() ? 3 : 4;
       if (revealed) {
         stage = 4;
         els.feedback.className = "feedback correct";
         els.feedback.textContent = "組句已完成，可以查看本題重點。";
+      } else if (!sameStructure || !samePieces) {
+        els.feedback.textContent = "本題的結構拆塊已更新，請依新版片段繼續練習；已完成紀錄會保留。";
       }
     }
 
@@ -4856,10 +5133,44 @@
       return token ? token.text : "";
     }
 
-    // 3 個字以上的片語才需要學生逐字重組；2 個字以下視為自動完成。
-    function isPieceBuilt(piece) {
+    function pieceStructure(piece, data = question()) {
+      return [...data.core, ...data.details].find((token) => token.slot === piece.source)
+        || (data.subclauses || []).find((clause) => clause.id === piece.source)
+        || null;
+    }
+
+    function pieceSubclause(piece, data = question()) {
+      const key = normalizeGlossKey(piece.text);
+      return (data.subclauses || []).find((clause) => normalizeGlossKey(clause.text) === key) || null;
+    }
+
+    function isFiniteSubclause(clause) {
+      return clause?.type === "名詞子句" || clause?.type === "形容詞子句";
+    }
+
+    function pieceLabel(piece, data = question()) {
+      const clause = pieceSubclause(piece, data);
+      if (clause) return `${clause.type}｜${clause.role}${clause.target ? ` → ${clause.target}` : ""}`;
+      const token = pieceStructure(piece, data);
+      const group = (data.coreGroups || []).find((item) => item.slots.includes(piece.source));
+      return `${group && hasMultipleCoreGroups(data) ? `${group.label}｜` : ""}${token?.label || "片段"}`;
+    }
+
+    function pieceRole(piece, data = question()) {
+      if (isFiniteSubclause(pieceSubclause(piece, data))) return "subclause";
+      const token = pieceStructure(piece, data);
+      if (detailGroupSlots(data, "lead").includes(token?.slot)) return "lead";
+      return token?.role || "detail";
+    }
+
+    function needsWordPractice(piece, data = question()) {
+      return isFiniteSubclause(pieceSubclause(piece, data)) || pieceWordTokens(piece).length >= 3;
+    }
+
+    // 完整子句一律練習；一般片段至少 3 個字才逐字重組。
+    function isPieceBuilt(piece, data = question()) {
       const tokens = pieceWordTokens(piece);
-      if (tokens.length < 3) return true;
+      if (!needsWordPractice(piece, data)) return true;
       const placed = phraseWordBuilds[piece.id] || [];
       if (placed.length !== tokens.length) return false;
       const builtText = placed.map((id) => wordTextById(piece, id)).join(" ");
@@ -4867,13 +5178,17 @@
     }
 
     function buildablePieces(data) {
-      return data.answerPieces.filter((piece) => pieceWordTokens(piece).length >= 3);
+      return data.answerPieces.filter((piece) => needsWordPractice(piece, data));
     }
 
     // 進階模式：取得一個英文片段對應的中文。優先用本題固定片語的完整中文（最精準），
     // 找不到再用片語表／全域單字表逐段拼出（只取每個字的第一個語意，避免一串分號）。
     function pieceChinese(piece, glossary) {
       const data = question();
+      const clause = pieceSubclause(piece, data);
+      if (clause?.chinese) return clause.chinese;
+      const source = pieceStructure(piece, data);
+      if (source) return source.chinese || source.text;
       const key = normalizeGlossKey(piece.text);
       const exact = (data.phraseNotes || []).find((note) => normalizeGlossKey(note.text) === key);
       if (exact && exact.meaning) return exact.meaning;
@@ -4908,7 +5223,7 @@
 
     function isPhraseStageDone(data) {
       if (practiceMode !== "advanced") return true;
-      return data.answerPieces.every(isPieceBuilt);
+      return data.answerPieces.every((piece) => isPieceBuilt(piece, data));
     }
 
     function togglePracticeMode() {
@@ -4933,10 +5248,10 @@
         const total = pieceWordTokens(piece).length;
         if (isPieceBuilt(piece)) {
           els.feedback.className = "feedback correct";
-          els.feedback.textContent = `片語「${piece.text}」組好了。`;
+          els.feedback.textContent = `${isFiniteSubclause(pieceSubclause(piece)) ? "子句" : "片段"}「${piece.text}」組好了。`;
         } else if (phraseWordBuilds[pieceId].length >= total) {
           els.feedback.className = "feedback error";
-          els.feedback.textContent = "這個片語的單字順序還不對，點一下已放的字可以移除重排。";
+          els.feedback.textContent = "這個片段的單字順序還不對，點一下已放的字可以移除重排。";
         }
       }
       render();
@@ -4970,8 +5285,11 @@
     }
 
     function isSentenceDone() {
-      const expected = question().answerPieces.map((piece) => piece.id).join("|");
-      return isDecisionDone() && builtPieces.join("|") === expected;
+      const pieces = question().answerPieces;
+      if (!isDecisionDone() || builtPieces.length !== pieces.length || new Set(builtPieces).size !== pieces.length) return false;
+      // 同一句可能有兩塊相同的 we；文字相同的合法片段互換仍應判對。
+      const byId = new Map(pieces.map((piece) => [piece.id, piece.text]));
+      return builtPieces.every((id, index) => byId.has(id) && byId.get(id) === pieces[index].text);
     }
 
     function hasCompletedQuestion(saved = readSavedProgress().questions[question().id]) {
@@ -5283,7 +5601,7 @@
       // 特權／開發帳號則直接補滿，方便校對。
       const revealAllPhrases = DEV_ALWAYS_REVEAL || isPrivilegedUser();
       const builtBefore = new Set(
-        data.answerPieces.filter(isPieceBuilt).map((piece) => piece.id)
+        data.answerPieces.filter((piece) => isPieceBuilt(piece, data)).map((piece) => piece.id)
       );
       phraseWordBuilds = {};
       data.answerPieces.forEach((piece) => {
@@ -5330,8 +5648,8 @@
         els.promptTitle.textContent = "第三階段：時態與主被動";
         els.promptBody.textContent = "先確認時態，再確認主動或被動；兩者都正確後才會解鎖英文組句。";
       } else if (practiceMode === "advanced" && !isPhraseStageDone(data)) {
-        els.promptTitle.textContent = "第四階段：片語組字";
-        els.promptBody.textContent = "先把每個較長片語的單字排成正確順序，全部完成後才解鎖整句組句。";
+        els.promptTitle.textContent = "第四階段：片語／子句組字";
+        els.promptBody.textContent = "依結構分類排好片語與完整子句，全部完成後才解鎖英文組句。";
       } else {
         els.promptTitle.textContent = practiceMode === "advanced" ? "第五階段：英文組句" : "第四階段：英文組句";
         els.promptBody.textContent = "把英文片段排成完整句子。";
@@ -5484,8 +5802,9 @@
             <div class="clause-lane">
               ${subclauses.map((clause) => `
                 <div class="clause-card">
-                  <strong>${clause.type}${clause.role ? `｜${clause.role}` : ""}</strong>
-                  <span>${clause.text}</span>
+                  <strong>${escapeHtml(clause.type)}${clause.role ? `｜${escapeHtml(clause.role)}` : ""}</strong>
+                  ${clause.chinese ? `<span>${escapeHtml(clause.chinese)}</span>` : ""}
+                  <span>${escapeHtml(clause.text)}</span>
                   <div class="clause-meta">
                     ${[
                       clause.marker ? `引導詞：${clause.marker}` : "",
@@ -5510,7 +5829,7 @@
       const leadSlotSet = new Set(leadSlots);
       const boundSlots = detailGroupSlots(data, "bound");
       const supplementalSlots = detailGroupSlots(data, "supplemental");
-      const coreGroups = data.coreGroups || [{ id: "main", label: "主幹", slots: ["subject", "verb", "object"] }];
+      const coreGroups = data.coreGroups || [{ id: "main", label: "主幹", slots: data.core.map((token) => token.slot) }];
       const leadLabel = hasMultipleCoreGroups(data) ? "句首導入 / 句間連接" : "句首導入 / 全句框架";
 
       els.stageOne.classList.toggle("locked", locked);
@@ -5720,8 +6039,8 @@
         els.stagePhrase.innerHTML = `
           <div class="stage-heading">
             <div>
-              <h3>4. 片語組字（進階）</h3>
-              <p>這題沒有需要逐字重組的長片語，可直接進入英文組句。</p>
+              <h3>4. 片語／子句組字（進階）</h3>
+              <p>這題沒有需要逐字重組的片語或子句，可直接進入英文組句。</p>
             </div>
             <span class="stage-badge">略過</span>
           </div>
@@ -5730,14 +6049,17 @@
       }
 
       const rows = pieces.map((piece) => {
-        // 每個要重組的片語，最上面顯示「這一小句」的中文（整句中文已在最上面的固定 Title）。
+        // 中文與結構標籤共用第二步的來源，子句保留完整邊界。
+        const clause = pieceSubclause(piece, data);
         const zh = pieceChinese(piece, glossary);
-        const zhLine = zh ? `<p class="piece-zh">${escapeHtml(zh)}</p>` : "";
-        if (isPieceBuilt(piece)) {
+        const context = `<div class="piece-context"><span class="piece-role">${escapeHtml(pieceLabel(piece, data))}</span>${zh ? `<p class="piece-zh">${escapeHtml(zh)}</p>` : ""}</div>`;
+        const attributes = `data-practice-piece="${escapeHtml(piece.id)}"${clause ? ` data-clause-id="${escapeHtml(clause.id)}"` : ""}`;
+        const unit = clause ? clause.type : "片段";
+        if (isPieceBuilt(piece, data)) {
           return `
-            <div class="answer-box">
-              ${zhLine}
-              <span>片語完成</span>
+            <div class="answer-box" ${attributes}>
+              ${context}
+              <span>${escapeHtml(unit)}完成</span>
               <strong>${glossifyText(piece.text, glossary)}</strong>
             </div>
           `;
@@ -5747,12 +6069,12 @@
         const usedIds = new Set(placed);
         const scrambled = seededShuffle(tokens, `${data.id}:${piece.id}`);
         return `
-          <div class="builder-box">
-            ${zhLine}
-            <p class="line-label">把這 ${tokens.length} 個字排成正確片語</p>
+          <div class="builder-box" ${attributes}>
+            ${context}
+            <p class="line-label">把這 ${tokens.length} 個字排成${escapeHtml(isFiniteSubclause(clause) ? `完整的${clause.type}` : "正確片段")}</p>
             <div class="built-line">
               ${placed.length === 0
-                ? `<span class="built-placeholder">點選下方單字，依序組成片語。</span>`
+                ? `<span class="built-placeholder">點選下方單字，依序組成${isFiniteSubclause(clause) ? "完整子句" : "片段"}。</span>`
                 : placed.map((id) => `<button class="token" data-word-remove="${id}" type="button">${glossifyText(wordTextById(piece, id), glossary)}</button>`).join("")}
             </div>
             <div class="sentence-bank">
@@ -5765,11 +6087,12 @@
       els.stagePhrase.innerHTML = `
         <div class="stage-heading">
           <div>
-            <h3>4. 片語組字（進階）</h3>
-            <p>先把每個較長片語的單字排成正確順序，全部完成後才解鎖英文組句。</p>
+            <h3>4. 片語／子句組字（進階）</h3>
+            <p>依上方的結構分類重組片語與完整子句，全部完成後才解鎖英文組句。</p>
           </div>
           <span class="stage-badge">${isPhraseStageDone(data) ? "完成" : locked ? "未解鎖" : "作答中"}</span>
         </div>
+        ${renderGlossHelp()}
         ${rows}
       `;
 
@@ -5806,6 +6129,7 @@
         .filter((clause) => (clause.position || "after-core") === position)
         .map((clause) => `<div class="clause-card recap-clause">
           <strong>${escapeHtml(clause.type)}｜${escapeHtml(clause.role || "子句")}${clause.target ? ` → ${escapeHtml(clause.target)}` : ""}</strong>
+          ${clause.chinese ? `<p>${escapeHtml(clause.chinese)}</p>` : ""}
           <p>${escapeHtml(clause.text)}</p>
         </div>`).join("");
       const groups = data.coreGroups || [{ id: "main", label: "主幹", slots: data.core.map((token) => token.slot) }];
@@ -5843,6 +6167,7 @@
           </div>
           <span class="stage-badge">${isSentenceDone() ? "完成" : locked ? "未解鎖" : "作答中"}</span>
         </div>
+        ${renderGlossHelp()}
         ${done ? `
           <div class="answer-box">
             <span>完整句子</span>
@@ -5853,13 +6178,13 @@
           <p class="line-label">英文組句區</p>
           <div class="built-line">
             ${builtPieces.length === 0 ? `<span class="built-placeholder">從下方點選英文片段，依序組成句子。</span>` : builtPieces.map((id) => `
-              <button class="token" data-built-id="${id}" type="button">${glossifyText(answerById[id].text, glossary)}</button>
+              <button class="token sentence-piece ${pieceRole(answerById[id], data)}" data-built-id="${id}" type="button"><small class="piece-role">${escapeHtml(pieceLabel(answerById[id], data))}</small><span>${glossifyText(answerById[id].text, glossary)}</span></button>
             `).join("")}
           </div>
           <div class="sentence-bank">
             ${data.pieceOrder.map((id) => {
               const piece = answerById[id];
-              return `<button class="token ${used.has(id) ? "used" : ""}" data-piece-id="${id}" type="button">${glossifyText(piece.text, glossary)}</button>`;
+              return `<button class="token sentence-piece ${pieceRole(piece, data)} ${used.has(id) ? "used" : ""}" data-piece-id="${id}" data-structure-source="${escapeHtml(piece.source || "")}" type="button"><small class="piece-role">${escapeHtml(pieceLabel(piece, data))}</small><span>${glossifyText(piece.text, glossary)}</span></button>`;
             }).join("")}
           </div>
           <div class="top-actions">
@@ -6104,18 +6429,40 @@
       return out.join(" ");
     }
 
+    function renderGlossHelp() {
+      return `<p class="gloss-help">查意思：滑鼠移入底線字，或用手指長按。輕點照常作答；點空白處可收起翻譯。</p>`;
+    }
+
+    let glossPress = null;
+    let suppressedGlossClick = null;
+    let lastGlossTouchAt = -Infinity;
+    const boundGlossSpans = new WeakSet();
+
+    function cancelGlossPress() {
+      if (glossPress) window.clearTimeout(glossPress.timer);
+      glossPress = null;
+    }
+
+    function suppressGlossClick(target) {
+      suppressedGlossClick = { host: target.closest("button") || target, until: Infinity };
+    }
+
     const glossTip = (() => {
       let tip = null;
+      let pinned = false;
       function ensure() {
         if (!tip) {
           tip = document.createElement("div");
           tip.className = "gloss-tip";
+          tip.setAttribute("role", "tooltip");
           tip.hidden = true;
           document.body.appendChild(tip);
         }
         return tip;
       }
-      function show(target) {
+      function show(target, keepOpen = false) {
+        if (!target.isConnected) return;
+        pinned = keepOpen;
         const el = ensure();
         const note = target.dataset.glossNote || "";
         el.innerHTML = `
@@ -6131,17 +6478,84 @@
         left = Math.max(window.scrollX + 8, Math.min(left, maxLeft));
         let top = window.scrollY + rect.top - tipRect.height - 8;
         if (top < window.scrollY + 4) top = window.scrollY + rect.bottom + 8;
+        top = Math.max(window.scrollY + 8, Math.min(top, window.scrollY + window.innerHeight - tipRect.height - 8));
         el.style.left = `${left}px`;
         el.style.top = `${top}px`;
       }
       function hide() {
+        cancelGlossPress();
+        pinned = false;
         if (tip) tip.hidden = true;
       }
-      return { show, hide };
+      return { show, hide, isPinned: () => pinned };
     })();
 
     window.addEventListener("scroll", () => glossTip.hide(), { passive: true });
     window.addEventListener("resize", () => glossTip.hide());
+    window.addEventListener("blur", () => glossTip.hide());
+
+    // 在子元素開始長按前先收起上一張提示；第二根手指即使落在字外，也取消查字。
+    document.addEventListener("touchstart", (event) => {
+      lastGlossTouchAt = Date.now();
+      if (event.touches.length > 1) {
+        if (glossPress) suppressGlossClick(glossPress.target);
+        glossTip.hide();
+        return;
+      }
+      suppressedGlossClick = null;
+      if (!event.target.closest?.(".gloss-tip")) glossTip.hide();
+    }, { capture: true, passive: true });
+
+    document.addEventListener("touchmove", (event) => {
+      if (!glossPress) return;
+      const touch = Array.from(event.touches).find((item) => item.identifier === glossPress.identifier);
+      if (event.touches.length !== 1 || !touch || Math.hypot(touch.clientX - glossPress.x, touch.clientY - glossPress.y) > 10) {
+        suppressGlossClick(glossPress.target);
+        glossTip.hide();
+      }
+      // 不攔截 touchmove，保留瀏覽器原生捲動與雙指縮放。
+    }, { capture: true, passive: true });
+
+    document.addEventListener("touchend", (event) => {
+      const press = glossPress;
+      if (press && Array.from(event.changedTouches).some((touch) => touch.identifier === press.identifier)) {
+        cancelGlossPress();
+        if (press.shown) {
+          if (event.cancelable) event.preventDefault();
+          event.stopPropagation();
+        }
+      }
+      if (!event.touches.length && suppressedGlossClick) suppressedGlossClick.until = Date.now() + 800;
+      // 放開手指後不計時關閉，等使用者點空白、繼續作答或捲動畫面。
+    }, { capture: true, passive: false });
+
+    document.addEventListener("touchcancel", () => {
+      if (glossPress) suppressGlossClick(glossPress.target);
+      glossTip.hide();
+      if (suppressedGlossClick) suppressedGlossClick.until = Date.now() + 800;
+    }, { capture: true, passive: true });
+
+    document.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "touch") return;
+      suppressedGlossClick = null;
+      if (!event.target.closest?.(".gloss-tip")) glossTip.hide();
+    }, true);
+
+    document.addEventListener("click", (event) => {
+      // 有些觸控瀏覽器仍會送出相容 click，須在它到達組句按鈕前攔下。
+      if (event.detail !== 0 && suppressedGlossClick && Date.now() <= suppressedGlossClick.until
+          && suppressedGlossClick.host.contains(event.target)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        suppressedGlossClick = null;
+        return;
+      }
+      if (!event.target.closest?.(".gloss-tip")) glossTip.hide();
+    }, true);
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") glossTip.hide();
+    });
 
     // 只有真正支援 hover 的滑鼠裝置才用 hover 顯示翻譯；觸控裝置（平板／手機）一律靠長按，
     // 短按＝token 原本的「放進句子」動作。這樣可避免平板上點一下就誤觸 hover、中文卡住不消失。
@@ -6149,32 +6563,32 @@
     function bindGloss(container) {
       if (!container) return;
       container.querySelectorAll(".glossable").forEach((span) => {
+        if (boundGlossSpans.has(span)) return;
+        boundGlossSpans.add(span);
         if (SUPPORTS_HOVER) {
-          span.addEventListener("mouseenter", () => glossTip.show(span));
-          span.addEventListener("mouseleave", () => glossTip.hide());
+          span.addEventListener("mouseenter", () => {
+            if (!glossTip.isPinned() && Date.now() - lastGlossTouchAt > 1000) glossTip.show(span);
+          });
+          span.addEventListener("mouseleave", () => {
+            if (!glossTip.isPinned() && !glossPress && Date.now() - lastGlossTouchAt > 1000) glossTip.hide();
+          });
         }
-        let timer = null;
-        let longPress = false;
-        span.addEventListener("touchstart", () => {
-          longPress = false;
-          glossTip.hide();
-          timer = window.setTimeout(() => {
-            longPress = true;
-            glossTip.show(span);
+        span.addEventListener("touchstart", (event) => {
+          if (event.touches.length !== 1 || !span.isConnected || span.closest("[inert]")) return;
+          const touch = event.touches[0];
+          const press = { target: span, identifier: touch.identifier, x: touch.clientX, y: touch.clientY, shown: false, timer: null };
+          glossPress = press;
+          press.timer = window.setTimeout(() => {
+            if (glossPress !== press || !span.isConnected || span.closest("[inert]")) return;
+            press.shown = true;
+            suppressGlossClick(span);
+            glossTip.show(span, true);
           }, 350);
         }, { passive: true });
-        span.addEventListener("touchmove", () => {
-          window.clearTimeout(timer);
-        }, { passive: true });
-        span.addEventListener("touchend", (event) => {
-          window.clearTimeout(timer);
-          if (longPress) {
-            // 長按：只顯示解釋，攔掉後續 click，不要把單字填進句子。
-            event.preventDefault();
-            event.stopPropagation();
-            window.setTimeout(() => glossTip.hide(), 1600);
-          }
-          // 短按：不攔截，讓 click 冒泡到 token，照常填入單字（中文卡會在重繪時清掉）。
+        span.addEventListener("contextmenu", (event) => {
+          const touchMenu = event.pointerType === "touch"
+            || (!event.pointerType && (glossPress?.target === span || Date.now() - lastGlossTouchAt < 1000));
+          if (touchMenu) event.preventDefault();
         });
       });
     }
