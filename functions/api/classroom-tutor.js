@@ -37,7 +37,20 @@ function shortText(value, maximum = 1500) {
   return typeof value === 'string' ? value.slice(0, maximum) : '';
 }
 
-function lessonContext(content, builtPieceIds) {
+function lessonAttempt(content, builtPieceIds) {
+  const pieces = new Map((Array.isArray(content.question.answerPieces) ? content.question.answerPieces : [])
+    .filter(piece => typeof piece?.id === 'string' && typeof piece?.text === 'string')
+    .map(piece => [piece.id, piece.text]));
+  // The learner may describe their own attempt only with IDs from this lesson.
+  // Never forward browser-supplied context or arbitrary answer text.
+  const ids = Array.isArray(builtPieceIds) && builtPieceIds.length <= pieces.size
+    && new Set(builtPieceIds).size === builtPieceIds.length
+    && builtPieceIds.every(id => typeof id === 'string' && pieces.has(id))
+    ? builtPieceIds : [];
+  return { ids, text: ids.map(id => pieces.get(id)).join(' ') };
+}
+
+function lessonContext(content, attempt) {
   const data = content.question;
   const tenseLabels = {
     'present-simple': '現在簡單式', 'present-continuous': '現在進行式',
@@ -48,15 +61,6 @@ function lessonContext(content, builtPieceIds) {
   };
   const points = Array.isArray(content.guide?.points) ? content.guide.points : [];
   const replacements = Array.isArray(content.replacements) ? content.replacements : [];
-  const pieces = new Map((Array.isArray(data.answerPieces) ? data.answerPieces : [])
-    .filter(piece => typeof piece?.id === 'string' && typeof piece?.text === 'string')
-    .map(piece => [piece.id, piece.text]));
-  // The learner may describe their own attempt only with IDs from this lesson.
-  // Never forward browser-supplied context or arbitrary answer text.
-  const attempt = Array.isArray(builtPieceIds) && builtPieceIds.length <= pieces.size
-    && new Set(builtPieceIds).size === builtPieceIds.length
-    && builtPieceIds.every(id => typeof id === 'string' && pieces.has(id))
-    ? builtPieceIds.map(id => pieces.get(id)).join(' ') : '';
   return [
     `中文題目：${shortText(data.chinese)}`,
     `參考英文答案：${shortText(data.answer)}`,
@@ -118,7 +122,12 @@ export async function onRequestPost(context) {
     // assignment membership in the deployed rules. Never add Admin credentials.
     const authorized = await fetch(
       `${FIRESTORE_DOCUMENTS}/studentSpaces/${payload.studentToken}/assignments/${payload.assignmentId}`,
-      { method: 'GET', headers: { Accept: 'application/json', 'Cache-Control': 'no-store' }, cache: 'no-store', redirect: 'error' }
+      {
+        method: 'GET', headers: { Accept: 'application/json', 'Cache-Control': 'no-store' },
+        // These options also work on older Pages compatibility dates. Manual
+        // redirects are rejected below so a capability never follows Location.
+        redirect: 'manual', cf: { cacheTtlByStatus: { '100-599': -1 } }
+      }
     );
     if ([401, 403, 404].includes(authorized.status)) return reply(request, 403, { error: DENIED });
     if (!authorized.ok) return reply(request, 503, { error: UNAVAILABLE });
@@ -134,11 +143,13 @@ export async function onRequestPost(context) {
   }
 
   try {
+    const attempt = lessonAttempt(content, payload.builtPieceIds);
     const forwardedRequest = new Request(request.url, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         question: shortText(payload.question, 500).trim(),
-        context: lessonContext(content, payload.builtPieceIds),
+        context: lessonContext(content, attempt.text),
+        builtPieceIds: attempt.ids,
         studentToken: payload.studentToken,
         assignmentId: payload.assignmentId
       })
